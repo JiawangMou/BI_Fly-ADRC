@@ -24,7 +24,7 @@ extern PidObject pidRateRoll;
 extern PidObject pidRatePitch;
 extern PidObject pidRateYaw;
 
-void attitudeControlInit(float rateDt, float angleDt);
+void attitudeControlInit(float rateDt, float angleDt,float maindt);
 bool attitudeControlTest(void);
 
 void attitudeRatePID(Axis3f *actualRate,attitude_t *desiredRate,control_t *output);

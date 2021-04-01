@@ -2,240 +2,227 @@
 #include "pm.h"
 #include <math.h>
 #include "maths.h"
+#include "filter.h"
 
-Fhan_Data ADRC_Pitch_Controller;
-Fhan_Data ADRC_Roll_Controller;
-const float ADRC_Unit[3][16]=
-{
-/*TD跟踪微分器   改进最速TD,h0=N*h      扩张状态观测器ESO           扰动补偿     非线性组合*/
-/*  r     h      N                  beta_01   beta_02    beta_03     b0     beta_0   beta_1     beta_2     N1     C    alpha1  alpha2  zeta  b*/
- {6000000 ,0.002 , 2,               500,      83333,     20000,     2.5,    0.002,   45.0,      0.009,     5,    5,    0.8,   1.6,    50,    0.0004372},
- {6000000 ,0.002 , 2,               500,      83333,     20000,     2.5,    0.002,   60.0,      0.009,     5,    5,    0.8,   1.6,    50,    0.0004205},
- {1000000 ,0.002 , 2,               300,      4000,      10000,   0.001,    0.002,   120.0,     0.0001,    5,    5,    0.8,   1.5,    50,    0},
-};
+#define U_LPF_CUTOFF_FREQ 100
 
+// const float ADRC_Unit[3][16]=
+// {
+// /*TD跟踪微分器   改进最速TD,h0=N*h      扩张状态观测器ESO           扰动补偿     非线性组合*/
+// /*  r     h      N                  beta_01   beta_02    beta_03     b0     beta_0   beta_1     beta_2     N1     C    alpha1  alpha2  zeta  b*/
+//  {6000000 ,0.002 , 2,               300,      30000,     1000000,    30.0,    0.002,   350.0,     0.025,      5,    5,    0.8,   1.6,    50,    0.0004372},
+//  {6000000 ,0.002 , 2,               300,      30000,     1000000,    30.0,    0.002,   350.0,     0.025,      5,    5,    0.8,   1.6,    50,    0.0004205},
+//  {1000000 ,0.002 , 2,               300,      4000,      10000,      0.001,   0.002,   120.0,     0.0001,     5,    5,    0.8,   1.5,    50,    0},
+// };
+// const float ADRC_Unit[3][11]=
+// {
+// /*TD跟踪微分器      改进最速TD,h0=N*h    扩张状态观测器ESO     扰动补偿 非线性组合*/
+// /*  r       h       N0                  beta_01   beta_02     b0       r1       h1         N1   C    zeta*/
+//  {6000000  ,0.002 , 2,                  500,      85000,      0.26,    20000,   0.002,     2,   2,   50},
+//  {6000000  ,0.002 , 2,                  500,      85000,      0.26,    20000,   0.002,     2,   2,   50},
+//  {10000    ,0.002 , 2,                  300,      4000,       1.0,     3000,    0.002,     2,   5,   50},
+// };
+// const float ADRC_Unit[3][10]=
+// {
+// /*TD跟踪微分器      改进最速TD,h0=N*h    扩张状态观测器ESO     扰动补偿 非线性组合*/
+// /*  r       h       N0                  w0           b0        r1       h1      N1      C    zeta*/
+//  {800000   ,0.001 , 1,                 300,         0.25,    8000,     0.004,   30.0,   1.2,   50},
+//  {800000   ,0.001 , 1,                 300,         0.25,    8000,     0.004,   30.0,   1.2,   50},
+//  {10000    ,0.001 , 2,                  300,        1.0,    3000,      0.002,    2.0,   1.0,   50},
+// };
 
+// const float ADRC_Unit[3][10]=
+// {
+// /*TD跟踪微分器      改进最速TD,h0=N*h    扩张状态观测器ESO     扰动补偿 非线性组合*/
+// /*  r       h       N0                  w0           b0        r1       h1      N1      C    zeta*/
+//  {800000   ,0.001 , 1,                 800,         0.033,    1100.0,  0.004,   72.0,   0.04,   50},
+//  {800000   ,0.001 , 1,                 800,         0.033,    1100.0,  0.004,   72.0,   0.04,   50},
+//  {10000    ,0.001 , 2,                 300,         1.0,      3000,    0.002,   2.0,    1.0,    50},
+// };
+
+// const float ADRC_Unit[3][10]=
+// {
+// /*TD跟踪微分器      改进最速TD,h0=N*h    扩张状态观测器ESO     扰动补偿 非线性组合*/
+// /*  r       h       N0                  w0           b0        r1       h1      N1      C    zeta*/
+//  {16000000   ,0.001 , 2,                 600,        0.26,   4000.0,  0.004,   40.0,   0.064,   50},
+//  {16000000   ,0.001 , 2,                 600,        0.26,   4000.0,  0.004,   40.0,   0.064,   50},
+//  {10000    ,0.001 , 1,                 300,         1.0,      3000,    0.002,   2.0,    1.0,    50},
+// };
 float Constrain_Float(float amt, float low, float high){
   return ((amt)<(low)?(low):((amt)>(high)?(high):(amt)));
 }
 
-int16_t Sign_ADRC(float Input)
+int16_t adrc_sign(float val)
 {
-    int16_t output=0;
-    if((double)Input>1E-6) output=1;
-    else if(Input<-1E-6) output=-1;
-    else output=0;
-    return output;
+	if(val >= 0.0f)
+		return 1.0f;
+	else
+		return -1.0f;
 }
 
-int16_t Fsg_ADRC(float x,float d)
+// int16_t Fsg_ADRC(float x,float d)
+// {
+//   int16_t output=0;
+//   output=(Sign_ADRC(x+d)-Sign_ADRC(x-d))/2;
+//   return output;
+// }
+
+void td_init(tdObject_t *tdobject,tdParam_t *tdparam, float tdDt)
 {
-  int16_t output=0;
-  output=(Sign_ADRC(x+d)-Sign_ADRC(x-d))/2;
-  return output;
+    /*****TD*******/
+    tdobject->TD_input = 0;
+    tdobject->x1       = 0; //跟踪微分期状态量
+    tdobject->x2       = 0; //跟踪微分期状态量微分项
+    tdobject->r        = tdparam->r; //时间尺度
+    tdobject->h        = tdDt; //ADRC系统积分时间
+    tdobject->N0       = tdparam->N0; //跟踪微分器解决速度超调h0=N*h
 }
 
-void ADRC_Init(Fhan_Data *fhan_Input1,Fhan_Data *fhan_Input2)
+void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
 {
-  fhan_Input1->r=ADRC_Unit[0][0];
-  fhan_Input1->h=ADRC_Unit[0][1];
-  fhan_Input1->N0=(u16)(ADRC_Unit[0][2]);
-  fhan_Input1->beta_01=ADRC_Unit[0][3];
-  fhan_Input1->beta_02=ADRC_Unit[0][4];
-  fhan_Input1->beta_03=ADRC_Unit[0][5];
-  fhan_Input1->b0=ADRC_Unit[0][6];
-  fhan_Input1->beta_0=ADRC_Unit[0][7];
-  fhan_Input1->beta_1=ADRC_Unit[0][8];
-  fhan_Input1->beta_2=ADRC_Unit[0][9];
-  fhan_Input1->N1=(u16)(ADRC_Unit[0][10]);
-  fhan_Input1->c=ADRC_Unit[0][11];
+    /*****LESO*******/
+    lesoobject->z1      = 0;
+    lesoobject->z2      = 0;
+    lesoobject->e       = 0; //系统状态误差
+    lesoobject->b0      = lesoparam->b0;
+    lesoobject->h       = lesoDt;
+    lesoobject->w0      = lesoparam->w0;
 
-  fhan_Input1->alpha1=ADRC_Unit[0][12];
-  fhan_Input1->alpha2=ADRC_Unit[0][13];
-  fhan_Input1->zeta=ADRC_Unit[0][14];
-  fhan_Input1->b=ADRC_Unit[0][15];
-
-  fhan_Input2->r=ADRC_Unit[1][0];
-  fhan_Input2->h=ADRC_Unit[1][1];
-  fhan_Input2->N0=(u16)(ADRC_Unit[1][2]);
-  fhan_Input2->beta_01=ADRC_Unit[1][3];
-  fhan_Input2->beta_02=ADRC_Unit[1][4];
-  fhan_Input2->beta_03=ADRC_Unit[1][5];
-  fhan_Input2->b0=ADRC_Unit[1][6];
-  fhan_Input2->beta_0=ADRC_Unit[1][7];
-  fhan_Input2->beta_1=ADRC_Unit[1][8];
-  fhan_Input2->beta_2=ADRC_Unit[1][9];
-  fhan_Input2->N1=(u16)(ADRC_Unit[1][10]);
-  fhan_Input2->c=ADRC_Unit[1][11];
-
-  fhan_Input2->alpha1=ADRC_Unit[1][12];
-  fhan_Input2->alpha2=ADRC_Unit[1][13];
-  fhan_Input2->zeta=ADRC_Unit[1][14];
-  fhan_Input2->b=ADRC_Unit[1][15];
-
-  fhan_Input1->beta_1_temp = 0;
-  fhan_Input1->beta_2_temp = 0;
-  fhan_Input2->beta_1_temp = 0;
-  fhan_Input2->beta_2_temp = 0;
+}
+void nlsef_toc_init(nlsef_TOCPObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlsef_tocparam,float nlsefDt)
+{
+    /**********NLSEF*********/
+//    adrcobject->nlsef_TOC.e0 = 0; //状态误差积分项
+    nlsef_tocobject->r  = nlsef_tocparam->r; //状态偏差
+    nlsef_tocobject->h  = nlsefDt; //状态量微分项
+    nlsef_tocobject->N1 = nlsef_tocparam->N1;
+    nlsef_tocobject->e1 = 0;
+    nlsef_tocobject->e2 = 0; //非线性组合系统输出
+    nlsef_tocobject->c  = nlsef_tocparam->c;
+    nlsef_tocobject->u0 = 0; //扰动补偿
 }
 
 
 
-//ADRC最速跟踪微分器TD，改进的算法fhan
-void TD_ADRC(Fhan_Data *fhan_Input,float expect_ADRC)//安排ADRC过度过程
+
+
+
+
+// //ADRC最速跟踪微分器TD，改进的算法fhan
+// void Fhan_ADRC(Fhan_Data *fhan_Input,float expect_ADRC)//安排ADRC过度过程
+// {
+//   float d=0,a0=0,y=0,a1=0,a2=0,a=0;
+//   float x1_delta=0;//ADRC状态跟踪误差项
+//   fhan_Input->TD_input = expect_ADRC;
+//   x1_delta=fhan_Input->x1-expect_ADRC;//用x1-v(k)替代x1得到离散更新公式
+//   fhan_Input->h0=fhan_Input->N0*fhan_Input->h;//用h0替代h，解决最速跟踪微分器速度超调问题
+//   d=fhan_Input->r*fhan_Input->h0*fhan_Input->h0;//d=rh^2;
+//   a0=fhan_Input->h0*fhan_Input->x2;//a0=h*x2
+//   y=x1_delta+a0;//y=x1+a0
+//   a1=sqrt(d*(d+8*ABS(y)));//a1=sqrt(d*(d+8*ABS(y))])
+//   a2=a0+Sign_ADRC(y)*(a1-d)/2;//a2=a0+sign(y)*(a1-d)/2;
+//   a=(a0+y)*Fsg_ADRC(y,d)+a2*(1-Fsg_ADRC(y,d));
+//   fhan_Input->fh = -fhan_Input->r * (a / d) * Fsg_ADRC(a, d) - fhan_Input->r * Sign_ADRC(a) * (1 - Fsg_ADRC(a, d)); //得到最速微分加速度跟踪量
+//   fhan_Input->x1 += fhan_Input->h * fhan_Input->x2;             //跟新最速跟踪状态量x1
+//   fhan_Input->x2 += fhan_Input->h * fhan_Input->fh;             //跟新最速跟踪状态量微分x2
+// }
+
+float adrc_fhan(float x1, float x2, float r0, float h0)
 {
-  float d=0,a0=0,y=0,a1=0,a2=0,a=0;
-  float x1_delta=0;//ADRC状态跟踪误差项
-  x1_delta=fhan_Input->x1-expect_ADRC;//用x1-v(k)替代x1得到离散更新公式
-  fhan_Input->h0=fhan_Input->N0*fhan_Input->h;//用h0替代h，解决最速跟踪微分器速度超调问题
-  d=fhan_Input->r*fhan_Input->h0*fhan_Input->h0;//d=rh^2;
-  a0=fhan_Input->h0*fhan_Input->x2;//a0=h*x2
-  y=x1_delta+a0;//y=x1+a0
-  a1=sqrt(d*(d+8*ABS(y)));//a1=sqrt(d*(d+8*ABS(y))])
-  a2=a0+Sign_ADRC(y)*(a1-d)/2;//a2=a0+sign(y)*(a1-d)/2;
-  a=(a0+y)*Fsg_ADRC(y,d)+a2*(1-Fsg_ADRC(y,d));
-  fhan_Input->fh=-fhan_Input->r*(a/d)*Fsg_ADRC(a,d)
-                  -fhan_Input->r*Sign_ADRC(a)*(1-Fsg_ADRC(a,d));//得到最速微分加速度跟踪量
-  fhan_Input->x1+=fhan_Input->h*fhan_Input->x2;//跟新最速跟踪状态量x1
-  fhan_Input->x2+=fhan_Input->h*fhan_Input->fh;//跟新最速跟踪状态量微分x2
+	float d = h0 * h0 * r0;
+	float a0 = h0 * x2;
+	float y = x1 + a0;
+	float a1 = sqrtf(d*(d + 8.0f*fabsf(y)));
+	float a2 = a0 + adrc_sign(y)*(a1-d)*0.5f;
+	float sy = (adrc_sign(y+d) - adrc_sign(y-d))*0.5f;
+	float a = (a0 + y - a2)*sy + a2;
+	float sa = (adrc_sign(a+d) - adrc_sign(a-d))*0.5f;
+	
+	return -r0*(a/d - adrc_sign(a))*sa - r0*adrc_sign(a);
 }
 
+void adrc_td(tdObject_t *td,float v)
+{
+    float fh = adrc_fhan(td->x1 - v, td->x2, td->r, td->h * td->N0);
+    td->x1 += td->h * td->x2;
+    td->x2 += td->h  * fh;
+    td->TD_input = v;
+}
 
 //原点附近有连线性段的连续幂次函数
 float Fal_ADRC(float e,float alpha,float zeta)
 {
-    s16 s=0;
-    float fal_output=0;
-    s=(Sign_ADRC(e+zeta)-Sign_ADRC(e-zeta))/2;
-    fal_output=e*s/(powf(zeta,1-alpha))+powf(ABS(e),alpha)*Sign_ADRC(e)*(1-s);
-    return fal_output;
+	if(fabsf(e) <= zeta){
+		return e / (powf(zeta, 1.0f-alpha));
+	}else{
+		return powf(fabsf(e), alpha) * adrc_sign(e);
+	}
 }
+//LESO
+void adrc_leso(lesoObject_t* adrcobject,float expect_val, float u)
+{
+    float Beta_01 = 2 * adrcobject->w0;
+    float Beta_02 = adrcobject->w0 * adrcobject->w0;
 
+    adrcobject->e = adrcobject->z1 - expect_val;
+    adrcobject->z1 += (adrcobject->z2 - Beta_01 * adrcobject->e + adrcobject->b0 * lpf2pApply(&adrcobject->uLpf, u)) * adrcobject->h;
+    // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
+    adrcobject->z2 += -Beta_02 * adrcobject->e * adrcobject->h;
+}
 
 /************扩张状态观测器********************/
-//状态观测器参数beta01=1/h  beta02=1/(3*h^2)  beta03=2/(8^2*h^3) ...
-void ESO_ADRC(Fhan_Data *fhan_Input)
+//状态观测器参数beta01=1/h  beta02=1/(3*h^2)  beta03=2/(8^2*h^3) 我这里取得是1/20*h^3 ...
+void adrc_eso(nlesoObject_t *nlesoObject,float expect_val,float u)
 {
-  float bat = pmGetBatteryVoltage();
-  fhan_Input->e=fhan_Input->z1-fhan_Input->y;//状态误差
+  // float bat = pmGetBatteryVoltage();
+  nlesoObject->e = nlesoObject->z1 - expect_val; //状态误差
 
-  fhan_Input->fe =Fal_ADRC(fhan_Input->e,0.5,fhan_Input->h);//非线性函数，提取跟踪状态与当前状态误差
-  fhan_Input->fe1=Fal_ADRC(fhan_Input->e,0.25,fhan_Input->h);
+  nlesoObject->fe =Fal_ADRC(nlesoObject->e,0.5,nlesoObject->h);//非线性函数，提取跟踪状态与当前状态误差
+  // nlesoObject->fe1=Fal_ADRC(nlesoObject->e,0.25,nlesoObject->h);
 
+//   /*************扩展状态量更新**********/
+//   nlesoObject->z1+=nlesoObject->h*(nlesoObject->z2-nlesoObject->beta_01*nlesoObject->e);
+//   nlesoObject->z2+=nlesoObject->h*(nlesoObject->z3
+//                                  -nlesoObject->beta_02*nlesoObject->fe
+//                                    +nlesoObject->b*bat*nlesoObject->u);
+//  //ESO估计状态加速度信号，进行扰动补偿，传统MEMS陀螺仪漂移较大，估计会产生漂移
+//   nlesoObject->z3+=nlesoObject->h*(-nlesoObject->beta_03*nlesoObject->fe1);
   /*************扩展状态量更新**********/
-  fhan_Input->z1+=fhan_Input->h*(fhan_Input->z2-fhan_Input->beta_01*fhan_Input->e);
-  fhan_Input->z2+=fhan_Input->h*(fhan_Input->z3
-                                 -fhan_Input->beta_02*fhan_Input->fe
-                                   +fhan_Input->b*bat*fhan_Input->u0);
- //ESO估计状态加速度信号，进行扰动补偿，传统MEMS陀螺仪漂移较大，估计会产生漂移
-  fhan_Input->z3+=fhan_Input->h*(-fhan_Input->beta_03*fhan_Input->fe1);
+  nlesoObject->z1+=nlesoObject->h*(nlesoObject->z2 - nlesoObject->beta_01*nlesoObject->e + nlesoObject->b0*lpf2pApply(&nlesoObject->uLpf, u));
+  // nlesoObject->z1+=nlesoObject->h*(nlesoObject->z2 - nlesoObject->beta_01*nlesoObject->e);
+  nlesoObject->z2+=nlesoObject->h*(-nlesoObject->beta_02*nlesoObject->fe);
+  // nlesoObject->z2 = Constrain_Float(nlesoObject->z2,-40000,40000);
+
 }
 
-
-/************非线性组合****************/
-/*
-void Nolinear_Conbination_ADRC(Fhan_Data *fhan_Input)
+float adrc_nlsef(nlsef_TOCPObject_t* nlsef_t)
 {
-  float d=0,a0=0,y=0,a1=0,a2=0,a=0;
-  float Sy=0,Sa=0;//ADRC状态跟踪误差项
-  float r = 300000;
-
-  fhan_Input->h1=fhan_Input->N1*fhan_Input->h;
-
-  d=r*fhan_Input->h1*fhan_Input->h1;
-  a0=fhan_Input->h1*fhan_Input->c*fhan_Input->e2;
-  y=fhan_Input->e1+a0;
-  a1=sqrt(d*(d+8*ABS(y)));
-  a2=a0+Sign_ADRC(y)*(a1-d)/2;
-
-  Sy=Fsg_ADRC(y,d);
-  a=(a0+y-a2)*Sy+a2;
-  Sa=Fsg_ADRC(a,d);
-  fhan_Input->u0=-r*((a/d)-Sign_ADRC(a))*Sa-r*Sign_ADRC(a);
-
-  //a=(a0+y)*Fsg_ADRC(y,d)+a2*(1-Fsg_ADRC(y,d));
-
-  //fhan_Input->fh=-fhan_Input->r*(a/d)*Fsg_ADRC(a,d)
-  //                -fhan_Input->r*Sign_ADRC(a)*(1-Fsg_ADRC(a,d));//得到最速微分加速度跟踪量
-}
-*/
-
-void Nolinear_Conbination_ADRC(Fhan_Data *fhan_Input)
-{
-  float temp_e2=0;
-  temp_e2=Constrain_Float(fhan_Input->e2,-5000,5000);
-  fhan_Input->beta_1_temp = fhan_Input->beta_1*Fal_ADRC(fhan_Input->e1,fhan_Input->alpha1,fhan_Input->zeta);
-  fhan_Input->beta_2_temp = fhan_Input->beta_2*Fal_ADRC(temp_e2,fhan_Input->alpha2,fhan_Input->zeta);
-  // fhan_Input->beta_1_temp = fhan_Input->beta_1*fhan_Input->e1;
-  // fhan_Input->beta_2_temp = fhan_Input->beta_2*temp_e2;
-  fhan_Input->u0 = fhan_Input->beta_1_temp + fhan_Input->beta_2_temp;
+    return -adrc_fhan(nlsef_t->e1, nlsef_t->c * nlsef_t->e2, nlsef_t->r, nlsef_t->h * nlsef_t->N1);
 }
 
-void ADRC_Control(Fhan_Data *fhan_Input,float expect_ADRC,float feedback_ADRC)
-{
-    /*自抗扰控制器第1步*/
-    /********
-        **
-        **
-        **
-        **
-        **
-     ********/
-      /*****
-      安排过度过程，输入为期望给定，
-      由TD跟踪微分器得到：
-      过度期望信号x1，过度期望微分信号x2
-      ******/
-      TD_ADRC(fhan_Input,expect_ADRC);
 
-    /*自抗扰控制器第2步*/
-    /********
-            *
-            *
-       ****
-     *
-     *
-     ********/
-      /************系统输出值为反馈量，状态反馈，ESO扩张状态观测器的输入*********/
-      fhan_Input->y=feedback_ADRC;
-      /*****
-      扩张状态观测器，得到反馈信号的扩张状态：
-      1、状态信号z1；
-      2、状态速度信号z2；
-      3、状态加速度信号z3。
-      其中z1、z2用于作为状态反馈与TD微分跟踪器得到的x1,x2做差后，
-      经过非线性函数映射，乘以beta系数后，
-      组合得到未加入状态加速度估计扰动补偿的原始控制量u
-      *********/
-      ESO_ADRC(fhan_Input);//低成本MEMS会产生漂移，扩展出来的z3此项会漂移，目前暂时未想到办法解决，未用到z3
-    /*自抗扰控制器第3步*/
-    /********
-           **
-         **
-       **
-         **
-           **
-     ********/
-      /********状态误差反馈率***/
-      fhan_Input->e0+=fhan_Input->e1*fhan_Input->h;//状态积分项
-      fhan_Input->e1=fhan_Input->x1-fhan_Input->z1;//状态偏差项
-      fhan_Input->e2=fhan_Input->x2-fhan_Input->z2;//状态微分项
-      /********线性组合*******/
-     /*
-      fhan_Input->u0=//fhan_Input->beta_0*fhan_Input->e0
-                    +fhan_Input->beta_1*fhan_Input->e1
-                    +fhan_Input->beta_2*fhan_Input->e2;
-     */
-      Nolinear_Conbination_ADRC(fhan_Input);
-      /**********扰动补偿*******/
-      // fhan_Input->u=fhan_Input->u0
-      //             -fhan_Input->z3/fhan_Input->b0;
-      fhan_Input->u=fhan_Input->u0 - fhan_Input->z3/fhan_Input->b0;
-      // //由于MEMS传感器漂移比较严重，当beta_03取值比较大时，长时间z3漂移比较大，目前不加入扰动补偿控制量
-      // fhan_Input->u=Constrain_Float(fhan_Input->u,-200,200);
-}
 
-// void ADRCGet(Fhan_Data *fhan_Input,Fhan_Data *fhan_Ouput)
+// void Nolinear_Conbination_ADRC(Fhan_Data *fhan_Input)
 // {
-//    *fhan_Ouput = *fhan_Input;
+//   float temp_e2=0;
+//   temp_e2=Constrain_Float(fhan_Input->e2,-3000,3000);
+//   fhan_Input->beta_1_temp = fhan_Input->beta_1*Fal_ADRC(fhan_Input->e1,fhan_Input->alpha1,fhan_Input->zeta);
+//   fhan_Input->beta_2_temp = fhan_Input->beta_2*Fal_ADRC(temp_e2,fhan_Input->alpha2,fhan_Input->zeta);
+//   // fhan_Input->beta_1_temp = fhan_Input->beta_1*fhan_Input->e1;
+//   // fhan_Input->beta_2_temp = fhan_Input->beta_2*temp_e2;
+//   fhan_Input->u0 = fhan_Input->beta_1_temp + fhan_Input->beta_2_temp;
 // }
+
+//void Nolinear_Conbination_ADRC(Fhan_Data *fhan_Input)
+//{
+//  float temp_e2=0;
+//  temp_e2=Constrain_Float(fhan_Input->e2,-3000,3000);
+//  fhan_Input->beta_1_temp = fhan_Input->beta_1*fhan_Input->e1;
+//  fhan_Input->beta_2_temp = fhan_Input->beta_2*fhan_Input->e2;
+//  // fhan_Input->beta_1_temp = fhan_Input->beta_1*fhan_Input->e1;
+//  // fhan_Input->beta_2_temp = fhan_Input->beta_2*temp_e2;
+//  fhan_Input->u0 = fhan_Input->beta_1_temp + fhan_Input->beta_2_temp;
+//}
+
+
+

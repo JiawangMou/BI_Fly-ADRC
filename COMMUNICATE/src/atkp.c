@@ -24,8 +24,10 @@
 #include "ADRC.h"
 #include "state_control.h"
 #include "sensors.h"
+#include "config_param.h"
+#include "attitude_adrc.h"
 
-/*FreeRTOS相关头文件*/
+/*FeeRTOS相关头文件*/
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "semphr.h"
@@ -89,8 +91,8 @@ static xQueueHandle      rxQueue;
 // extern PidObject pidRatePitch;
 // extern PidObject pidRateYaw;
 
-extern Fhan_Data ADRC_Pitch_Controller;
-extern Fhan_Data ADRC_Roll_Controller;
+extern adrcObject_t ADRCRatePitch;
+extern adrcObject_t ADRCRateRoll;
 
 static void atkpSendPacket(atkp_t* p)
 {
@@ -550,15 +552,12 @@ static void atkpSendPeriod(void)
 		getAttitudeData(&attitude);
 		getattitudeDesired(&attitudeDesired);
 		getStateData(&acc, &vel, &pos);
-		getSensorData(&sensordata);
 		getrateDesired( &rateDesired_temp );
 		getgyro_UnLPFData( &gyro_UnLPF);
-		sendUserData(1,attitudeDesired.roll,attitude.roll , sensordata.gyro.x,sensordata.gyro.y, ADRC_Roll_Controller.z1,ADRC_Roll_Controller.z2, rateDesired_temp.roll, rateDesired_temp.pitch, ADRC_Roll_Controller.x1);
+		sendUserData(1,attitudeDesired.pitch, rateDesired_temp.pitch, ADRCRatePitch.td.TD_input,  ADRCRatePitch.td.x1, ADRCRatePitch.td.x2, sensordata.gyro.y,  ADRCRatePitch.leso.z1, ADRCRatePitch.leso.z2 , ADRCRatePitch.leso.e);
 		// sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
 		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
-		sendUserData(2, ADRC_Roll_Controller.x2, ADRC_Pitch_Controller.x1, ADRC_Pitch_Controller.x2, ADRC_Roll_Controller.e1, ADRC_Roll_Controller.e2, ADRC_Pitch_Controller.e1, ADRC_Pitch_Controller.y,
-					ADRC_Pitch_Controller.e,ADRC_Pitch_Controller.fe1);
-		sendUserData(3, ADRC_Roll_Controller.beta_1_temp, ADRC_Roll_Controller.beta_2_temp, 0, 0, 0, 0, 0, 0, 0);
+		sendUserData(2, attitude.pitch,  ADRCRateRoll.td.TD_input, ADRCRateRoll.td.x1, ADRCRateRoll.td.x2, sensordata.gyro.x, ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2,ADRCRatePitch.u,ADRCRatePitch.nlsef_TOC.u0);
     }
     if (!(count_ms % PERIOD_RCDATA)) {
         sendRCData(rcdata.thrust, rcdata.yaw, rcdata.roll, rcdata.pitch, 0, 0, 0, 0, 0, 0);
@@ -688,7 +687,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         {
             resetConfigParamPID();
 
-            attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT);        /*初始化姿态PID*/
+			attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
             positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
 
             sendPid(1, pidRateRoll.kp, pidRateRoll.ki, pidRateRoll.kd, pidRatePitch.kp, pidRatePitch.ki,

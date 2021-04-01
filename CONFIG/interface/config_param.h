@@ -79,6 +79,57 @@ typedef struct
 // 	Bias_Value bias_value;
 // 	bool bias_isfound;
 // }Bias;
+typedef struct 
+{
+/*****安排过度过程*******/
+	float r;//时间尺度
+	float N0;//跟踪微分器解决速度超调h0=N*h	
+}tdParam_t;
+
+typedef struct 
+{
+	float N1;//跟踪微分器解决速度超调h1=N1*h
+	float r1;
+	float beta_1;
+	float beta_2;
+	float zeta;
+	float alpha1;
+	float alpha2;
+}nlsefParam_t;
+
+//最速控制(time-optimal control:TOC)  TODO:最速开关控制的英文缩写看是不是改一下
+typedef struct 
+{
+	float r;//时间尺度
+	float N1;//跟踪微分器解决速度超调h0=N*h	
+	float c;//阻尼系数
+}nlsef_TOCParam_t;
+
+typedef struct 
+{
+	float b0;
+	float w0;
+}lesoParam_t;
+
+typedef struct 
+{
+	float b0;
+	float beta_01;
+	float beta_02;
+}nlesoParam_t;
+
+typedef struct 
+{
+	tdParam_t td;
+	nlsef_TOCParam_t nlsef_TOC;
+	lesoParam_t leso;
+}adrcInit_t;
+
+typedef struct 
+{
+	adrcInit_t roll;
+	adrcInit_t pitch;
+}adrcParam_t;
 typedef struct	
 {
 	u8 version;				/*软件版本号*/
@@ -87,6 +138,8 @@ typedef struct
 	pidParamPos_t pidPos;	/*位置PID*/
 //	accBias_t accBias;		/*加速度校准值*/
 //	magBias_t magBias;		/*磁力计校准值*/
+	adrcParam_t adrcAngle;	/*角度ADRC*/
+	adrcParam_t adrcRate;	/*角速度ADRC*/
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
 	u16 thrustBase;			/*油门基础值*/

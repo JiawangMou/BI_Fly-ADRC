@@ -28,7 +28,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 13 /*13 表示V1.3*/
+#define VERSION 23 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -144,6 +144,90 @@ static configParam_t configParamDefault =
 			.accGain = {2049, 2045, 2068},
 			.bias_isfound = true,
 		},
+		.adrcRate=
+		{
+			.roll=
+			{
+				.td=
+				{
+					.r  = 16000000,
+					.N0 = 2,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 4000.0,
+					.N1 = 40.0,
+					.c  = 0.064,
+				},
+				.leso=
+				{
+					.b0 = 0.26,
+					.w0 = 600,
+				},
+
+			},
+			.pitch=
+			{
+				.td=
+				{
+					.r  = 16000000,
+					.N0 = 2,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 4000.0,
+					.N1 = 40.0,
+					.c  = 0.064,
+				},
+				.leso=
+				{
+					.b0 = 0.26,
+					.w0 = 600,
+				},
+			},
+		},
+		.adrcAngle=
+		{
+			.roll=
+			{
+				.td=
+				{
+					.r  = 0,
+					.N0 = 0,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 0,
+					.N1 = 0,
+					.c  = 0,
+				},
+				.leso=
+				{
+					.b0 = 0,
+					.w0 = 0,
+				},
+
+			},
+			.pitch=
+			{
+				.td=
+				{
+					.r  = 0,
+					.N0 = 0,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 0,
+					.N1 = 0,
+					.c  = 0,
+				},
+				.leso=
+				{
+					.b0 = 0,
+					.w0 = 0,
+				},
+			},
+		},
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 34000, /*定高油门基础值*/
@@ -256,6 +340,90 @@ static configParam_t configParamDefault =
 			.accGain = {2049, 2045, 2068},
 			.bias_isfound = true,
 		},
+		.adrcRate=
+		{
+			.roll=
+			{
+				.td=
+				{
+					.r  = 16000000,
+					.N0 = 2,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 4000.0,
+					.N1 = 40.0,
+					.c  = 0.064,
+				},
+				.leso=
+				{
+					.b0 = 0.26,
+					.w0 = 600,
+				},
+
+			},
+			.pitch=
+			{
+				.td=
+				{
+					.r  = 16000000,
+					.N0 = 2,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 4000.0,
+					.N1 = 40.0,
+					.c  = 0.064,
+				},
+				.leso=
+				{
+					.b0 = 0.26,
+					.w0 = 600,
+				},
+			},
+		},
+		.adrcAngle=
+		{
+			.roll=
+			{
+				.td=
+				{
+					.r  = 0,
+					.N0 = 0,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 0,
+					.N1 = 0,
+					.c  = 0,
+				},
+				.leso=
+				{
+					.b0 = 0,
+					.w0 = 0,
+				},
+
+			},
+			.pitch=
+			{
+				.td=
+				{
+					.r  = 0,
+					.N0 = 0,
+				},
+				.nlsef_TOC=
+				{
+					.r  = 0,
+					.N1 = 0,
+					.c  = 0,
+				},
+				.leso=
+				{
+					.b0 = 0,
+					.w0 = 0,
+				},
+			},
+		},		
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 44500, /*定高油门基础值*/

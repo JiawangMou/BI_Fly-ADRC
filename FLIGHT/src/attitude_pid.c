@@ -2,7 +2,8 @@
 #include "pid.h"
 #include "sensors.h"
 #include "attitude_pid.h"
-#include "ADRC.h"
+#include "attitude_adrc.h"
+#include "adrc.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -37,8 +38,11 @@ PidObject pidRateRoll;
 PidObject pidRatePitch;
 PidObject pidRateYaw;
 
-extern Fhan_Data ADRC_Pitch_Controller;
-extern Fhan_Data ADRC_Roll_Controller;
+extern adrcObject_t ADRCAnglePitch;
+extern adrcObject_t ADRCAngleRoll;
+extern adrcObject_t ADRCRatePitch;
+extern adrcObject_t ADRCRateRoll;
+
 
 static inline int16_t pidOutLimit(float in)
 {
@@ -50,7 +54,7 @@ static inline int16_t pidOutLimit(float in)
 		return (int16_t)in;
 }
 
-void attitudeControlInit(float ratePidDt, float anglePidDt)
+void attitudeControlInit(float ratePidDt, float anglePidDt,float maindt)
 {
 	pidInit(&pidAngleRoll, 0, configParam.pidAngle.roll, anglePidDt);		/*roll  角度PID初始化*/
 	pidInit(&pidAnglePitch, 0, configParam.pidAngle.pitch, anglePidDt);		/*pitch 角度PID初始化*/
@@ -66,7 +70,8 @@ void attitudeControlInit(float ratePidDt, float anglePidDt)
 	pidSetIntegralLimit(&pidRatePitch, PID_RATE_PITCH_INTEGRATION_LIMIT); /*pitch 角速度积分限幅设置*/
 	pidSetIntegralLimit(&pidRateYaw, PID_RATE_YAW_INTEGRATION_LIMIT);	  /*yaw   角速度积分限幅设置*/
 
-	ADRC_Init(&ADRC_Roll_Controller,&ADRC_Pitch_Controller);
+	adrc_init(&ADRCRatePitch,&configParam.adrcRate.pitch, maindt,maindt,ratePidDt);
+	adrc_init(&ADRCRateRoll, &configParam.adrcRate.roll,  maindt,maindt,ratePidDt);
 }
 
 bool attitudeControlTest()
@@ -78,10 +83,10 @@ void attitudeRatePID(Axis3f *actualRate, attitude_t *desiredRate, control_t *out
 {
 	// output->roll = pidOutLimit(pidUpdate(&pidRateRoll, desiredRate->roll - actualRate->x));
 	// output->pitch = pidOutLimit(pidUpdate(&pidRatePitch, desiredRate->pitch - actualRate->y));
-	ADRC_Control(&ADRC_Roll_Controller, desiredRate->roll,actualRate->x);
-	ADRC_Control(&ADRC_Pitch_Controller,desiredRate->pitch,actualRate->y);
-	output->roll = pidOutLimit(ADRC_Roll_Controller.u0);
-	output->pitch = pidOutLimit(ADRC_Pitch_Controller.u0);
+	ADRC_RateControl(&ADRCRateRoll,desiredRate->roll,actualRate->x);
+	ADRC_RateControl(&ADRCRatePitch,desiredRate->pitch,actualRate->y);
+	output->roll = pidOutLimit(ADRCRateRoll.u);
+	output->pitch = pidOutLimit(ADRCRatePitch.u);
 	// output->pitch = 0;
 	output->yaw = pidOutLimit(pidUpdate(&pidRateYaw, desiredRate->yaw - actualRate->z));
 	// output->yaw = 0;

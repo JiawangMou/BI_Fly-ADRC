@@ -6,7 +6,7 @@
 #include "position_pid.h"
 #include "stabilizer.h"
 #include <math.h>
-
+#include "ADRC.h"
 /********************************************************************************
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
  * ALIENTEK MiniFly
@@ -24,10 +24,15 @@ static float      actualThrust;
 static attitude_t attitudeDesired;
 static attitude_t rateDesired;
 
+extern adrcObject_t ADRCAnglePitch;
+extern adrcObject_t ADRCAngleRoll;
+extern adrcObject_t ADRCRatePitch;
+extern adrcObject_t ADRCRateRoll;
+
 void stateControlInit(void)
 {
-    attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT);        /*初始化姿态PID*/
-    positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
+	attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
+	positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
 }
 
 bool stateControlTest(void)
@@ -70,6 +75,13 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
         attitudeAnglePID(&state->attitude, &attitudeDesired, &rateDesired);
     }
+    /*ADRC-ESO*/
+    adrc_leso(&ADRCRatePitch.leso, sensors->gyro.y,ADRCRatePitch.u);
+    adrc_leso(&ADRCRateRoll.leso, sensors->gyro.x,ADRCRateRoll.u);	
+	/*ADRC-TD*/
+    adrc_td(&ADRCRatePitch.td, rateDesired.pitch - ADRCRatePitch.leso.z1);
+    adrc_td(&ADRCRateRoll.td,  rateDesired.roll - ADRCRateRoll.leso.z1);
+
 
     //角速度环（内环）
     if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {
@@ -105,6 +117,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // attitudeResetAllPID();	/*复位姿态PID*/
         // /*这里取消复位的原因是，让飞行器翅膀不拍动的时候，还能看到舵机的反应，从而确认PID计算结果是否正常，或者是接线是否有问题*/
         positionResetAllPID();                     /*复位位置PID*/
+        // adrc_reset(&ADRCRatePitch);
+		// adrc_reset(&ADRCRatePitch);
         attitudeDesired.yaw = state->attitude.yaw; /*复位计算的期望yaw值*/
 
         if (cnt++ > 1500) {
