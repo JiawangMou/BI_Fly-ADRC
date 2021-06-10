@@ -1,6 +1,7 @@
 #ifndef __SENSORS_H
 #define __SENSORS_H
 #include "stabilizer_types.h"
+#include "config.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -64,4 +65,9 @@ Axis3f getaccBias(void);
 /*获取accScale的值*/
 Axis3f getaccScale(void);
 void resetaccBias_accScale(void);
+
+#ifdef PCBV4_5
+float getBatteryVoltage(void);
+#endif
+
 #endif //__SENSORS_H

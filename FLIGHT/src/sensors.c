@@ -17,6 +17,7 @@
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "bat.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -91,6 +92,14 @@ static Axis3i16 gyro_UnLPF;
 static lpf2pData accLpf[3];
 static lpf2pData gyroLpf[3];
 static lpf2pData BaroLpf;
+
+#ifdef PCBV4_5
+#define BAT_LPF_CUTOFF_FREQ 10
+static lpf2pData BatLpf;
+static float VoltageSeparateCoeff = 0.001201f;
+static float VoltageBiasCoeff = -0.0525f;
+static float BatteryVoltage = 0.0f;
+#endif
 
 static bool isMPUPresent = false;
 static bool isMagPresent = false;
@@ -245,6 +254,10 @@ void sensorsDeviceInit(void)
 		lpf2pInit(&accLpf[i], 1000, ACCEL_LPF_CUTOFF_FREQ);
 	}
 	lpf2pInit(&BaroLpf, 1000, BARO_LPF_CUTOFF_FREQ);
+
+#ifdef PCBV4_5
+	lpf2pInit(&BatLpf, 1000, BAT_LPF_CUTOFF_FREQ);
+#endif
 
 #ifdef SENSORS_ENABLE_MAG_AK8963
 	ak8963Init(I2C3_DEV); //ak8963磁力计初始化
@@ -701,6 +714,16 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	// gyroBff.z = gyroTmp.z;
 }
 
+#ifdef PCBV4_5
+void processBatteryVoltage(){
+	BatteryVoltage = lpf2pApply(&BatLpf, (u32)batteryVoltageRaw[0] * vRefIntCal / batteryVoltageRaw[1] * VoltageSeparateCoeff + VoltageBiasCoeff);
+}
+
+float getBatteryVoltage(){
+	return BatteryVoltage;
+}
+#endif
+
 /*传感器任务*/
 void sensorsTask(void *param)
 {
@@ -744,7 +767,9 @@ void sensorsTask(void *param)
 			{
 				xQueueOverwrite(magnetometerDataQueue, &sensors.mag);
 			}
-
+			#ifdef PCBV4_5
+			processBatteryVoltage();
+			#endif
 			xTaskResumeAll();
 		}
 	}
