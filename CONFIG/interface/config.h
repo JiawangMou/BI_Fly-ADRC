@@ -32,8 +32,13 @@
 #define MCU_FLASH_SIZE_ADDRESS  0x1FFF7A22
 
 #define BI_Fly_1
-//#define ENABLE_GET_TASK_STATUS
 
+//自定义的一些配置宏用于完成代码的切换
+
+//#define ENABLE_GET_TASK_STATUS     //查看系统每个线程大概占用了多少CPU的资源
+
+#define BOARD_VERTICAL               //板子垂直放置
+// #define BOARD_HORIZONTAL          //板子水平放置   
 
 
 #endif /* __CONFIG_H */

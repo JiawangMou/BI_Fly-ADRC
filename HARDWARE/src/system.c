@@ -14,7 +14,7 @@
  * All rights reserved
 ********************************************************************************/
 
-static bool systemTest(void);
+//static bool systemTest(void);
 
 /*底层硬件初始化*/
 void systemInit(void)
@@ -62,16 +62,18 @@ void systemInit(void)
 
     //	watchdogInit(WATCHDOG_RESET_MS);	/*看门狗初始化*/
 }
-static bool systemTest(void)
-{
-    bool pass = true;
 
-    pass &= ledseqTest();
-    pass &= pmTest();
-    pass &= configParamTest();
-    pass &= commTest();
-    pass &= stabilizerTest();
-    pass &= watchdogTest();
+////minifly 上电自检
+//static bool systemTest(void)
+//{
+//    bool pass = true;
 
-    return pass;
-}
+//    pass &= ledseqTest();
+//    pass &= pmTest();
+//    pass &= configParamTest();
+//    pass &= commTest();
+//    pass &= stabilizerTest();
+//    pass &= watchdogTest();
+
+//    return pass;
+//}
