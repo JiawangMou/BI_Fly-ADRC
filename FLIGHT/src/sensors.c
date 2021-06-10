@@ -94,7 +94,7 @@ static lpf2pData gyroLpf[3];
 static lpf2pData BaroLpf;
 
 #ifdef PCBV4_5
-#define BAT_LPF_CUTOFF_FREQ 10
+#define BAT_LPF_CUTOFF_FREQ 20
 static lpf2pData BatLpf;
 static float VoltageSeparateCoeff = 0.001201f;
 static float VoltageBiasCoeff = -0.0525f;

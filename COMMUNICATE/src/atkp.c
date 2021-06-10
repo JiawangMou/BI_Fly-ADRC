@@ -315,46 +315,46 @@ static void sendMotorPWM(u16 m_1, u16 m_2, u16 m_3, u16 m_4, u16 m_5, u16 m_6, u
     p.dataLen = _cnt;
     atkpSendPacket(&p);
 }
-static void sendPIDOUT(u8 id, float pid1, float pid2, float pid3, float pid4, float pid5, float pid6)
-{
-    u8     _cnt = 0;
-    atkp_t p;
-    p.msgID = UP_PIDOUT;
+//static void sendPIDOUT(u8 id, float pid1, float pid2, float pid3, float pid4, float pid5, float pid6)
+//{
+//    u8     _cnt = 0;
+//    atkp_t p;
+//    p.msgID = UP_PIDOUT;
 
-    p.data[_cnt++] = id;
-    p.data[_cnt++] = BYTE0(pid1);
-    p.data[_cnt++] = BYTE1(pid1);
-    p.data[_cnt++] = BYTE2(pid1);
-    p.data[_cnt++] = BYTE3(pid1);
+//    p.data[_cnt++] = id;
+//    p.data[_cnt++] = BYTE0(pid1);
+//    p.data[_cnt++] = BYTE1(pid1);
+//    p.data[_cnt++] = BYTE2(pid1);
+//    p.data[_cnt++] = BYTE3(pid1);
 
-    p.data[_cnt++] = BYTE0(pid2);
-    p.data[_cnt++] = BYTE1(pid2);
-    p.data[_cnt++] = BYTE2(pid2);
-    p.data[_cnt++] = BYTE3(pid2);
+//    p.data[_cnt++] = BYTE0(pid2);
+//    p.data[_cnt++] = BYTE1(pid2);
+//    p.data[_cnt++] = BYTE2(pid2);
+//    p.data[_cnt++] = BYTE3(pid2);
 
-    p.data[_cnt++] = BYTE0(pid3);
-    p.data[_cnt++] = BYTE1(pid3);
-    p.data[_cnt++] = BYTE2(pid3);
-    p.data[_cnt++] = BYTE3(pid3);
+//    p.data[_cnt++] = BYTE0(pid3);
+//    p.data[_cnt++] = BYTE1(pid3);
+//    p.data[_cnt++] = BYTE2(pid3);
+//    p.data[_cnt++] = BYTE3(pid3);
 
-    p.data[_cnt++] = BYTE0(pid4);
-    p.data[_cnt++] = BYTE1(pid4);
-    p.data[_cnt++] = BYTE2(pid4);
-    p.data[_cnt++] = BYTE3(pid4);
+//    p.data[_cnt++] = BYTE0(pid4);
+//    p.data[_cnt++] = BYTE1(pid4);
+//    p.data[_cnt++] = BYTE2(pid4);
+//    p.data[_cnt++] = BYTE3(pid4);
 
-    p.data[_cnt++] = BYTE0(pid5);
-    p.data[_cnt++] = BYTE1(pid5);
-    p.data[_cnt++] = BYTE2(pid5);
-    p.data[_cnt++] = BYTE3(pid5);
+//    p.data[_cnt++] = BYTE0(pid5);
+//    p.data[_cnt++] = BYTE1(pid5);
+//    p.data[_cnt++] = BYTE2(pid5);
+//    p.data[_cnt++] = BYTE3(pid5);
 
-    p.data[_cnt++] = BYTE0(pid6);
-    p.data[_cnt++] = BYTE1(pid6);
-    p.data[_cnt++] = BYTE2(pid6);
-    p.data[_cnt++] = BYTE3(pid6);
+//    p.data[_cnt++] = BYTE0(pid6);
+//    p.data[_cnt++] = BYTE1(pid6);
+//    p.data[_cnt++] = BYTE2(pid6);
+//    p.data[_cnt++] = BYTE3(pid6);
 
-    p.dataLen = _cnt;
-    atkpSendPacket(&p);
-}
+//    p.dataLen = _cnt;
+//    atkpSendPacket(&p);
+//}
 
 // static void sendSenser2(s32 bar_alt, u16 csb_alt)
 // {
@@ -585,22 +585,24 @@ static void atkpSendPeriod(void)
     //     int baro = getBaroData() * 100.f;
     //     sendSenser2(baro, 0);
     // }
-    if (!(count_ms % PERIOD_PIDOUT)) {
-        Axis3f acc, vel, pos;
-        mode_e z_mode;
-        u8 commander;
-        sendPIDOUT(0, pidAngleRoll.outP, pidAngleRoll.outI, pidAngleRoll.outD, pidAnglePitch.outP,
-        pidAnglePitch.outI,pidAnglePitch.outD);
-        sendPIDOUT(1, pidAngleYaw.outP, pidAngleYaw.outI, pidAngleYaw.outD, pidRateRoll.outP, pidRateRoll.outI,
-            pidRateRoll.outD);
-        sendPIDOUT(2, pidRatePitch.outP, pidRatePitch.outI, pidRatePitch.outD, pidRateYaw.outP, pidRateYaw.outI,
-            pidRateYaw.outD);
-        getStateData(&acc, &vel, &pos);
-        z_mode = getZmode();
-        commander = getCommanderBits();
-        u32 modeCommander =((((u32)z_mode&0xff) << 8) | ((u32)commander&0xff));
-        sendPIDOUT(3, pidZ.out, pidVZ.out, getControlData().thrust, vel.z, *(float*)(&modeCommander), 0);
-    }
+    
+    //用自己的地面站查看的数据，现在用匿名地面站，所以注释掉
+    // if (!(count_ms % PERIOD_PIDOUT)) {
+    //     Axis3f acc, vel, pos;
+    //     mode_e z_mode;
+    //     u8 commander;
+    //     sendPIDOUT(0, pidAngleRoll.outP, pidAngleRoll.outI, pidAngleRoll.outD, pidAnglePitch.outP,
+    //     pidAnglePitch.outI,pidAnglePitch.outD);
+    //     sendPIDOUT(1, pidAngleYaw.outP, pidAngleYaw.outI, pidAngleYaw.outD, pidRateRoll.outP, pidRateRoll.outI,
+    //         pidRateRoll.outD);
+    //     sendPIDOUT(2, pidRatePitch.outP, pidRatePitch.outI, pidRatePitch.outD, pidRateYaw.outP, pidRateYaw.outI,
+    //         pidRateYaw.outD);
+    //     getStateData(&acc, &vel, &pos);
+    //     z_mode = getZmode();
+    //     commander = getCommanderBits();
+    //     u32 modeCommander =((((u32)z_mode&0xff) << 8) | ((u32)commander&0xff));
+    //     sendPIDOUT(3, pidZ.out, pidVZ.out, getControlData().thrust, vel.z, *(float*)(&modeCommander), 0);
+    // }
     if (++count_ms >= 65535)
         count_ms = 1;
 }

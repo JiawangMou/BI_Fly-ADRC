@@ -48,12 +48,12 @@ void ADC1_Init(){
     ADC_CommonInit(&ADC_CommonInitStructure);                           //通用初始化
 
     ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
-    ADC_InitStructure.ADC_ScanConvMode = ENABLE;                        //模数转换工作在扫描模式
-    ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;                  //模数转换工作在连续转换模式
+    ADC_InitStructure.ADC_ScanConvMode = ENABLE;                                //模数转换工作在扫描模式
+    ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;                          //模数转换工作在连续转换模式
     ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None; //外部触发转换关闭
-    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;              //ADC数据右对齐
-    ADC_InitStructure.ADC_NbrOfConversion = 2;                             //顺序进行规则转换的ADC通道的数目
-    ADC_Init(ADC1, &ADC_InitStructure);                                 //根据ADC_InitStruct中指定的参数初始化外设ADCx的寄存器
+    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;                      //ADC数据右对齐
+    ADC_InitStructure.ADC_NbrOfConversion = 2;                                  //顺序进行规则转换的ADC通道的数目
+    ADC_Init(ADC1, &ADC_InitStructure);                                         //根据ADC_InitStruct中指定的参数初始化外设ADCx的寄存器
 
     //设置指定ADC的规则组通道，设置它们的转化顺序和采样时间
     //ADC1,ADC通道x,规则采样顺序值为y,采样时间为239.5周期
