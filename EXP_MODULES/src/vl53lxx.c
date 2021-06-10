@@ -25,10 +25,10 @@ TaskHandle_t vl53l1xTaskHandle = NULL;
 u16 vl53lxxId = 0;			 /*vl53芯片ID*/
 bool isEnableVl53lxx = true; /*是否使能激光*/
 
-static bool isInitvl53l0x = false; /*初始化vl53l0x*/
+//static bool isInitvl53l0x = false; /*初始化vl53l0x*/
 static bool isInitvl53l1x = false; /*初始化vl53l1x*/
 static bool reInitvl53l0x = false; /*再次初始化vl53l0x*/
-static bool reInitvl53l1x = false; /*再次初始化vl53l1x*/
+//static bool reInitvl53l1x = false; /*再次初始化vl53l1x*/
 
 static u8 count = 0;
 static u8 validCnt = 0;

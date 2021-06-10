@@ -46,7 +46,7 @@ static float startBaroAsl   = 0.f; /*起飞点海拔*/
 
 // // TEST:加速度漂移问题
 // static float posZPredict = 0.0f;
-static float fHLast = 0.0f;
+// static float fHLast = 0.0f;
 
 /*估测系统*/
 static estimator_t estimator = {
@@ -108,7 +108,7 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     {
         fusedHeight = relateHight; /*融合高度*/
     }
-    fHLast = fusedHeightLpf;
+    // fHLast = fusedHeightLpf;
     fusedHeightLpf += (fusedHeight - fusedHeightLpf) * 0.1f; /*融合高度 低通*/
 
     if (isRstHeight) {

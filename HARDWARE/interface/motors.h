@@ -47,8 +47,8 @@
 #define MOTORS_MAXPWM (0.4 * 65535)
 
 #ifdef BI_Fly_1
-#define SERVO_MAXPWM 2100 //2.1ms
-#define SERVO_MINPWM 900  //0.9ms
+#define SERVO_MAXPWM 1950 //2.1ms
+#define SERVO_MINPWM 1250  //0.9ms
 #define SERVO_RANGE ((SERVO_MAXPWM - SERVO_MINPWM) / 2)
 #endif
 

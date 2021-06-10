@@ -934,6 +934,11 @@
               <FileType>1</FileType>
               <FilePath>..\FLIGHT\src\ADRC.c</FilePath>
             </File>
+            <File>
+              <FileName>attitude_adrc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FLIGHT\src\attitude_adrc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

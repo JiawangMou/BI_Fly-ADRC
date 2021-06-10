@@ -73,8 +73,8 @@ u16 limitServo(u8 id, float value)
 }
 void motorControl(control_t *control) /*功率输出控制*/
 {
-	// s16 r = control->roll / 2.0f;
-	// s16 p = control->pitch / 2.0f;
+//	s16 r = control->roll / 2.0f;
+//	s16 p = control->pitch / 2.0f;
 	s16 r = control->roll;
 	s16 p = control->pitch;
 	//控制分配	改！

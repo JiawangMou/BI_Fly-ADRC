@@ -634,11 +634,11 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 {
 	/*注意传感器读取方向(旋转270°x和y交换)*/
 	int16_t ay = (((int16_t)buffer[0]) << 8) | buffer[1];
-	int16_t ax = (((int16_t)buffer[2]) << 8) | buffer[3];
-	int16_t az = (((int16_t)buffer[4]) << 8) | buffer[5];
+	int16_t az = -((((int16_t)buffer[2]) << 8) | buffer[3]);
+	int16_t ax = (((int16_t)buffer[4]) << 8) | buffer[5];
 	int16_t gy = (((int16_t)buffer[8]) << 8) | buffer[9];
-	int16_t gx = (((int16_t)buffer[10]) << 8) | buffer[11];
-	int16_t gz = (((int16_t)buffer[12]) << 8) | buffer[13];
+	int16_t gz = -((((int16_t)buffer[10]) << 8) | buffer[11]);
+	int16_t gx = (((int16_t)buffer[12]) << 8) | buffer[13];
 
 	accRaw.x = ax - accBias.x; /*用于上传到上位机*/
 	accRaw.y = ay - accBias.y;

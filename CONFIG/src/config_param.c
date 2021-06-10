@@ -28,7 +28,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 23 /*13 表示V1.3*/
+#define VERSION 33 /*13 表示V3.3*/
 
 configParam_t configParam;
 
@@ -41,21 +41,21 @@ static configParam_t configParamDefault =
 		{
 			.roll =
 				{
-					.kp = 16.0,
+					.kp = 10.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
 			.pitch =
 				{
-					.kp = 36.0,
+					.kp = 8.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 0.0,
+					.kp = 5.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -65,22 +65,22 @@ static configParam_t configParamDefault =
 		{
 			.roll =
 				{
-					.kp = 80.0,
+					.kp = 50.0,
 					.ki = 0.0,
-					.kd = 6.5,
+					.kd = 1.0,
 					.outputLimit = 0,
 				},
 			.pitch =
 				{
-					.kp = 98.0,
+					.kp = 70.0,
 					.ki = 0.0,
-					.kd = 6.5,
+					.kd = 0.5,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 70,
-					.ki = 8.0,
+					.kp = 30.0,
+					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
@@ -133,10 +133,10 @@ static configParam_t configParamDefault =
 		},
 
 		.servo_initpos =
-			{
-				.s_left = 1520,
-				.s_right = 1520,
-				.s_middle = 1520,
+			{//面对控制板看
+				.s_left = 1500,
+				.s_right = 1500,
+				.s_middle = 1600,
 			},
 		.accBias = 
 		{
@@ -150,14 +150,14 @@ static configParam_t configParamDefault =
 			{
 				.td=
 				{
-					.r  = 16000000,
+					.r  = 8000000,
 					.N0 = 2,
 				},
 				.nlsef_TOC=
 				{
 					.r  = 4000.0,
-					.N1 = 40.0,
-					.c  = 0.064,
+					.N1 = 70.0,
+					.c  = 0.0364,
 				},
 				.leso=
 				{
@@ -170,7 +170,7 @@ static configParam_t configParamDefault =
 			{
 				.td=
 				{
-					.r  = 16000000,
+					.r  = 8000000,
 					.N0 = 2,
 				},
 				.nlsef_TOC=
@@ -243,21 +243,21 @@ static configParam_t configParamDefault =
 		{
 			.roll =
 				{
-					.kp = 14.0,
+					.kp = 10.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
 			.pitch =
 				{
-					.kp = 13.0,
+					.kp = 8.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 0.0,
+					.kp = 5.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -267,21 +267,21 @@ static configParam_t configParamDefault =
 		{
 			.roll =
 				{
-					.kp = 160.0,
+					.kp = 50.0,
 					.ki = 0.0,
-					.kd = 6.5,
+					.kd = 1.0,
 					.outputLimit = 0,
 				},
 			.pitch =
 				{
-					.kp = 69.0,
+					.kp = 70.0,
 					.ki = 0.0,
-					.kd = 6.5,
+					.kd = 0.5,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 5.0,
+					.kp = 20.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -330,9 +330,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1520,
-			.s_right = 1520,
-			.s_middle = 1520,
+			.s_left = 1500,
+			.s_right = 1500,
+			.s_middle = 1500,
 		},
 		.accBias = 
 		{
