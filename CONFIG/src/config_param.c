@@ -28,7 +28,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 33 /*13 表示V3.3*/
+#define VERSION 23 /*13 表示V3.3*/
 
 configParam_t configParam;
 
