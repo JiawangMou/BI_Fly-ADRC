@@ -96,8 +96,8 @@ static lpf2pData BaroLpf;
 #ifdef PCBV4_5
 #define BAT_LPF_CUTOFF_FREQ 20
 static lpf2pData BatLpf;
-static float VoltageSeparateCoeff = 0.001201f;
-static float VoltageBiasCoeff = -0.0525f;
+static float VoltageSeparateCoeff = 0.001651375f;
+static float VoltageBiasCoeff = -0.0721875f;
 static float BatteryVoltage = 0.0f;
 #endif
 
@@ -715,6 +715,7 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 }
 
 #ifdef PCBV4_5
+//VvRefIntCal: V(内部参考电压)/V(3.3V) 标定值；  batteryVoltageRaw[0]：V(实际引脚电压)/V(实际Vref的电压)；batteryVoltageRaw[1]：V(内部参考电压)/V(实际Vref的电压)
 void processBatteryVoltage(){
 	BatteryVoltage = lpf2pApply(&BatLpf, (u32)batteryVoltageRaw[0] * vRefIntCal / batteryVoltageRaw[1] * VoltageSeparateCoeff + VoltageBiasCoeff);
 }

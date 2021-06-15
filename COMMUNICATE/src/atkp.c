@@ -564,7 +564,7 @@ static void atkpSendPeriod(void)
         sendRCData(rcdata.thrust, rcdata.yaw, rcdata.roll, rcdata.pitch, 0, 0, 0, 0, 0, 0);
     }
     if (!(count_ms % PERIOD_POWER)) {
-        float bat = pmGetBatteryVoltage();
+        float bat = getBatteryVoltage();
         sendPower(bat * 100, 500);
     }
     if (!(count_ms % PERIOD_MOTOR)) {
