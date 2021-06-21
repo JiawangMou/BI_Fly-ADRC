@@ -89,7 +89,6 @@ typedef struct
 typedef struct 
 {
 	float N1;//跟踪微分器解决速度超调h1=N1*h
-	float r1;
 	float beta_1;
 	float beta_2;
 	float zeta;
@@ -121,7 +120,8 @@ typedef struct
 typedef struct 
 {
 	tdParam_t td;
-	nlsef_TOCParam_t nlsef_TOC;
+	// nlsef_TOCParam_t nlsef_TOC;
+	nlsefParam_t nlsef;
 	lesoParam_t leso;
 }adrcInit_t;
 

@@ -4,5 +4,10 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"attitude_adrc.h": "c",
+			"adrc.h": "c"
+		}
+	}
 }

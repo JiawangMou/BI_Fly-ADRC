@@ -89,7 +89,7 @@ void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
     lesoobject->w0      = lesoparam->w0;
 
 }
-void nlsef_toc_init(nlsef_TOCPObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlsef_tocparam,float nlsefDt)
+void nlsef_toc_init(nlsef_TOCObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlsef_tocparam,float nlsefDt)
 {
     /**********NLSEF*********/
 //    adrcobject->nlsef_TOC.e0 = 0; //状态误差积分项
@@ -102,7 +102,22 @@ void nlsef_toc_init(nlsef_TOCPObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlse
     nlsef_tocobject->u0 = 0; //扰动补偿
 }
 
+void nlsef_init(nlsefObject_t *nlsef_object, nlsefParam_t *nlsef_param, float nlsefDt)
+{
+    nlsef_object->N1 = nlsef_param->N1; //跟踪微分器解决速度超调h1=N1*h
+    nlsef_object->beta_1 = nlsef_param->beta_1;
+    nlsef_object->beta_2 = nlsef_param->beta_2;
+    nlsef_object->zeta = nlsef_param->zeta;
+    nlsef_object->alpha1 = nlsef_param->alpha1;
+    nlsef_object->alpha2 = nlsef_param->alpha2;
 
+    nlsef_object->h = nlsefDt;
+    nlsef_object->u0 = 0; //扰动补偿
+    nlsef_object->e1 = 0;
+    nlsef_object->e2 = 0; //非线性组合系统输出
+    nlsef_object->e1_out = 0;
+    nlsef_object->e2_out = 0;
+}
 
 
 
@@ -195,9 +210,16 @@ void adrc_eso(nlesoObject_t *nlesoObject,float expect_val,float u)
 
 }
 
-float adrc_nlsef(nlsef_TOCPObject_t* nlsef_t)
+float adrc_TOCnlsef(nlsef_TOCObject_t* nlsef_t)
 {
     return -adrc_fhan(nlsef_t->e1, nlsef_t->c * nlsef_t->e2, nlsef_t->r, nlsef_t->h * nlsef_t->N1);
+}
+
+float adrc_nlsef(nlsefObject_t *nlsef_t)
+{
+    nlsef_t->e1_out = nlsef_t->beta_1*Fal_ADRC(nlsef_t->e1,nlsef_t->alpha1,nlsef_t->zeta);
+    nlsef_t->e2_out = nlsef_t->beta_2*Fal_ADRC(nlsef_t->e2,nlsef_t->alpha2,nlsef_t->zeta);
+    return  nlsef_t->e1_out + nlsef_t->e2_out;
 }
 
 

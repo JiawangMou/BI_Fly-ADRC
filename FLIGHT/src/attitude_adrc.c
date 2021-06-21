@@ -13,7 +13,8 @@ void adrc_init(adrcObject_t *adrcobject,adrcInit_t *param, float tdDt,float leso
 {
     td_init(&adrcobject->td,&param->td,tdDt);
     leso_init(&adrcobject->leso, &param->leso,lesoDt);
-    nlsef_toc_init(&adrcobject->nlsef_TOC,&param->nlsef_TOC,nlsefDt);
+    // nlsef_toc_init(&adrcobject->nlsef_TOC,&param->nlsef_TOC,nlsefDt);
+    nlsef_init(&adrcobject->nlsef,&param->nlsef,nlsefDt);
     lpf2pInit(&adrcobject->leso.uLpf, 1.0f/lesoDt, U_LPF_CUTOFF_FREQ);
     adrcobject->u = 0;
 }
@@ -40,7 +41,9 @@ void adrc_reset(adrcObject_t *adrcobject)
     // fhan_Input->e0 = 0; //状态误差积分项
     // fhan_Input->e1 = 0; //状态偏差
     // fhan_Input->e2 = 0; //状态量微分项
-    adrcobject->nlsef_TOC.u0  = 0; //非线性组合系统输出
+
+    // adrcobject->nlsef_TOC.u0  = 0; //非线性组合系统输出
+    adrcobject->nlsef.u0  = 0; //非线性组合系统输出
     adrcobject->u  = 0; //带扰动补偿后的输出
 
 }
@@ -52,14 +55,21 @@ void ADRC_RateControl(adrcObject_t *adrcObject,float expect_ADRC,float feedback_
     /********状态误差反馈率***/
     // fhan_Input->e0 += fhan_Input->e1 * fhan_Input->h1; //状态积分项
     // fhan_Input->e0 = Constrain_Float(fhan_Input->e0, -10.0f, 10.0f);
-    adrcObject->nlsef_TOC.e1 = adrcObject->td.x1; //状态偏差项
-    adrcObject->nlsef_TOC.e2 = adrcObject->td.x2; //状态微分项
 
+    //nlsef_TOC
+    // adrcObject->nlsef_TOC.e1 = adrcObject->td.x1; //状态偏差项
+    // adrcObject->nlsef_TOC.e2 = adrcObject->td.x2; //状态微分项
+    //nlsef
+    adrcObject->nlsef.e1 = adrcObject->td.x1; //状态偏差项
+    adrcObject->nlsef.e2 = adrcObject->td.x2; //状态微分项
     /********NLSEF*******/
-    adrcObject->nlsef_TOC.u0 = adrc_nlsef(&adrcObject->nlsef_TOC);
+    //nlsef_TOC
+    // adrcObject->nlsef_TOC.u0 = adrc_TOCnlsef(&adrcObject->nlsef_TOC);
+    //nlsef
+    adrcObject->nlsef.u0 = adrc_nlsef(&adrcObject->nlsef);
     /**********扰动补偿*******/
-    adrcObject->u = (adrcObject->nlsef_TOC.u0 - 0.5f * adrcObject->leso.z2) / adrcObject->leso.b0;
-    // adrcObject->u = adrcObject->u0  / adrcObject->b0;
+    // adrcObject->u = (adrcObject->nlsef.u0 - 0.5f * adrcObject->leso.z2) / adrcObject->leso.b0;
+    adrcObject->u = adrcObject->nlsef.u0 / adrcObject->leso.b0;
     //实际输出
     adrcObject->u = Constrain_Float(adrcObject->u, -32767, 32767);
 }

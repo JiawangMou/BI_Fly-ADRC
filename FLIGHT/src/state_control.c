@@ -7,6 +7,8 @@
 #include "stabilizer.h"
 #include <math.h>
 #include "ADRC.h"
+#include "attitude_adrc.h"
+
 /********************************************************************************
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
  * ALIENTEK MiniFly
@@ -119,7 +121,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // /*这里取消复位的原因是，让飞行器翅膀不拍动的时候，还能看到舵机的反应，从而确认PID计算结果是否正常，或者是接线是否有问题*/
         positionResetAllPID();                     /*复位位置PID*/
         // adrc_reset(&ADRCRatePitch);
-		// adrc_reset(&ADRCRateRoll);
+		adrc_reset(&ADRCRateRoll);
         attitudeDesired.yaw = state->attitude.yaw; /*复位计算的期望yaw值*/
 
         if (cnt++ > 1500) {

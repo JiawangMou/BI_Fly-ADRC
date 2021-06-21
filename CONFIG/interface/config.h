@@ -31,7 +31,7 @@
 #define MCU_ID_ADDRESS          0x1FFF7A10
 #define MCU_FLASH_SIZE_ADDRESS  0x1FFF7A22
 
-#define BI_Fly_2
+#define BI_Fly_1
 
 //自定义的一些配置宏用于完成代码的切换
 

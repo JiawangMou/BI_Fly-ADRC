@@ -101,12 +101,12 @@ void motorsInit(void) /*电机初始化*/
 
     /* Automatic Output enable, Break, dead time and lock configuration*/
     TIM_BDTRInitTypeDef TIM_BDTRInitStructure;
-    TIM_BDTRInitStructure.TIM_OSSRState = TIM_OSSRState_Enable;
-    TIM_BDTRInitStructure.TIM_OSSIState = TIM_OSSIState_Enable;
-    TIM_BDTRInitStructure.TIM_LOCKLevel = TIM_LOCKLevel_1; 
-    TIM_BDTRInitStructure.TIM_DeadTime = DEADTIME;
-    TIM_BDTRInitStructure.TIM_Break = TIM_Break_Disable;
-    TIM_BDTRInitStructure.TIM_BreakPolarity = TIM_BreakPolarity_High;
+    TIM_BDTRInitStructure.TIM_OSSRState       = TIM_OSSRState_Enable;
+    TIM_BDTRInitStructure.TIM_OSSIState       = TIM_OSSIState_Enable;
+    TIM_BDTRInitStructure.TIM_LOCKLevel       = TIM_LOCKLevel_1;
+    TIM_BDTRInitStructure.TIM_DeadTime        = DEADTIME;
+    TIM_BDTRInitStructure.TIM_Break           = TIM_Break_Disable;
+    TIM_BDTRInitStructure.TIM_BreakPolarity   = TIM_BreakPolarity_High;
     TIM_BDTRInitStructure.TIM_AutomaticOutput = TIM_AutomaticOutput_Disable;
     TIM_BDTRConfig(TIM_MOTOR_2, &TIM_BDTRInitStructure);
 

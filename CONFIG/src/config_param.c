@@ -28,7 +28,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 23 /*13 表示V3.3*/
+#define VERSION 33 /*13 表示V3.3*/
 
 configParam_t configParam;
 
@@ -48,240 +48,38 @@ static configParam_t configParamDefault =
 				},
 			.pitch =
 				{
-					.kp = 8.0,
+					.kp = 12.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
 			.yaw =
-				{
-					.kp = 5.0,
-					.ki = 0.0,
-					.kd = 0.0,
-					.outputLimit = 0,
-				},
-		},
-		.pidRate = /*角速度PID*/
-		{
-			.roll =
-				{
-					.kp = 50.0,
-					.ki = 0.0,
-					.kd = 1.0,
-					.outputLimit = 0,
-				},
-			.pitch =
-				{
-					.kp = 70.0,
-					.ki = 0.0,
-					.kd = 0.5,
-					.outputLimit = 0,
-				},
-			.yaw =
-				{
-					.kp = 30.0,
-					.ki = 0.0,
-					.kd = 0.0,
-					.outputLimit = 0,
-				},
-		},
-		.pidPos = /*位置PID*/
-		{
-			.vx =
-				{
-					.kp = 4.5,
-					.ki = 0.0,
-					.kd = 0.0,
-					.outputLimit = 120.0f,
-				},
-			.vy =
-				{
-					.kp = 4.5,
-					.ki = 0.0,
-					.kd = 0.0,
-					.outputLimit = 120.0f,
-				},
-			.vz =
-				{
-					.kp = 80.0,
-					.ki = 130.0,
-					.kd = 10.0,
-					.outputLimit = 65500.0f,
-				},
-
-			.x =
-				{
-					.kp = 4.0,
-					.ki = 0.0,
-					.kd = 0.6,
-					.outputLimit = 1200.0f,
-				},
-			.y =
-				{
-					.kp = 4.0,
-					.ki = 0.0,
-					.kd = 0.6,
-					.outputLimit = 1200.0f,
-				},
-			.z =
-				{
-					.kp = 300.0,
-					.ki = 0.0,
-					.kd = 100.0,
-					.outputLimit = 65500.0f,
-				},
-		},
-
-		.servo_initpos =
-			{//面对控制板看
-				.s_left = 1500,
-				.s_right = 1500,
-				.s_middle = 1600,
-			},
-		.accBias = 
-		{
-			.accZero = {32, -39, -92},
-			.accGain = {2049, 2045, 2068},
-			.bias_isfound = true,
-		},
-		.adrcRate=
-		{
-			.roll=
-			{
-				.td=
-				{
-					.r  = 8000000,
-					.N0 = 2,
-				},
-				.nlsef_TOC=
-				{
-					.r  = 4000.0,
-					.N1 = 70.0,
-					.c  = 0.0364,
-				},
-				.leso=
-				{
-					.b0 = 0.26,
-					.w0 = 600,
-				},
-
-			},
-			.pitch=
-			{
-				.td=
-				{
-					.r  = 8000000,
-					.N0 = 2,
-				},
-				.nlsef_TOC=
-				{
-					.r  = 4000.0,
-					.N1 = 40.0,
-					.c  = 0.064,
-				},
-				.leso=
-				{
-					.b0 = 0.26,
-					.w0 = 600,
-				},
-			},
-		},
-		.adrcAngle=
-		{
-			.roll=
-			{
-				.td=
-				{
-					.r  = 0,
-					.N0 = 0,
-				},
-				.nlsef_TOC=
-				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
-				},
-				.leso=
-				{
-					.b0 = 0,
-					.w0 = 0,
-				},
-
-			},
-			.pitch=
-			{
-				.td=
-				{
-					.r  = 0,
-					.N0 = 0,
-				},
-				.nlsef_TOC=
-				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
-				},
-				.leso=
-				{
-					.b0 = 0,
-					.w0 = 0,
-				},
-			},
-		},
-		.trimP = 0.f,		 /*pitch微调*/
-		.trimR = 0.f,		 /*roll微调*/
-		.thrustBase = 34000, /*定高油门基础值*/
-};
-#endif
-
-#ifdef BI_Fly_2
-static configParam_t configParamDefault =
-	{
-		.version = VERSION, /*软件版本号*/
-
-		.pidAngle = /*角度PID*/
-		{
-			.roll =
 				{
 					.kp = 10.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
-			.pitch =
-				{
-					.kp = 8.0,
-					.ki = 0.0,
-					.kd = 0.0,
-					.outputLimit = 0,
-				},
-			.yaw =
-				{
-					.kp = 5.0,
-					.ki = 0.0,
-					.kd = 0.0,
-					.outputLimit = 0,
-				},
 		},
 		.pidRate = /*角速度PID*/
 		{
 			.roll =
 				{
-					.kp = 50.0,
+					.kp = 80.0,
 					.ki = 0.0,
 					.kd = 1.0,
 					.outputLimit = 0,
 				},
 			.pitch =
 				{
-					.kp = 70.0,
+					.kp = 60.0,
 					.ki = 0.0,
-					.kd = 0.5,
+					.kd = 2,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 20.0,
+					.kp = 15.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -330,9 +128,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1500,
+			.s_left = 1600,
 			.s_right = 1500,
-			.s_middle = 1500,
+			.s_middle = 1600,
 		},
 		.accBias = 
 		{
@@ -346,14 +144,23 @@ static configParam_t configParamDefault =
 			{
 				.td=
 				{
-					.r  = 16000000,
-					.N0 = 2,
+					.r  = 800000,
+					.N0 = 3,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
 				{
-					.r  = 4000.0,
-					.N1 = 40.0,
-					.c  = 0.064,
+					.N1 = 2,
+					.beta_1 = 300.0,
+					.beta_2 = 0.2,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -369,11 +176,20 @@ static configParam_t configParamDefault =
 					.r  = 16000000,
 					.N0 = 2,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
 				{
-					.r  = 4000.0,
-					.N1 = 40.0,
-					.c  = 0.064,
+					.N1 = 2,
+					.beta_1 = 60.0,
+					.beta_2 = 1.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -391,11 +207,20 @@ static configParam_t configParamDefault =
 					.r  = 0,
 					.N0 = 0,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
 				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
+					.N1 = 2,
+					.beta_1 = 10.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -411,11 +236,20 @@ static configParam_t configParamDefault =
 					.r  = 0,
 					.N0 = 0,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
 				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
+					.N1 = 2,
+					.beta_1 = 12.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -426,7 +260,239 @@ static configParam_t configParamDefault =
 		},		
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
-		.thrustBase = 44500, /*定高油门基础值*/
+		.thrustBase = 40000.0, /*定高油门基础值*/
+};
+#endif
+
+#ifdef BI_Fly_2
+static configParam_t configParamDefault =
+	{
+		.version = VERSION, /*软件版本号*/
+
+		.pidAngle = /*角度PID*/
+		{
+			.roll =
+				{
+					.kp = 10.0,
+					.ki = 0.0,
+					.kd = 0.0,
+					.outputLimit = 0,
+				},
+			.pitch =
+				{
+					.kp = 12.0,
+					.ki = 0.0,
+					.kd = 0.0,
+					.outputLimit = 0,
+				},
+			.yaw =
+				{
+					.kp = 10.0,
+					.ki = 0.0,
+					.kd = 0.0,
+					.outputLimit = 0,
+				},
+		},
+		.pidRate = /*角速度PID*/
+		{
+			.roll =
+				{
+					.kp = 80.0,
+					.ki = 0.0,
+					.kd = 1.0,
+					.outputLimit = 0,
+				},
+			.pitch =
+				{
+					.kp = 60.0,
+					.ki = 0.0,
+					.kd = 2,
+					.outputLimit = 0,
+				},
+			.yaw =
+				{
+					.kp = 15.0,
+					.ki = 0.0,
+					.kd = 0.0,
+					.outputLimit = 0,
+				},
+		},
+		.pidPos = /*位置PID*/
+		{
+			.vx =
+				{
+					.kp = 4.5,
+					.ki = 0.0,
+					.kd = 0.0,
+				},
+			.vy =
+				{
+					.kp = 4.5,
+					.ki = 0.0,
+					.kd = 0.0,
+				},
+			.vz =
+				{
+					.kp = 80.0,
+					.ki = 130.0,
+					.kd = 10.0,
+				},
+
+			.x =
+				{
+					.kp = 4.0,
+					.ki = 0.0,
+					.kd = 0.6,
+				},
+			.y =
+				{
+					.kp = 4.0,
+					.ki = 0.0,
+					.kd = 0.6,
+				},
+			.z =
+				{
+					.kp = 4.0,
+					.ki = 1.0,
+					.kd = 1.0,
+				},
+		},
+
+		.servo_initpos =
+		{
+			.s_left = 1600,
+			.s_right = 1500,
+			.s_middle = 1600,
+		},
+		.accBias = 
+		{
+			.accZero = {32, -39, -92},
+			.accGain = {2049, 2045, 2068},
+			.bias_isfound = true,
+		},
+		.adrcRate=
+		{
+			.roll=
+			{
+				.td=
+				{
+					.r  = 16000000,
+					.N0 = 2,
+				},
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
+				{
+					.N1 = 2,
+					.beta_1 = 80.0,
+					.beta_2 = 60.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
+				},
+				.leso=
+				{
+					.b0 = 0.26,
+					.w0 = 600,
+				},
+
+			},
+			.pitch=
+			{
+				.td=
+				{
+					.r  = 16000000,
+					.N0 = 2,
+				},
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
+				{
+					.N1 = 2,
+					.beta_1 = 60.0,
+					.beta_2 = 1.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
+				},
+				.leso=
+				{
+					.b0 = 0.26,
+					.w0 = 600,
+				},
+			},
+		},
+		.adrcAngle=
+		{
+			.roll=
+			{
+				.td=
+				{
+					.r  = 0,
+					.N0 = 0,
+				},
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
+				{
+					.N1 = 2,
+					.beta_1 = 10.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
+				},
+				.leso=
+				{
+					.b0 = 0,
+					.w0 = 0,
+				},
+
+			},
+			.pitch=
+			{
+				.td=
+				{
+					.r  = 0,
+					.N0 = 0,
+				},
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
+				{
+					.N1 = 2,
+					.beta_1 = 12.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
+				},
+				.leso=
+				{
+					.b0 = 0,
+					.w0 = 0,
+				},
+			},
+		},		
+		.trimP = 0.f,		 /*pitch微调*/
+		.trimR = 0.f,		 /*roll微调*/
+		.thrustBase = 40000.0, /*定高油门基础值*/
 };
 #endif
 

@@ -1,7 +1,7 @@
 #include "power_control.h"
 #include "motors.h"
 #include "config_param.h"
-
+#include "math.h"
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
  * ALIENTEK MiniFly
@@ -93,8 +93,8 @@ void motorControl(control_t *control) /*功率输出控制*/
 	{
 		motorPWM = motorPWMSet;
 	}
-	motorsSetRatio(PWMF1, motorPWM.f1); /*控制电机输出百分比*/
-	motorsSetRatio(PWMF2, motorPWM.f2);
+	motorsSetRatio(PWMF1, sqrt(motorPWM.f1) * 256); /*控制电机输出百分比*/
+	motorsSetRatio(PWMF2, sqrt(motorPWM.f2) * 256);
 	servoSetPWM(PWM_LEFT, motorPWM.s_left); /*舵机输出占空比设置*/
 	servoSetPWM(PWM_MIDDLE, motorPWM.s_middle);
 	//	motorsSetRatio(PWMR, motorPWM.r1);

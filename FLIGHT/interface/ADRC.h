@@ -83,9 +83,13 @@ typedef struct
 	float alpha1;
 	float alpha2;
     float u0;
+	float e1;
+    float e2;
+	float e1_out;
+    float e2_out;
 }nlsefObject_t;
 
-//最速控制(time-optimal control:TOC)  TODO:最速开关控制的英文缩写看是不是改一下
+//最速控制(time-optimal control:TOC)  TODO: 最速开关控制的英文缩写看是不是改一下
 typedef struct 
 {
 	float r;//时间尺度
@@ -95,7 +99,7 @@ typedef struct
     float e2;
     float c;
     float u0;
-}nlsef_TOCPObject_t;
+}nlsef_TOCObject_t;
 
 
 typedef struct 
@@ -128,19 +132,21 @@ typedef struct
 typedef struct 
 {
 	tdObject_t td;
-	nlsef_TOCPObject_t nlsef_TOC;
+//	nlsef_TOCObject_t nlsef_TOC;
+	nlsefObject_t nlsef;
 	lesoObject_t leso;
     float u;
 }adrcObject_t;
 
-
-void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam,float lesoDt);
-void td_init(tdObject_t *tdobject,tdParam_t *tdparam,float ldtDt);
-void nlsef_toc_init(nlsef_TOCPObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlsef_tocparam,float nlsefDt);
-void adrc_leso(lesoObject_t* adrcobject,float expect_val, float u);
-float adrc_nlsef(nlsef_TOCPObject_t* nlsef_t);
-void adrc_eso(nlesoObject_t *nlesoObject,float expect_val,float u);
-void adrc_td(tdObject_t *td,float v);
+void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt);
+void td_init(tdObject_t *tdobject, tdParam_t *tdparam, float ldtDt);
+void nlsef_toc_init(nlsef_TOCObject_t *nlsef_tocobject, nlsef_TOCParam_t *nlsef_tocparam, float nlsefDt);
+void nlsef_init(nlsefObject_t *nlsef_object, nlsefParam_t *nlsef_param, float nlsefDt);
+void adrc_leso(lesoObject_t *adrcobject, float expect_val, float u);
+float adrc_TOCnlsef(nlsef_TOCObject_t *nlsef_t);
+float adrc_nlsef(nlsefObject_t *nlsef_t);
+void adrc_eso(nlesoObject_t *nlesoObject, float expect_val, float u);
+void adrc_td(tdObject_t *td, float v);
 float Constrain_Float(float amt, float low, float high);
 
 // void ADRCGet(Fhan_Data *fhan_Input,Fhan_Data *fhan_Ouput);

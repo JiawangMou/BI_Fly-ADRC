@@ -44,8 +44,8 @@ static float invSqrt(float x);	/*快速开平方求倒*/
 static void calBaseAcc(float* acc)	/*计算静态加速度*/
 {
 	static u16 cnt = 0;
-	static float accZMin = 1.5;
-	static float accZMax = 0.5;
+	static float accZMin = -0.5;
+	static float accZMax = -1.5;
 	static float sumAcc[3] = {0.f};
 	
 	for(u8 i=0; i<3; i++)
@@ -58,10 +58,10 @@ static void calBaseAcc(float* acc)	/*计算静态加速度*/
 	{
 		cnt = 0;
 		maxError = accZMax - accZMin;
-		accZMin = 1.5;
-		accZMax = 0.5;
+		accZMin = -0.5;
+		accZMax = -1.5;;
 		
-		if(maxError < 0.015f)
+		if(maxError < 0.015f)//判断最小的波动不大于0.015，而且acc[2]要在0.5~.15之间，否者不能通过
 		{
 			for(u8 i=0; i<3; i++)
 				baseAcc[i] = sumAcc[i] / ACCZ_SAMPLE;
@@ -76,9 +76,11 @@ static void calBaseAcc(float* acc)	/*计算静态加速度*/
 	}	
 }
 
-/*计算旋转矩阵*/
+/*计算旋转矩阵*/  
+//R(B2n) 机体到地球坐标系的旋转矩阵
 void imuComputeRotationMatrix(void)
 {
+	float q0q0 = q0 * q0;
     float q1q1 = q1 * q1;
     float q2q2 = q2 * q2;
     float q3q3 = q3 * q3;
@@ -90,17 +92,19 @@ void imuComputeRotationMatrix(void)
     float q1q3 = q1 * q3;
     float q2q3 = q2 * q3;
 
-    rMat[0][0] = 1.0f - 2.0f * q2q2 - 2.0f * q3q3;
-    rMat[0][1] = 2.0f * (q1q2 + -q0q3);
-    rMat[0][2] = 2.0f * (q1q3 - -q0q2);
+//旋转顺序： ZYX 
+//rMat[][] 第一列序号为行，第二列为列 
+   rMat[0][0] = 1.0f - 2.0f * q2q2 - 2.0f * q3q3;
+   rMat[0][1] = 2.0f * (q1q2 - q0q3);
+   rMat[0][2] = 2.0f * (q1q3 + q0q2);
 
-    rMat[1][0] = 2.0f * (q1q2 - -q0q3);
-    rMat[1][1] = 1.0f - 2.0f * q1q1 - 2.0f * q3q3;
-    rMat[1][2] = 2.0f * (q2q3 + -q0q1);
+   rMat[1][0] = 2.0f * (q1q2 + q0q3);
+   rMat[1][1] = 1.0f - 2.0f * q1q1 - 2.0f * q3q3;
+   rMat[1][2] = 2.0f * (q2q3 - q0q1);
 
-    rMat[2][0] = 2.0f * (q1q3 + -q0q2);
-    rMat[2][1] = 2.0f * (q2q3 - -q0q1);
-    rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
+   rMat[2][0] = 2.0f * (q1q3 - q0q2);
+   rMat[2][1] = 2.0f * (q2q3 + q0q1);
+   rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
 }
 
 static bool imuIsAccelerometerHealthy(Axis3f *accAverage)
@@ -144,11 +148,10 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 		acc.y *= normalise;
 		acc.z *= normalise;
 
-		/*加速计读取的方向与重力加速计方向的差值，用向量叉乘计算*/
-		ex = (acc.y * rMat[2][2] - acc.z * rMat[2][1]);
-		ey = (acc.z * rMat[2][0] - acc.x * rMat[2][2]);
-		ez = (acc.x * rMat[2][1] - acc.y * rMat[2][0]);
-
+		/*加速计读取的重力方向方向与旋转矩阵换算出的重力方向的差值，用向量叉乘计算*/
+		ex = (-acc.y * rMat[2][2] + acc.z * rMat[2][1]);
+		ey = (-acc.z * rMat[2][0] + acc.x * rMat[2][2]);
+		ez = (-acc.x * rMat[2][1] + acc.y * rMat[2][0]);
 	}
 			
 	/*误差累计，与积分常数相乘*/
@@ -179,10 +182,16 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 	
 	imuComputeRotationMatrix();	/*计算旋转矩阵*/
 	
+	// /*计算roll pitch yaw 欧拉角*/
+	// state->attitude.pitch = -asinf(rMat[2][0]) * RAD2DEG; 
+	// state->attitude.roll = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
+	// state->attitude.yaw = atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
+
 	/*计算roll pitch yaw 欧拉角*/
-	state->attitude.pitch = -asinf(rMat[2][0]) * RAD2DEG; 
+	state->attitude.pitch = asinf(rMat[2][0]) * RAD2DEG; 
 	state->attitude.roll = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
-	state->attitude.yaw = atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
+	state->attitude.yaw = -atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
+
 	state->attitude.timestamp = getSysTickCnt();
 	if (!isGravityCalibrated)	/*未校准*/
 	{		
