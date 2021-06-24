@@ -47,7 +47,17 @@ u16 limitThrust(int value)
 	return (u16)value;
 }
 
-u16 limitServo(u8 id, float value)
+/*************************************************
+Function: Servo_Int16ToPWM
+Description: 将舵机相对中立位置位移的范围从-32767~32767 映射到 -SERVO_HalfRANGE ~ SERVO_HalfRANGE 范围内（SERVO_HalfRANGE 为舵机行程的一半）
+			并且加上中立位置，得到最终的输出：900~2100的占空比
+Input:  id: 指明是设置哪个舵机
+        value: 舵机变化量对应的值（-32767~32767）；
+Output: 范围在900~2100的占空比
+Return: 范围在900~2100的占空比
+Others: 无
+********************************************/
+u16 Servo_Int16ToPWM(u8 id, float value)
 {
 	float ratio = 0;
 	float PWM_Value = 0;
@@ -61,16 +71,12 @@ u16 limitServo(u8 id, float value)
 	}
 
 	ratio = value / INT16_MAX;
-	PWM_Value = ratio * SERVO_RANGE;
+	PWM_Value = ratio * SERVO_HalfRANGE;
 	PWM_Value += getservoinitpos_configParam(id);
-#ifdef BI_Fly_1
-	PWM_Value = servoPWMLimit(PWM_Value);
-#endif
-#ifdef BI_Fly_2
-	PWM_Value = servoPWMLimit(id,PWM_Value);
-#endif
 	return PWM_Value;
 }
+
+
 void motorControl(control_t *control) /*功率输出控制*/
 {
 //	s16 r = control->roll / 2.0f;
@@ -81,12 +87,12 @@ void motorControl(control_t *control) /*功率输出控制*/
 	motorPWM.f2 = limitThrust(control->thrust + r / 2);
 	motorPWM.f1 = limitThrust(control->thrust - r / 2);
 #ifdef BI_Fly_1
-	motorPWM.s_left = limitServo(PWM_LEFT, p - control->yaw * 1.5f );
-	motorPWM.s_middle = limitServo(PWM_MIDDLE, -p - control->yaw * 1.5f );
+	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, -p + control->yaw * 1.5f );
+	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, p + control->yaw * 1.5f );
 #endif
 #ifdef BI_Fly_2
-	motorPWM.s_left = limitServo(PWM_LEFT, p + control->yaw * 1.5f );
-	motorPWM.s_middle = limitServo(PWM_MIDDLE, -p + control->yaw * 1.5f );
+	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, p + control->yaw * 1.5f );
+	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, -p + control->yaw * 1.5f );
 #endif
 
 	if (motorSetEnable)

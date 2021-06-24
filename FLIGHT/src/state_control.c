@@ -31,10 +31,18 @@ extern adrcObject_t ADRCAngleRoll;
 extern adrcObject_t ADRCRatePitch;
 extern adrcObject_t ADRCRateRoll;
 
+
+// // remoter setpoint(roll,pitch) filter
+// static lpf2pData setpointFilter[2];
+
 void stateControlInit(void)
 {
 	attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
 	positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
+
+    //     // Filter the setpoint
+    // lpf2pInit(&setpointFilter[0], ANGEL_PID_RATE, 20);
+    // lpf2pInit(&setpointFilter[1], ANGEL_PID_RATE, 20);
 }
 
 bool stateControlTest(void)
@@ -61,11 +69,11 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
         if (setpoint->mode.x == modeDisable || setpoint->mode.y == modeDisable) {
             attitudeDesired.roll  = setpoint->attitude.roll;
-            attitudeDesired.pitch = setpoint->attitude.pitch;
+            attitudeDesired.pitch = -setpoint->attitude.pitch;
         }
 
         if (control->flipDir == CENTER) {
-            attitudeDesired.yaw += setpoint->attitude.yaw / ANGEL_PID_RATE; /*期望YAW 速率模式*/
+            attitudeDesired.yaw -= setpoint->attitude.yaw / ANGEL_PID_RATE; /*期望YAW 速率模式*/
             if (attitudeDesired.yaw > 180.0f)
                 attitudeDesired.yaw -= 360.0f;
             if (attitudeDesired.yaw < -180.0f)
@@ -74,6 +82,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
         attitudeDesired.roll += configParam.trimR; //叠加微调值
         attitudeDesired.pitch += configParam.trimP;
+
+        // attitudeDesired.roll  = lpf2pApply(&setpointFilter[0], attitudeDesired.roll);
+        // attitudeDesired.pitch = lpf2pApply(&setpointFilter[1], attitudeDesired.pitch);
 
         attitudeAnglePID(&state->attitude, &attitudeDesired, &rateDesired);
     }

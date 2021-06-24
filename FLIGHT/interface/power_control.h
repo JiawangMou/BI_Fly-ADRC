@@ -33,5 +33,5 @@ void motorControl(control_t *control);
 void getMotorPWM(motorPWM_t* get);
 void setMotorPWM(bool enable, u16 f1_set, u16 f2_set, u16 s1_set, u16 s2_set, u16 s3_set,u16 r1_set);
 //return 为舵机的位置 单位为us
-u16 limitServo(u8 id, float value);
+u16 Servo_Int16ToPWM(u8 id, float value);
 #endif 

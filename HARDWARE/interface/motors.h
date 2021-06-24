@@ -67,17 +67,17 @@
 #define MOTORS_MAXPWM (0.4 * 65535)
 
 #ifdef BI_Fly_1
-#define SERVO_MAXPWM 1950 //2.1ms
-#define SERVO_MINPWM 1250  //0.9ms
-#define SERVO_RANGE ((SERVO_MAXPWM - SERVO_MINPWM) / 2)
+#define SERVO_MAXPWM 2050 //2.1ms
+#define SERVO_MINPWM 950  //0.9ms
+#define SERVO_HalfRANGE ((SERVO_MAXPWM - SERVO_MINPWM) / 2)
 #endif
 
 #ifdef BI_Fly_2
-#define SERVO_RANGE 350
+#define SERVO_HalfRANGE 350
 #define SERVO_MAXPWM 2100 //2.1ms
 #define SERVO_MINPWM 900  //0.9ms
 #endif
-
+ 
 void motorsInit(void);                    /*电机初始化*/
 bool motorsTest(void);                    /*电机测试*/
 void motorsSetRatio(u32 id, u16 ithrust); /*设置电机占空比*/

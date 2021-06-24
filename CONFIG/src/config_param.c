@@ -128,9 +128,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1600,
+			.s_left = 1500,
 			.s_right = 1500,
-			.s_middle = 1600,
+			.s_middle = 1500,
 		},
 		.accBias = 
 		{
@@ -588,10 +588,12 @@ void configParamGiveSemaphore(void)
 
 void resetConfigParamPID(void)
 {
-	configParam.pidAngle = configParamDefault.pidAngle;
-	configParam.pidRate = configParamDefault.pidRate;
-	configParam.pidPos = configParamDefault.pidPos;
+    configParam.pidAngle      = configParamDefault.pidAngle;
+    configParam.pidRate       = configParamDefault.pidRate;
+    configParam.pidPos        = configParamDefault.pidPos;
+    configParam.servo_initpos = configParamDefault.servo_initpos;
 }
+
 
 void saveConfigAndNotify(void)
 {
@@ -602,6 +604,7 @@ void saveConfigAndNotify(void)
 		STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*–¥»Îstm32 flash*/
 	}
 }
+
 
 void changeServoinitpos_configParam(u16 s1, u16 s2, u16 s3)
 {

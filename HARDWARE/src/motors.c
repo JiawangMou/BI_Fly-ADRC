@@ -204,8 +204,23 @@ void motorsSetRatio(u32 id, u16 ithrust)
     }
 }
 
+/*************************************************
+Function: servoSetPWM
+Description: 设定舵机的占空比，范围为900~2100
+Input:  id: 指明是设置哪个舵机
+        value: 占空比的值；
+Output: 无
+Return: 无
+Others: 无
+********************************************/
 void servoSetPWM(u8 id, u16 value)
 {
+    #ifdef BI_Fly_1
+	value = servoPWMLimit(value);
+    #endif
+    #ifdef BI_Fly_2
+	value = servoPWMLimit(id,value);
+    #endif
     switch (id) {
     case PWM_LEFT:
         TIM_SetCompare3(TIM3, (uint32_t)value);

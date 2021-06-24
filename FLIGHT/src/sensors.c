@@ -93,6 +93,9 @@ static lpf2pData accLpf[3];
 static lpf2pData gyroLpf[3];
 static lpf2pData BaroLpf;
 
+static smoothFilter_t gyroPitchSF;
+static smoothFilter_t gyroRollSF;
+
 #ifdef PCBV4_5
 #define BAT_LPF_CUTOFF_FREQ 20
 static lpf2pData BatLpf;
@@ -255,6 +258,10 @@ void sensorsDeviceInit(void)
 	}
 	lpf2pInit(&BaroLpf, 1000, BARO_LPF_CUTOFF_FREQ);
 
+	// Add Smooth Filter for Pitch & Roll
+	// (You may choose either smooth or butterworth after)
+	smoothFilterInit(&gyroPitchSF, 50);
+	smoothFilterInit(&gyroRollSF, 50);
 #ifdef PCBV4_5
 	lpf2pInit(&BatLpf, 1000, BAT_LPF_CUTOFF_FREQ);
 #endif
@@ -685,7 +692,12 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	sensors.gyro.x =  (gx - gyroBias.x) * SENSORS_DEG_PER_LSB_CFG; /*单位 °/s */
 	sensors.gyro.y =  (gy - gyroBias.y) * SENSORS_DEG_PER_LSB_CFG;
 	sensors.gyro.z =  (gz - gyroBias.z) * SENSORS_DEG_PER_LSB_CFG;
-	applyAxis3fLpf(gyroLpf, &sensors.gyro);
+
+	// applyAxis3fLpf(gyroLpf, &sensors.gyro);
+	// To use butterworth lpf in roll & yaw, use smooth in pitch
+	sensors.gyro.axis[0] = lpf2pApply(&gyroLpf[0], sensors.gyro.axis[0]);
+	sensors.gyro.axis[1] = smoothFilterApply(&gyroPitchSF, sensors.gyro.axis[1]);
+	sensors.gyro.axis[2] = lpf2pApply(&gyroLpf[2], sensors.gyro.axis[2]);
 
 	// sensors.acc.x = -(ax)*SENSORS_G_PER_LSB_CFG / accScale.x; /*单位 g(9.8m/s^2)*/
 	// sensors.acc.y =  (ay)*SENSORS_G_PER_LSB_CFG / accScale.y;	/*重力加速度缩放因子accScale 根据样本计算得出*/

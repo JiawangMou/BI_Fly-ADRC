@@ -7,7 +7,8 @@
 	"settings": {
 		"files.associations": {
 			"attitude_adrc.h": "c",
-			"adrc.h": "c"
+			"adrc.h": "c",
+			"filter.h": "c"
 		}
 	}
 }

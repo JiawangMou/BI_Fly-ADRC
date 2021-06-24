@@ -182,17 +182,17 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 	
 	imuComputeRotationMatrix();	/*计算旋转矩阵*/
 	
-	// /*计算roll pitch yaw 欧拉角*/
-	// state->attitude.pitch = -asinf(rMat[2][0]) * RAD2DEG; 
-	// state->attitude.roll = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
-	// state->attitude.yaw = atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
-
 	/*计算roll pitch yaw 欧拉角*/
-	state->attitude.pitch = asinf(rMat[2][0]) * RAD2DEG; 
-	state->attitude.roll = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
-	state->attitude.yaw = -atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
+    state->attitude.pitch = -asinf(rMat[2][0]) * RAD2DEG;
+    state->attitude.roll  = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
+    state->attitude.yaw   = atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
 
-	state->attitude.timestamp = getSysTickCnt();
+        // /*计算roll pitch yaw 欧拉角*/
+    // state->attitude.pitch = asinf(rMat[2][0]) * RAD2DEG;
+    // state->attitude.roll  = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
+    // state->attitude.yaw   = -atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
+
+    state->attitude.timestamp = getSysTickCnt();
 	if (!isGravityCalibrated)	/*未校准*/
 	{		
 //		accBuf[0] = tempacc.x* rMat[0][0] + tempacc.y * rMat[0][1] + tempacc.z * rMat[0][2];	/*accx*/
