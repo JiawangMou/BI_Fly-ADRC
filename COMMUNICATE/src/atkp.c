@@ -91,6 +91,10 @@ extern PidObject pidRateRoll;
 extern PidObject pidRatePitch;
 extern PidObject pidRateYaw;
 
+
+
+extern adrcObject_t ADRCAnglePitch;
+extern adrcObject_t ADRCAngleRoll;
 extern adrcObject_t ADRCRatePitch;
 extern adrcObject_t ADRCRateRoll;
 
@@ -695,8 +699,8 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 					   pidVX.kp, pidVX.ki, pidVX.kd
 				   );
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
-					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_MIDDLE), 0,
-					   0, 0, 0
+					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_MIDDLE), ADRCRateRoll.nlsef.beta_2,
+                       ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1, ADRCRateRoll.nlsef.alpha2
 				   );
 
             
@@ -808,12 +812,16 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID4) {
-        pidX.kp = 0.1*((s16)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
-		pidX.ki = 0.1*((s16)(*(anlPacket->data+2)<<8)|*(anlPacket->data+3));
-		pidX.kd = 0.01*((s16)(*(anlPacket->data+4)<<8)|*(anlPacket->data+5));
-        pidY = pidX;	//位置保持PID，X\Y方向是一样的
-        u16  s_left_set   = 0.1*((s16)(*(anlPacket->data+6)<<8)|*(anlPacket->data+7));
-        u16  s_middle_set = 0.1*((s16)(*(anlPacket->data+8)<<8)|*(anlPacket->data+9));
+        pidX.kp                   =  0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        pidX.ki                   =  0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        pidX.kd                   = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        pidY                      = pidX; //位置保持PID，X\Y方向是一样的
+        u16 s_left_set            =  0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
+        u16 s_middle_set          =  0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
+        ADRCRateRoll.nlsef.beta_2 = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
+        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        ADRCRateRoll.nlsef.alpha1 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        ADRCRateRoll.nlsef.alpha2 = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
         changeServoinitpos_configParam(s_left_set, 0, s_middle_set);
         servoSetPWM(PWM_LEFT, s_left_set);
         servoSetPWM(PWM_MIDDLE, s_middle_set);
@@ -852,7 +860,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 		// s16 m3_set = ((s16)(*(anlPacket->data+12)<<8)|*(anlPacket->data+13));
 		// s16 m4_set = ((s16)(*(anlPacket->data+14)<<8)|*(anlPacket->data+15));
 		// setMotorPWM(enable,m1_set,m2_set,m3_set,m4_set);
-
+        attitudeADRCwriteToConfigParam();
 		attitudePIDwriteToConfigParam();
 		positionPIDwriteToConfigParam();
 		u8 cksum = atkpCheckSum(anlPacket);

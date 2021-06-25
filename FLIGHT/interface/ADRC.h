@@ -136,6 +136,7 @@ typedef struct
 	nlsefObject_t nlsef;
 	lesoObject_t leso;
     float u;
+
 }adrcObject_t;
 
 void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt);

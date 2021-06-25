@@ -7,13 +7,15 @@
 #include "stmflash.h"
 #include "delay.h"
 #include "sensors.h"
+#include "motors.h"
+#include "ADRC.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
-#include "motors.h"
+
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -28,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 33 /*13 表示V3.3*/
+#define VERSION 23 /*13 表示V3.3*/
 
 configParam_t configParam;
 
@@ -128,9 +130,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1500,
+			.s_left = 1600,
 			.s_right = 1500,
-			.s_middle = 1500,
+			.s_middle = 1600,
 		},
 		.accBias = 
 		{
@@ -157,7 +159,7 @@ static configParam_t configParamDefault =
 				{
 					.N1 = 2,
 					.beta_1 = 300.0,
-					.beta_2 = 0.2,
+					.beta_2 = 0.12,
 					.zeta = 0.01,
 					.alpha1 = 0.6,
 					.alpha2 = 1.2,
@@ -630,6 +632,8 @@ u16 getservoinitpos_configParam(u8 pwm_id)
 	}
 	return value;
 }
+
+
 
 accBias_t getaccbias_configParam( void )
 {

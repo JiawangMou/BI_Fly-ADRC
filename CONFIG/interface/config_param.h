@@ -1,7 +1,11 @@
 #ifndef __CONFIG_PARAM_H
 #define __CONFIG_PARAM_H
+
 #include "sys.h"
 #include <stdbool.h>
+
+
+
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -130,6 +134,7 @@ typedef struct
 	adrcInit_t roll;
 	adrcInit_t pitch;
 }adrcParam_t;
+
 typedef struct	
 {
 	u8 version;				/*软件版本号*/
@@ -163,6 +168,7 @@ void changeServoinitpos_configParam(u16 s1,u16 s2,u16 s3);
 u16 getservoinitpos_configParam(u8 pwm_id);
 accBias_t getaccbias_configParam( void );
 void accbias_writeFlash(void);
+
 
 #endif /*__CONFIG_PARAM_H */
 

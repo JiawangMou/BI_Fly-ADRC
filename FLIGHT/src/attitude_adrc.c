@@ -1,5 +1,8 @@
-#include "attitude_adrc.h"
 #include "ADRC.h"
+#include "config_param.h"
+#include "attitude_adrc.h"
+
+
 
 #define U_LPF_CUTOFF_FREQ 100
 
@@ -78,4 +81,52 @@ void ADRC_AngleControl(adrcObject_t *adrcObject,float expect_ADRC,float feedback
 {
 	adrcObject->td.x1 = feedback;
 	adrc_td( &adrcObject->td, expect_ADRC);
+}
+
+
+void attitudeADRCwriteToConfigParam(void)
+{
+    configParam.adrcAngle.pitch.leso.b0      = ADRCAnglePitch.leso.b0;
+    configParam.adrcAngle.pitch.leso.w0      = ADRCAnglePitch.leso.w0;
+    configParam.adrcAngle.pitch.nlsef.alpha1 = ADRCAnglePitch.nlsef.alpha1;
+    configParam.adrcAngle.pitch.nlsef.alpha2 = ADRCAnglePitch.nlsef.alpha2;
+    configParam.adrcAngle.pitch.nlsef.beta_1 = ADRCAnglePitch.nlsef.beta_1;
+    configParam.adrcAngle.pitch.nlsef.beta_2 = ADRCAnglePitch.nlsef.beta_2;
+    configParam.adrcAngle.pitch.nlsef.N1     = ADRCAnglePitch.nlsef.N1;
+    configParam.adrcAngle.pitch.nlsef.zeta   = ADRCAnglePitch.nlsef.zeta;
+    configParam.adrcAngle.pitch.td.N0        = ADRCAnglePitch.td.N0;
+    configParam.adrcAngle.pitch.td.r         = ADRCAnglePitch.td.r;
+
+    configParam.adrcAngle.roll.leso.b0      = ADRCAngleRoll.leso.b0;
+    configParam.adrcAngle.roll.leso.w0      = ADRCAngleRoll.leso.w0;
+    configParam.adrcAngle.roll.nlsef.alpha1 = ADRCAngleRoll.nlsef.alpha1;
+    configParam.adrcAngle.roll.nlsef.alpha2 = ADRCAngleRoll.nlsef.alpha2;
+    configParam.adrcAngle.roll.nlsef.beta_1 = ADRCAngleRoll.nlsef.beta_1;
+    configParam.adrcAngle.roll.nlsef.beta_2 = ADRCAngleRoll.nlsef.beta_2;
+    configParam.adrcAngle.roll.nlsef.N1     = ADRCAngleRoll.nlsef.N1;
+    configParam.adrcAngle.roll.nlsef.zeta   = ADRCAngleRoll.nlsef.zeta;
+    configParam.adrcAngle.roll.td.N0        = ADRCAngleRoll.td.N0;
+    configParam.adrcAngle.roll.td.r         = ADRCAngleRoll.td.r;
+
+    configParam.adrcRate.pitch.leso.b0      = ADRCRatePitch.leso.b0;
+    configParam.adrcRate.pitch.leso.w0      = ADRCRatePitch.leso.w0;
+    configParam.adrcRate.pitch.nlsef.alpha1 = ADRCRatePitch.nlsef.alpha1;
+    configParam.adrcRate.pitch.nlsef.alpha2 = ADRCRatePitch.nlsef.alpha2;
+    configParam.adrcRate.pitch.nlsef.beta_1 = ADRCRatePitch.nlsef.beta_1;
+    configParam.adrcRate.pitch.nlsef.beta_2 = ADRCRatePitch.nlsef.beta_2;
+    configParam.adrcRate.pitch.nlsef.N1     = ADRCRatePitch.nlsef.N1;
+    configParam.adrcRate.pitch.nlsef.zeta   = ADRCRatePitch.nlsef.zeta;
+    configParam.adrcRate.pitch.td.N0        = ADRCRatePitch.td.N0;
+    configParam.adrcRate.pitch.td.r         = ADRCRatePitch.td.r;
+
+    configParam.adrcRate.roll.leso.b0       = ADRCRateRoll.leso.b0;
+    configParam.adrcRate.roll.leso.w0       = ADRCRateRoll.leso.w0;
+    configParam.adrcRate.roll.nlsef.alpha1  = ADRCRateRoll.nlsef.alpha1;
+    configParam.adrcRate.roll.nlsef.alpha2  = ADRCRateRoll.nlsef.alpha2;
+    configParam.adrcRate.roll.nlsef.beta_1  = ADRCRateRoll.nlsef.beta_1;
+    configParam.adrcRate.roll.nlsef.beta_2  = ADRCRateRoll.nlsef.beta_2;
+    configParam.adrcRate.roll.nlsef.N1      = ADRCRateRoll.nlsef.N1;
+    configParam.adrcRate.roll.nlsef.zeta    = ADRCRateRoll.nlsef.zeta;
+    configParam.adrcRate.roll.td.N0         = ADRCRateRoll.td.N0;
+    configParam.adrcRate.roll.td.r          = ADRCRateRoll.td.r;
 }
