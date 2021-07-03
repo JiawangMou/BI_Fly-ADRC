@@ -158,8 +158,8 @@ static configParam_t configParamDefault =
 				.nlsef=
 				{
 					.N1 = 2,
-					.beta_1 = 300.0,
-					.beta_2 = 0.12,
+					.beta_1 = 28.0,
+					.beta_2 = 0.06,
 					.zeta = 0.01,
 					.alpha1 = 0.6,
 					.alpha2 = 1.2,

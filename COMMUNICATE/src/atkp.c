@@ -66,7 +66,7 @@
 #define PERIOD_MOTOR 40
 #define PERIOD_SENSOR2 40
 #define PERIOD_SPEED 50
-#define PERIOD_USERDATA 20
+#define PERIOD_USERDATA 2
 #define PERIOD_PIDOUT 20
 
 #define ATKP_RX_QUEUE_SIZE 10 /*ATKP包接收队列消息个数*/
@@ -521,23 +521,23 @@ static void atkpSendPeriod(void)
     //     u32 timestamp = getSysTickCnt();
     //     sendTestData(attitude.roll, attitude.pitch, attitude.yaw, pos.z, acc, accRawData, zPredict, timestamp);
     // }
-    if (!(count_ms % PERIOD_STATUS)) {
-        attitude_t attitude;
-        Axis3f     acc, vel, pos;
-        getAttitudeData(&attitude);
-        getStateData(&acc, &vel, &pos);
-        sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
-    }
-    if (!(count_ms % PERIOD_SENSOR)) {
-        Axis3i16 acc;
-        Axis3i16 gyro;
-        Axis3i16 mag;
-        Acc_Send acc_send;
-        getSensorRawData(&acc, &gyro, &mag);
-        getAcc_SendData(&acc_send);
-        sendSenser(acc_send.acc_beforefusion.x, acc_send.acc_beforefusion.y, acc_send.acc_beforefusion.z, gyro.x,
-            gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
-    }
+    // if (!(count_ms % PERIOD_STATUS)) {
+    //     attitude_t attitude;
+    //     Axis3f     acc, vel, pos;
+    //     getAttitudeData(&attitude);
+    //     getStateData(&acc, &vel, &pos);
+    //     sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
+    // }
+    // if (!(count_ms % PERIOD_SENSOR)) {
+    //     Axis3i16 acc;
+    //     Axis3i16 gyro;
+    //     Axis3i16 mag;
+    //     Acc_Send acc_send;
+    //     getSensorRawData(&acc, &gyro, &mag);
+    //     getAcc_SendData(&acc_send);
+    //     sendSenser(acc_send.acc_beforefusion.x, acc_send.acc_beforefusion.y, acc_send.acc_beforefusion.z, gyro.x,
+    //         gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
+    // }
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
 		Axis3f acc,vel,pos;
@@ -547,37 +547,39 @@ static void atkpSendPeriod(void)
 		attitude_t rateDesired_temp;
 		attitude_t attitude;
 		attitude_t attitudeDesired;
+        control_t control;
 		getAttitudeData(&attitude);
 		getattitudeDesired(&attitudeDesired);
 		getStateData(&acc, &vel, &pos);
         getSensorData(&sensordata);
 		getrateDesired( &rateDesired_temp );
 		getgyro_UnLPFData( &gyro_UnLPF);
-        sendUserData(1,rateDesired_temp.roll, sensordata.gyro.x, ADRCRateRoll.td.TD_input,  ADRCRateRoll.td.x1, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
+        control  = getControlData();
+        sendUserData(1, rateDesired_temp.roll, sensordata.gyro.x, control.roll,  ADRCRateRoll.td.x1, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
 		// sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
 		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
 		sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired_temp.pitch, sensordata.gyro.y, attitude.yaw,rateDesired_temp.yaw, sensordata.gyro.z);
     }
-    if (!(count_ms % PERIOD_RCDATA)) {
-        sendRCData(rcdata.thrust, rcdata.yaw, rcdata.roll, rcdata.pitch, 0, 0, 0, 0, 0, 0);
-    }
-    if (!(count_ms % PERIOD_POWER)) {
-        float bat = getBatteryVoltage();
-        sendPower(bat * 100, 500);
-    }
-    if (!(count_ms % PERIOD_MOTOR)) {
-        u16        f1, f2, s1, s2, s3, r1;
-        motorPWM_t motorPWM;
-        getMotorPWM(&motorPWM);
-        f1 = (float)motorPWM.f1 / 65535 * 1000;
-        f2 = (float)motorPWM.f2 / 65535 * 1000;
-        s1 = (float)motorPWM.s_left;
-        s2 = (float)motorPWM.s_rgith;
-        s3 = (float)motorPWM.s_middle;
-        r1 = (float)motorPWM.r1 / 65535 * 1000;
+    // if (!(count_ms % PERIOD_RCDATA)) {
+    //     sendRCData(rcdata.thrust, rcdata.yaw, rcdata.roll, rcdata.pitch, 0, 0, 0, 0, 0, 0);
+    // }
+    // if (!(count_ms % PERIOD_POWER)) {
+    //     float bat = getBatteryVoltage();
+    //     sendPower(bat * 100, 500);
+    // }
+    // if (!(count_ms % PERIOD_MOTOR)) {
+    //     u16        f1, f2, s1, s2, s3, r1;
+    //     motorPWM_t motorPWM;
+    //     getMotorPWM(&motorPWM);
+    //     f1 = (float)motorPWM.f1 / 65535 * 1000;
+    //     f2 = (float)motorPWM.f2 / 65535 * 1000;
+    //     s1 = (float)motorPWM.s_left;
+    //     s2 = (float)motorPWM.s_rgith;
+    //     s3 = (float)motorPWM.s_middle;
+    //     r1 = (float)motorPWM.r1 / 65535 * 1000;
 
-        sendMotorPWM(f1, f2, s1, s2, s3, r1, 0, 0);
-    }
+    //     sendMotorPWM(f1, f2, s1, s2, s3, r1, 0, 0);
+    // }
     // if (!(count_ms % PERIOD_SENSOR2))
     // {
     //     int baro = getBaroData() * 100.f;
@@ -701,6 +703,10 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
 					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_MIDDLE), ADRCRateRoll.nlsef.beta_2,
                        ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1, ADRCRateRoll.nlsef.alpha2
+				   );
+            sendPid(5, ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 1000.0f, ADRCRateRoll.leso.b0,
+					   0, 0, 0,
+                       0, 0, 0
 				   );
 
             
@@ -842,11 +848,12 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         // // pidY.outputLimit = ((u16)(*(anlPacket->data + 20) << 8) | *(anlPacket->data + 21));
         // // pidZ.outputLimit = ((u16)(*(anlPacket->data + 22) << 8) | *(anlPacket->data + 23));
 
-		
-		pidY = pidX;	//位置保持PID，X\Y方向是一样的
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID5) {
+        ADRCRateRoll.leso.w0 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        ADRCRateRoll.td.r    = 100.0 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        ADRCRateRoll.leso.b0 = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
         u8 cksum = atkpCheckSum(anlPacket);
 		sendCheck(anlPacket->msgID,cksum);
 

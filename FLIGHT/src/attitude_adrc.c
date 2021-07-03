@@ -71,8 +71,8 @@ void ADRC_RateControl(adrcObject_t *adrcObject,float expect_ADRC,float feedback_
     //nlsef
     adrcObject->nlsef.u0 = adrc_nlsef(&adrcObject->nlsef);
     /**********扰动补偿*******/
-    // adrcObject->u = (adrcObject->nlsef.u0 - 0.5f * adrcObject->leso.z2) / adrcObject->leso.b0;
-    adrcObject->u = adrcObject->nlsef.u0 / adrcObject->leso.b0;
+    adrcObject->u = (adrcObject->nlsef.u0 - 0.5f * adrcObject->leso.z2) / adrcObject->leso.b0;
+    // adrcObject->u = adrcObject->nlsef.u0 / adrcObject->leso.b0;
     //实际输出
     adrcObject->u = Constrain_Float(adrcObject->u, -32767, 32767);
 }
