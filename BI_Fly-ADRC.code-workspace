@@ -8,7 +8,11 @@
 		"files.associations": {
 			"attitude_adrc.h": "c",
 			"adrc.h": "c",
-			"filter.h": "c"
+			"filter.h": "c",
+			"config.h": "c",
+			"nvic.h": "c",
+			"sys.h": "c",
+			"state_control.h": "c"
 		}
 	}
 }

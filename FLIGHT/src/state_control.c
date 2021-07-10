@@ -8,6 +8,7 @@
 #include <math.h>
 #include "ADRC.h"
 #include "attitude_adrc.h"
+#include "stm32f4xx_gpio.h"
 
 /********************************************************************************
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -30,6 +31,14 @@ extern adrcObject_t ADRCAnglePitch;
 extern adrcObject_t ADRCAngleRoll;
 extern adrcObject_t ADRCRatePitch;
 extern adrcObject_t ADRCRateRoll;
+
+static uint8_t thrust_count = 0;
+static uint16_t thrust_init = 0;
+static uint16_t thrust_init_cmd = 10000;
+
+static uint8_t phase = 0;
+
+enum PHASE{start = 0, waiting = 1, accelerating = 2, scanning = 3, holdon = 4};
 
 
 // // remoter setpoint(roll,pitch) filter
@@ -55,7 +64,7 @@ bool stateControlTest(void)
 void stateControl(control_t* control, sensorData_t* sensors, state_t* state, setpoint_t* setpoint, const u32 tick)
 {
     static u16 cnt = 0;
-
+#ifndef TEST
     if (RATE_DO_EXECUTE(POSITION_PID_RATE, tick)) {
         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
             positionController(&actualThrust, &attitudeDesired, setpoint, state, POSITION_PID_DT);
@@ -142,6 +151,173 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     } else {
         cnt = 0;
     }
+#endif
+
+#ifdef TEST
+        static u32 tick_init = 0;
+        static int16_t control_roll = 0;
+        static u16 control_thrust = 0;
+        actualThrust = setpoint->thrust;
+
+
+        if (actualThrust > 5.f){
+            switch(phase)
+            {
+                case start:
+                {
+                    GPIO_SetBits(GPIOB, GPIO_Pin_14);
+                    phase++;
+                    tick_init = tick;
+                };break;
+                case waiting:
+                {
+                    if(((tick-tick_init) % 1000) == 0 ) {
+                        thrust_init = thrust_init_cmd + thrust_count * 2000;
+                        control_thrust = thrust_init / 10;
+                        control_roll = -30000/ 10;
+                        phase++;
+                        tick_init = tick;
+                    }
+                };break;
+                case accelerating:
+                {
+                    if(((tick-tick_init) % 10000) == 0 ){
+                        control_thrust = thrust_init;
+                        control_roll = -30000;
+                        phase++;
+                        tick_init = tick;
+                    }else{
+                        if(((tick-tick_init) % 1000) == 0 )
+                        {
+                            control_roll += - 30000/ 10;  
+                            control_thrust += thrust_init / 10;
+                        }
+                    }
+                };break;
+                case scanning:
+                {
+                    if(((tick-tick_init) % 155000) == 0 )  //31* 5s
+                    {
+                        control_thrust = 0;
+                        control_roll = 0;
+                        GPIO_ResetBits(GPIOB, GPIO_Pin_14);
+                        phase++;
+                        tick_init = tick;
+                    }else{
+                        if(((tick-tick_init) % 5000) == 0 )
+                        {
+                            control_roll += 2000;  
+                        }
+                    }
+                };break;
+                case holdon:
+                {
+                    if(((tick-tick_init) % 10000) == 0 )//10s
+                    {
+                        phase = 0; 
+                        thrust_count++;
+                        if(thrust_count >25)
+                        {
+                            thrust_count=0;
+                            control_thrust = 0;
+                            control_roll = 0;
+                            phase = 5;
+                        }
+                    } 
+                };break;
+                default:
+                {
+                    phase = 5;
+                    control_thrust = 0;
+                    control_roll = 0;
+                };
+            }
+            cnt = 0;
+        }
+        else{
+            if (cnt++ > 1500) {
+                cnt = 0;
+                configParamGiveSemaphore();
+            }
+            GPIO_ResetBits(GPIOB, GPIO_Pin_14);
+            control_thrust = 0;
+            control_roll = 0;
+            tick_init = tick;
+        }
+
+        control->thrust = constrainf(control_thrust, 0.0f, 60000.0f);
+        control->pitch = 0;
+        control->yaw = 0;
+        control->roll = control_roll;
+
+        // if( (control->thrust > 5.f) && (end_flag == 0 ))
+        // {
+        //     if(thrustchange_flag == 0)      //之前油门的状态为0
+        //     {
+        //         thrustchange_flag = 1;
+        //         count = 0;
+        //         GPIO_SetBits(GPIOA, GPIO_Pin_9);
+        //     }
+		// 	if (cnt++ > 1500) 
+		// 	{
+		// 		cnt = 0;
+		// 		configParamGiveSemaphore();
+		// 	}
+        // }else 
+		// {
+		// 	cnt = 0;
+		// }
+				
+		// if((count >= 1000) && (thrustchange_flag == 1) && (Start_flag == 0 )) //等待NI设备bias时间到
+        // {
+        //     Start_flag = 1;   //转换start_flag的状态
+        //     count = 0;
+        //     Roll_count = 0;
+		// 	thrust_count++;
+        //     thrust_init = thrust_init_cmd + thrust_count * 1000;
+		// 	if(thrust_init > 60000)
+		// 	{
+		// 		end_flag = 1;
+		// 		thrustchange_flag = 0;
+		// 		Start_flag = 0;
+		// 	}
+        // }
+
+        // if((Start_flag == 1) && (thrustchange_flag == 1))  
+        // {
+        //     roll_init = -30000 + Roll_count * 2000;
+        //     if(Roll_count > 30)
+        //     {
+		// 		GPIO_ResetBits(GPIOA, GPIO_Pin_9);
+		// 		count = 0;
+		// 		Start_flag = 2;
+        //     }
+        // }
+        // else
+        // {
+        //     roll_init = 0;
+		// 	thrust_init = 0;
+        //     Roll_count = 0;
+        // }
+				
+		// if((Start_flag == 2) && (thrustchange_flag == 1) && (count >= 4000))
+		// {
+		// 	Start_flag = 0;
+		// 	thrustchange_flag = 0;
+		// }
+        // control->thrust = thrust_init;
+        // control->roll = roll_init;
+        // count++; 
+        // if(count == 5000)
+        // {
+        //     Roll_count++;
+        //     count = 0;
+        // }
+
+#endif
+
+
+
 }
 
 void getrateDesired(attitude_t *get)
@@ -154,3 +330,11 @@ void getattitudeDesired(attitude_t *get)
 {
 	*get = attitudeDesired;
 }
+
+#ifdef TEST
+void setThrust_cmd(uint16_t Thrust_cmd)
+{
+    thrust_init_cmd = Thrust_cmd;
+}
+
+#endif

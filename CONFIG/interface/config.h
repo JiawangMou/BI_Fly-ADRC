@@ -42,4 +42,6 @@
 
 #define PCBV4_5                     //PCBV4.5将电池的电压检测换到主控上来检测，检测引脚为PA5 模拟输入 PA4 灌电流，电机的引脚换了
 #define PC7_OUT_ENABLE              //其中一个电机的引脚换成了PC7
+
+#define TEST
 #endif /* __CONFIG_H */

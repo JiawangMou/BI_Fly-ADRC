@@ -66,7 +66,7 @@
 #define PERIOD_MOTOR 40
 #define PERIOD_SENSOR2 40
 #define PERIOD_SPEED 50
-#define PERIOD_USERDATA 2
+#define PERIOD_USERDATA 20
 #define PERIOD_PIDOUT 20
 
 #define ATKP_RX_QUEUE_SIZE 10 /*ATKP包接收队列消息个数*/
@@ -555,7 +555,8 @@ static void atkpSendPeriod(void)
 		getrateDesired( &rateDesired_temp );
 		getgyro_UnLPFData( &gyro_UnLPF);
         control  = getControlData();
-        sendUserData(1, rateDesired_temp.roll, sensordata.gyro.x, control.roll,  ADRCRateRoll.td.x1, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
+        u32 timestamp = getSysTickCnt();
+        sendUserData(1, rateDesired_temp.roll, control.thrust, control.roll,  timestamp, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
 		// sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
 		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
 		sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired_temp.pitch, sensordata.gyro.y, attitude.yaw,rateDesired_temp.yaw, sensordata.gyro.z);
@@ -858,6 +859,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 		sendCheck(anlPacket->msgID,cksum);
 
     } else if (anlPacket->msgID == DOWN_PID6) {
+
 //		s16 temp1  = ((s16)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
 //		s16 temp2  = ((s16)(*(anlPacket->data+2)<<8)|*(anlPacket->data+3));
 //		s16 temp3  = ((s16)(*(anlPacket->data+4)<<8)|*(anlPacket->data+5));
@@ -867,6 +869,10 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 		// s16 m3_set = ((s16)(*(anlPacket->data+12)<<8)|*(anlPacket->data+13));
 		// s16 m4_set = ((s16)(*(anlPacket->data+14)<<8)|*(anlPacket->data+15));
 		// setMotorPWM(enable,m1_set,m2_set,m3_set,m4_set);
+#ifdef TEST
+        uint16_t temp1  = ((uint16_t)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
+        setThrust_cmd(temp1);
+#endif
         attitudeADRCwriteToConfigParam();
 		attitudePIDwriteToConfigParam();
 		positionPIDwriteToConfigParam();

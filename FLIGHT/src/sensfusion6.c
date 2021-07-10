@@ -44,8 +44,8 @@ static float invSqrt(float x);	/*快速开平方求倒*/
 static void calBaseAcc(float* acc)	/*计算静态加速度*/
 {
 	static u16 cnt = 0;
-	static float accZMin = -0.5;
-	static float accZMax = -1.5;
+	static float accZMin = 1.5;
+	static float accZMax = 0.5;
 	static float sumAcc[3] = {0.f};
 	
 	for(u8 i=0; i<3; i++)
@@ -58,8 +58,8 @@ static void calBaseAcc(float* acc)	/*计算静态加速度*/
 	{
 		cnt = 0;
 		maxError = accZMax - accZMin;
-		accZMin = -0.5;
-		accZMax = -1.5;;
+		accZMin = 1.5;
+		accZMax = 0.5;
 		
 		if(maxError < 0.015f)//判断最小的波动不大于0.015，而且acc[2]要在0.5~.15之间，否者不能通过
 		{
@@ -197,7 +197,7 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 	{		
 //		accBuf[0] = tempacc.x* rMat[0][0] + tempacc.y * rMat[0][1] + tempacc.z * rMat[0][2];	/*accx*/
 //		accBuf[1] = tempacc.x* rMat[1][0] + tempacc.y * rMat[1][1] + tempacc.z * rMat[1][2];	/*accy*/
-		accBuf[2] = tempacc.x* rMat[2][0] + tempacc.y * rMat[2][1] + tempacc.z * rMat[2][2];	/*accz*/
+		accBuf[2] = -tempacc.x* rMat[2][0] - tempacc.y * rMat[2][1] - tempacc.z * rMat[2][2];	/*accz*/
 		calBaseAcc(accBuf);		/*计算静态加速度*/				
 	}
 }

@@ -40,6 +40,18 @@ void systemInit(void)
     configParamInit();	/*初始化配置参数*/
     //	pmInit();			/*电源管理初始化*/
     stabilizerInit();	/*电机 传感器 PID初始化*/
+
+#ifdef TEST
+    GPIO_InitTypeDef GPIO_InitStructure;
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);  
+    GPIO_ResetBits(GPIOB, GPIO_Pin_14);	
+#endif
     //	expModuleDriverInit();/*扩展模块驱动初始化*/
 
     //	if(systemTest() == true)
