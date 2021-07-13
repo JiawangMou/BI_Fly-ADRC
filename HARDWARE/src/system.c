@@ -43,14 +43,14 @@ void systemInit(void)
 
 #ifdef TEST
     GPIO_InitTypeDef GPIO_InitStructure;
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);  
-    GPIO_ResetBits(GPIOB, GPIO_Pin_14);	
+    GPIO_Init(GPIOC, &GPIO_InitStructure);  
+    GPIO_ResetBits(GPIOC, GPIO_Pin_4);	
 #endif
     //	expModuleDriverInit();/*扩展模块驱动初始化*/
 

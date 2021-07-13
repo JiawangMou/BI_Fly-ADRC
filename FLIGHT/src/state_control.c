@@ -32,13 +32,31 @@ extern adrcObject_t ADRCAngleRoll;
 extern adrcObject_t ADRCRatePitch;
 extern adrcObject_t ADRCRateRoll;
 
+
+#ifdef TEST
+
+#define SCAN_NUM 15
+#define SCAN_STARTPOINT (-30000)
+#define SCAN_ENDPOINT 30000
+#define THRUST_NUM 10
+#define THRUST_STARTPOINT 10000
+#define THRUST_ENDPOINT 50000
+#define THRUST_DELTA ((THRUST_ENDPOINT - THRUST_STARTPOINT) / THRUST_NUM )
+#define SCAN_DELTA ((SCAN_ENDPOINT - SCAN_STARTPOINT) / SCAN_NUM)
+#define SCAN_ACCEL_TIME 2000 // scan 模型下的加速时间 单位：ms
+#define HOLDON_TIME 10000    // holdon 模式持续时间10s  单位：ms
+#define SCAN_ACCEL_DIV_MS 10 // scan模式下，加速1s的细分，100表示10ms改变一次速度
+
+
 static uint8_t thrust_count = 0;
-static uint16_t thrust_init = 0;
-static uint16_t thrust_init_cmd = 10000;
+static uint16_t thrust_init_cmd = 50000;
 
 static uint8_t phase = 0;
 
 enum PHASE{start = 0, waiting = 1, accelerating = 2, scanning = 3, holdon = 4};
+#endif
+
+
 
 
 // // remoter setpoint(roll,pitch) filter
@@ -155,81 +173,124 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
 #ifdef TEST
         static u32 tick_init = 0;
-        static int16_t control_roll = 0;
-        static u16 control_thrust = 0;
+        static int16_t control_roll_target = 0;
+        static int16_t control_roll_current = 0;
+        static u16 control_thrust_target = 0;
+        static u16 control_thrust_current = 0;
+        static int16_t control_roll_delta = 0;
+        static u16 control_thrust_delta = 0;
+        static bool start_flag = 0;
+        static bool start_scan_flag = 0;
+        static u8 scan_cnt = 0;
+        static bool key_flag = 0;
+
+
         actualThrust = setpoint->thrust;
+        if (actualThrust > 60000.f){
+            key_flag = 1; 
+        }
 
-
-        if (actualThrust > 5.f){
+        if((key_flag == 1) && (actualThrust < 60000.f))
+        {
+            start_flag = !start_flag;
+            key_flag = 0; 
+        }
+            
+        
+        if (start_flag){
             switch(phase)
             {
                 case start:
                 {
-                    GPIO_SetBits(GPIOB, GPIO_Pin_14);
-                    phase++;
+                    GPIO_SetBits(GPIOC, GPIO_Pin_4);
+                    phase = waiting;
                     tick_init = tick;
                 };break;
                 case waiting:
                 {
-                    if(((tick-tick_init) % 1000) == 0 ) {
-                        thrust_init = thrust_init_cmd + thrust_count * 2000;
-                        control_thrust = thrust_init / 10;
-                        control_roll = -30000/ 10;
-                        phase++;
-                        tick_init = tick;
+                    if (((tick - tick_init) % 1000) == 0) {
+                        control_thrust_target = thrust_init_cmd - thrust_count * THRUST_DELTA;
+                        control_roll_target   = SCAN_STARTPOINT;
+                        control_thrust_delta = control_thrust_target / 1000; // 100hz刷新一次，用时10s完成加速
+                        control_roll_delta   = control_roll_target / 1000; // 100hz刷新一次，用时10s完成加速
+                        phase                = accelerating;
+                        tick_init            = tick;
                     }
                 };break;
                 case accelerating:
                 {
-                    if(((tick-tick_init) % 10000) == 0 ){
-                        control_thrust = thrust_init;
-                        control_roll = -30000;
-                        phase++;
-                        tick_init = tick;
-                    }else{
-                        if(((tick-tick_init) % 1000) == 0 )
-                        {
-                            control_roll += - 30000/ 10;  
-                            control_thrust += thrust_init / 10;
+                    if(start_scan_flag ==1){//scan模型下的加速度过程
+                        if(((tick-tick_init) % SCAN_ACCEL_TIME) == 0){
+                            control_roll_current = control_roll_target;
+                            phase = scanning;
+                            tick_init = tick;
+                        }else{
+                            if(((tick-tick_init) % SCAN_ACCEL_DIV_MS) == 0 )
+                            {
+                                control_roll_current += control_roll_delta; 
+                            }
+                        }
+                    }else{//waiting 模式下的加速过程
+                        if(((tick-tick_init) % 10000) == 0){
+                            control_thrust_current = control_thrust_target;
+                            control_roll_current = control_roll_target;
+                            phase = scanning;
+                            tick_init = tick;
+                            start_scan_flag = 1;       //开始扫描
+                            scan_cnt = 0;
+                        }else{
+                            if(((tick-tick_init) % 10) == 0){
+                                control_thrust_current += control_thrust_delta;
+                                control_roll_current += control_roll_delta; 
+                            }
                         }
                     }
                 };break;
                 case scanning:
                 {
-                    if(((tick-tick_init) % 155000) == 0 )  //31* 5s
+                    if(((tick-tick_init) % 5000) == 0 )
                     {
-                        control_thrust = 0;
-                        control_roll = 0;
-                        GPIO_ResetBits(GPIOB, GPIO_Pin_14);
-                        phase++;
-                        tick_init = tick;
-                    }else{
-                        if(((tick-tick_init) % 5000) == 0 )
-                        {
-                            control_roll += 2000;  
+                        scan_cnt++;
+                        control_roll_target = scan_cnt * SCAN_DELTA + SCAN_STARTPOINT;
+                        control_roll_delta = (control_roll_target - control_roll_current) / (SCAN_ACCEL_TIME / SCAN_ACCEL_DIV_MS);
+                        if(scan_cnt < 16){
+                            phase = accelerating;
+                            tick_init = tick;
+                        }else{
+                            control_roll_target = 0;
+                            control_thrust_target = 0;
+                            control_roll_current = 0;
+                            control_thrust_current = 0;
+                            GPIO_ResetBits(GPIOC, GPIO_Pin_4);
+                            phase = holdon;
+                            tick_init = tick;
                         }
                     }
                 };break;
                 case holdon:
                 {
-                    if(((tick-tick_init) % 10000) == 0 )//10s
+                    if(((tick-tick_init) % HOLDON_TIME) == 0 )//10s
                     {
-                        phase = 0; 
+                        phase = start; 
                         thrust_count++;
-                        if(thrust_count >25)
+                        start_scan_flag = 0;
+                        if(thrust_count > THRUST_NUM)
                         {
                             thrust_count=0;
-                            control_thrust = 0;
-                            control_roll = 0;
-                            phase = 5;
+                            control_roll_target = 0;
+                            control_thrust_target = 0;
+                            control_roll_current = 0;
+                            control_thrust_current = 0;
+                            phase = 5;          //进入default状态
                         }
                     } 
                 };break;
                 default:
                 {
-                    phase = 5;
-                    control_thrust = 0;
-                    control_roll = 0;
+                    control_roll_target = 0;
+                    control_thrust_target = 0;
+                    control_roll_current = 0;
+                    control_thrust_current = 0;
                 };
             }
             cnt = 0;
@@ -239,80 +300,20 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 cnt = 0;
                 configParamGiveSemaphore();
             }
-            GPIO_ResetBits(GPIOB, GPIO_Pin_14);
-            control_thrust = 0;
-            control_roll = 0;
+            GPIO_ResetBits(GPIOC, GPIO_Pin_4);
+            control_roll_target = 0;
+            control_thrust_target = 0;
+            control_roll_current = 0;
+            control_thrust_current = 0;
+            phase = start;
+            start_scan_flag = 0;
             tick_init = tick;
         }
 
-        control->thrust = constrainf(control_thrust, 0.0f, 60000.0f);
+        control->thrust = constrainf(control_thrust_current, 0.0f, 50000.0f);
+        control->roll = control_roll_current;
         control->pitch = 0;
         control->yaw = 0;
-        control->roll = control_roll;
-
-        // if( (control->thrust > 5.f) && (end_flag == 0 ))
-        // {
-        //     if(thrustchange_flag == 0)      //之前油门的状态为0
-        //     {
-        //         thrustchange_flag = 1;
-        //         count = 0;
-        //         GPIO_SetBits(GPIOA, GPIO_Pin_9);
-        //     }
-		// 	if (cnt++ > 1500) 
-		// 	{
-		// 		cnt = 0;
-		// 		configParamGiveSemaphore();
-		// 	}
-        // }else 
-		// {
-		// 	cnt = 0;
-		// }
-				
-		// if((count >= 1000) && (thrustchange_flag == 1) && (Start_flag == 0 )) //等待NI设备bias时间到
-        // {
-        //     Start_flag = 1;   //转换start_flag的状态
-        //     count = 0;
-        //     Roll_count = 0;
-		// 	thrust_count++;
-        //     thrust_init = thrust_init_cmd + thrust_count * 1000;
-		// 	if(thrust_init > 60000)
-		// 	{
-		// 		end_flag = 1;
-		// 		thrustchange_flag = 0;
-		// 		Start_flag = 0;
-		// 	}
-        // }
-
-        // if((Start_flag == 1) && (thrustchange_flag == 1))  
-        // {
-        //     roll_init = -30000 + Roll_count * 2000;
-        //     if(Roll_count > 30)
-        //     {
-		// 		GPIO_ResetBits(GPIOA, GPIO_Pin_9);
-		// 		count = 0;
-		// 		Start_flag = 2;
-        //     }
-        // }
-        // else
-        // {
-        //     roll_init = 0;
-		// 	thrust_init = 0;
-        //     Roll_count = 0;
-        // }
-				
-		// if((Start_flag == 2) && (thrustchange_flag == 1) && (count >= 4000))
-		// {
-		// 	Start_flag = 0;
-		// 	thrustchange_flag = 0;
-		// }
-        // control->thrust = thrust_init;
-        // control->roll = roll_init;
-        // count++; 
-        // if(count == 5000)
-        // {
-        //     Roll_count++;
-        //     count = 0;
-        // }
 
 #endif
 
