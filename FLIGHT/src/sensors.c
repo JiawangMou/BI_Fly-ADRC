@@ -17,6 +17,7 @@
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "bat.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -91,6 +92,17 @@ static Axis3i16 gyro_UnLPF;
 static lpf2pData accLpf[3];
 static lpf2pData gyroLpf[3];
 static lpf2pData BaroLpf;
+
+static smoothFilter_t gyroPitchSF;
+static smoothFilter_t gyroRollSF;
+
+#ifdef PCBV4_5
+#define BAT_LPF_CUTOFF_FREQ 20
+static lpf2pData BatLpf;
+static float VoltageSeparateCoeff = 0.001651375f;
+static float VoltageBiasCoeff = -0.0721875f;
+static float BatteryVoltage = 0.0f;
+#endif
 
 static bool isMPUPresent = false;
 static bool isMagPresent = false;
@@ -245,6 +257,14 @@ void sensorsDeviceInit(void)
 		lpf2pInit(&accLpf[i], 1000, ACCEL_LPF_CUTOFF_FREQ);
 	}
 	lpf2pInit(&BaroLpf, 1000, BARO_LPF_CUTOFF_FREQ);
+
+	// Add Smooth Filter for Pitch & Roll
+	// (You may choose either smooth or butterworth after)
+	smoothFilterInit(&gyroPitchSF, 50);
+	smoothFilterInit(&gyroRollSF, 50);
+#ifdef PCBV4_5
+	lpf2pInit(&BatLpf, 1000, BAT_LPF_CUTOFF_FREQ);
+#endif
 
 #ifdef SENSORS_ENABLE_MAG_AK8963
 	ak8963Init(I2C3_DEV); //ak8963磁力计初始化
@@ -632,62 +652,89 @@ void processMagnetometerMeasurements(const uint8_t *buffer)
 /*处理加速计和陀螺仪数据*/
 void processAccGyroMeasurements(const uint8_t *buffer)
 {
-	/*注意传感器读取方向(旋转270°x和y交换)*/
+#ifdef BOARD_VERTICAL
+    int16_t ay = -((((int16_t)buffer[0]) << 8)  | buffer[1]);
+    int16_t az =  ((((int16_t)buffer[2]) << 8)  | buffer[3]);
+    int16_t ax = -((((int16_t)buffer[4]) << 8)  | buffer[5]);
+    int16_t gy = -((((int16_t)buffer[8]) << 8)  | buffer[9]);
+    int16_t gz =  ((((int16_t)buffer[10]) << 8) | buffer[11]);
+    int16_t gx = -((((int16_t)buffer[12]) << 8) | buffer[13]);
+#else
+#ifdef BOARD_HORIZONTAL
+//板子横着放置时需要重新根据板子的放置方向确定一下符号，下面的为未确认的结果
 	int16_t ay = (((int16_t)buffer[0]) << 8) | buffer[1];
-	int16_t az = -((((int16_t)buffer[2]) << 8) | buffer[3]);
-	int16_t ax = (((int16_t)buffer[4]) << 8) | buffer[5];
+	int16_t ax = (((int16_t)buffer[2]) << 8) | buffer[3];
+	int16_t az = (((int16_t)buffer[4]) << 8) | buffer[5];
 	int16_t gy = (((int16_t)buffer[8]) << 8) | buffer[9];
-	int16_t gz = -((((int16_t)buffer[10]) << 8) | buffer[11]);
-	int16_t gx = (((int16_t)buffer[12]) << 8) | buffer[13];
+	int16_t gx = (((int16_t)buffer[10]) << 8) | buffer[11];
+	int16_t gz = (((int16_t)buffer[12]) << 8) | buffer[13];
+#else
+	#error "Board alignment is not defined. Define BOARD_VERTICAL or BOARD_HORIZONTAL in config.h."
+#endif
+#endif
 
-	accRaw.x = ax - accBias.x; /*用于上传到上位机*/
-	accRaw.y = ay - accBias.y;
-	accRaw.z = az - accBias.z;
-	gyroRaw.x = gx - gyroBias.x;
-	gyroRaw.y = gy - gyroBias.y;
-	gyroRaw.z = gz - gyroBias.z;
+    accRaw.x  =  (ax - accBias.x); /*用于上传到上位机*/
+    accRaw.y  =  (ay - accBias.y);
+    accRaw.z  =  (az - accBias.z);
+    gyroRaw.x =  (gx - gyroBias.x);
+    gyroRaw.y =  (gy - gyroBias.y);
+    gyroRaw.z =  (gz - gyroBias.z);
 
-	gyroBiasFound = processGyroBias(gx, gy, gz, &gyroBias);
+    gyroBiasFound = processGyroBias(gx, gy, gz, &gyroBias);
 
-	if (gyroBiasFound)
-	{
-		if(!accBiasFound && isreadytoprocessAccBias)
-			processAccBias_Scale(ax, ay, az,&accBias);
-		
-		//processAccScale(ax, ay, az); /*计算accScale*/
+    if (gyroBiasFound) {
+        if (!accBiasFound && isreadytoprocessAccBias)
+            processAccBias_Scale(ax, ay, az, &accBias);
+
+        // processAccScale(ax, ay, az); /*计算accScale*/
 	}
 
-	sensors.gyro.x = -(gx - gyroBias.x) * SENSORS_DEG_PER_LSB_CFG; /*单位 °/s */
+	sensors.gyro.x =  (gx - gyroBias.x) * SENSORS_DEG_PER_LSB_CFG; /*单位 °/s */
 	sensors.gyro.y =  (gy - gyroBias.y) * SENSORS_DEG_PER_LSB_CFG;
 	sensors.gyro.z =  (gz - gyroBias.z) * SENSORS_DEG_PER_LSB_CFG;
-	applyAxis3fLpf(gyroLpf, &sensors.gyro);
+
+	// applyAxis3fLpf(gyroLpf, &sensors.gyro);
+	// To use butterworth lpf in roll & yaw, use smooth in pitch
+	sensors.gyro.axis[0] = lpf2pApply(&gyroLpf[0], sensors.gyro.axis[0]);
+	sensors.gyro.axis[1] = smoothFilterApply(&gyroPitchSF, sensors.gyro.axis[1]);
+	sensors.gyro.axis[2] = lpf2pApply(&gyroLpf[2], sensors.gyro.axis[2]);
 
 	// sensors.acc.x = -(ax)*SENSORS_G_PER_LSB_CFG / accScale.x; /*单位 g(9.8m/s^2)*/
 	// sensors.acc.y =  (ay)*SENSORS_G_PER_LSB_CFG / accScale.y;	/*重力加速度缩放因子accScale 根据样本计算得出*/
 	// sensors.acc.z =  (az)*SENSORS_G_PER_LSB_CFG / accScale.z;
-	sensors.acc.x = -(accRaw.x) / accScale.x;		/*单位 g(9.8m/s^2)*/
-	sensors.acc.y =   accRaw.y	/ accScale.y;		/*单位 g(9.8m/s^2)*/
-	sensors.acc.z =   accRaw.z	/ accScale.z;		/*单位 g(9.8m/s^2)*/
+    sensors.acc.x =  accRaw.x / accScale.x; /*单位 g(9.8m/s^2)*/
+    sensors.acc.y =  accRaw.y / accScale.y; /*单位 g(9.8m/s^2)*/
+    sensors.acc.z =  accRaw.z / accScale.z; /*单位 g(9.8m/s^2)*/
 
-	gyro_UnLPF.x   = sensors.gyro.x;
-    gyro_UnLPF.y   = sensors.gyro.y;
-    gyro_UnLPF.z   = sensors.gyro.z;
+    gyro_UnLPF.x = sensors.gyro.x;
+    gyro_UnLPF.y = sensors.gyro.y;
+    gyro_UnLPF.z = sensors.gyro.z;
 
-	applyAxis3fLpf(accLpf, &sensors.acc);
+    applyAxis3fLpf(accLpf, &sensors.acc);
 
-	// Axis3f gyroTmp;
-	// gyroTmp.x = sensors.gyro.x;
-	// gyroTmp.y = sensors.gyro.y;
-	// gyroTmp.z = sensors.gyro.z;
+    // Axis3f gyroTmp;
+    // gyroTmp.x = sensors.gyro.x;
+    // gyroTmp.y = sensors.gyro.y;
+    // gyroTmp.z = sensors.gyro.z;
 
-	// sensors.gyro.x = (sensors.gyro.x + gyroBff.x) * 0.5f;
-	// sensors.gyro.y = (sensors.gyro.y + gyroBff.y) * 0.5f;
-	// sensors.gyro.z = (sensors.gyro.z + gyroBff.z) * 0.5f;
-
-	// gyroBff.x = gyroTmp.x;
-	// gyroBff.y = gyroTmp.y;
-	// gyroBff.z = gyroTmp.z;
+    // sensors.gyro.x = (sensors.gyro.x + gyroBff.x) * 0.5f;
+    // sensors.gyro.y = (sensors.gyro.y + gyroBff.y) * 0.5f;
+    // sensors.gyro.z = (sensors.gyro.z + gyroBff.z) * 0.5f;
+    // gyroBff.x = gyroTmp.x;
+    // gyroBff.y = gyroTmp.y;
+    // gyroBff.z = gyroTmp.z;
 }
+
+#ifdef PCBV4_5
+//VvRefIntCal: V(内部参考电压)/V(3.3V) 标定值；  batteryVoltageRaw[0]：V(实际引脚电压)/V(实际Vref的电压)；batteryVoltageRaw[1]：V(内部参考电压)/V(实际Vref的电压)
+void processBatteryVoltage(){
+	BatteryVoltage = lpf2pApply(&BatLpf, (u32)batteryVoltageRaw[0] * vRefIntCal / batteryVoltageRaw[1] * VoltageSeparateCoeff + VoltageBiasCoeff);
+}
+
+float getBatteryVoltage(){
+	return BatteryVoltage;
+}
+#endif
 
 /*传感器任务*/
 void sensorsTask(void *param)
@@ -732,7 +779,9 @@ void sensorsTask(void *param)
 			{
 				xQueueOverwrite(magnetometerDataQueue, &sensors.mag);
 			}
-
+			#ifdef PCBV4_5
+			processBatteryVoltage();
+			#endif
 			xTaskResumeAll();
 		}
 	}

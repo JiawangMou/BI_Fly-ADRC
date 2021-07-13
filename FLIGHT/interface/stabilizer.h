@@ -52,7 +52,9 @@
 #define POSITION_PID_RATE		POSITION_ESTIMAT_RATE //位置环（外环）PID速率
 #define POSITION_PID_DT			(1.0/POSITION_PID_RATE)
 
-
+#ifdef TEST
+#define WAIT_RATE 
+#endif
 
 void stabilizerInit(void);
 void stabilizerTask(void* param);

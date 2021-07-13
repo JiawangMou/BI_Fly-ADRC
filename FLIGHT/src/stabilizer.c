@@ -123,14 +123,14 @@ void stabilizerTask(void* param)
     while (1) {
         vTaskDelayUntil(&lastWakeTime, MAIN_LOOP_DT); /*1ms周期延时*/
 
-        // 获取6轴和气压数据（500Hz）
-        // if (RATE_DO_EXECUTE(RATE_500_HZ, tick)) {
-        //     sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
-        // }
+        //获取6轴和气压数据（500Hz）
+        if (RATE_DO_EXECUTE(RATE_500_HZ, tick)) {
+            sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
+        }
 
         //四元数和欧拉角计算（250Hz）
         if (RATE_DO_EXECUTE(ATTITUDE_ESTIMAT_RATE, tick)) {
-            sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
+            //sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
             imuUpdate(sensorData.acc, sensorData.gyro, &state, ATTITUDE_ESTIMAT_DT);
         }
 
@@ -176,9 +176,9 @@ void stabilizerTask(void* param)
 
 void getAttitudeData(attitude_t* get)
 {
-    get->pitch = -state.attitude.pitch;
+    get->pitch = state.attitude.pitch;
     get->roll = state.attitude.roll;
-    get->yaw = -state.attitude.yaw;
+    get->yaw = state.attitude.yaw;
     get->timestamp = state.attitude.timestamp;
 }
 

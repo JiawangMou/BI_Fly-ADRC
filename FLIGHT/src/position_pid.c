@@ -74,20 +74,23 @@ static void velocityController(float* thrust, attitude_t* attitude, setpoint_t* 
 
     // Thrust
     //TEST:定高油门修改，进入速率模式之后，在定高油门上叠加加速油门
-    float thrustRaw = 0.f;
-    if (setpoint->mode.z == modeVelocity) {
-        thrustRaw        = pidUpdate(&pidVZ, setpoint->velocity.z) + thrustHover;
-        enterVelModeFlag = true;
-    } else {
-        thrustRaw   = pidUpdate(&pidZ, setpoint->position.z - state->position.z);
-        thrustHover = thrustRaw;
-    }
+    // float thrustRaw = 0.f;
+    // if (setpoint->mode.z == modeVelocity) {
+    //     thrustRaw        = pidUpdate(&pidVZ, setpoint->velocity.z) + thrustHover;
+    //     enterVelModeFlag = true;
+    // } else {
+    //     thrustRaw   = pidUpdate(&pidZ, setpoint->position.z - state->position.z);
+    //     thrustHover = thrustRaw;
+    // }
+
+	// Thrust
+	float thrustRaw = pidUpdate(&pidVZ, setpoint->velocity.z - state->velocity.z);
 
     *thrust = constrainf(thrustRaw + THRUST_BASE, 1000, 65500); /*油门限幅*/
 
-    //防止PID计算油门降得太快，让飞行器停机，影响定高效果，所以对低于基础油门的油门进行小变化范围处理，无论如何使油门不低于35000
-    if (*thrust < THRUST_BASE)
-        *thrust = *thrust / 8 + 35000;
+    // //防止PID计算油门降得太快，让飞行器停机，影响定高效果，所以对低于基础油门的油门进行小变化范围处理，无论如何使油门不低于35000
+    // if (*thrust < THRUST_BASE)
+    //     *thrust = *thrust / 8 + 35000;
 
     thrustLpf += (*thrust - thrustLpf) * 0.003f;
 
@@ -122,7 +125,7 @@ void positionController(float* thrust, attitude_t* attitude, setpoint_t* setpoin
     }
 
     if (setpoint->mode.z == modeAbs) {
-        // setpoint->velocity.z = pidUpdate(&pidZ, setpoint->position.z - state->position.z);
+        setpoint->velocity.z = pidUpdate(&pidZ, setpoint->position.z - state->position.z);
     }
 
     velocityController(thrust, attitude, setpoint, state);

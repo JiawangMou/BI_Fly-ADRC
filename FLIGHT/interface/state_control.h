@@ -22,6 +22,7 @@ bool stateControlTest(void);
 void stateControl(control_t *control, sensorData_t *sensors, state_t *state, setpoint_t *setpoint, const u32 tick);
 void getrateDesired(attitude_t *get);
 void getattitudeDesired(attitude_t *get);
+void setThrust_cmd(uint16_t Thrust_cmd);
 
 #endif /*__STATE_CONTROL_H */
 

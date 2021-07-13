@@ -7,6 +7,9 @@
 #include "stabilizer.h"
 #include <math.h>
 #include "ADRC.h"
+#include "attitude_adrc.h"
+#include "stm32f4xx_gpio.h"
+
 /********************************************************************************
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
  * ALIENTEK MiniFly
@@ -29,10 +32,44 @@ extern adrcObject_t ADRCAngleRoll;
 extern adrcObject_t ADRCRatePitch;
 extern adrcObject_t ADRCRateRoll;
 
+
+#ifdef TEST
+
+#define SCAN_NUM 15
+#define SCAN_STARTPOINT (-30000)
+#define SCAN_ENDPOINT 30000
+#define THRUST_NUM 10
+#define THRUST_STARTPOINT 10000
+#define THRUST_ENDPOINT 50000
+#define THRUST_DELTA ((THRUST_ENDPOINT - THRUST_STARTPOINT) / THRUST_NUM )
+#define SCAN_DELTA ((SCAN_ENDPOINT - SCAN_STARTPOINT) / SCAN_NUM)
+#define SCAN_ACCEL_TIME 2000 // scan 模型下的加速时间 单位：ms
+#define HOLDON_TIME 10000    // holdon 模式持续时间10s  单位：ms
+#define SCAN_ACCEL_DIV_MS 10 // scan模式下，加速1s的细分，100表示10ms改变一次速度
+
+
+static uint8_t thrust_count = 0;
+static uint16_t thrust_init_cmd = 50000;
+
+static uint8_t phase = 0;
+
+enum PHASE{start = 0, waiting = 1, accelerating = 2, scanning = 3, holdon = 4};
+#endif
+
+
+
+
+// // remoter setpoint(roll,pitch) filter
+// static lpf2pData setpointFilter[2];
+
 void stateControlInit(void)
 {
 	attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
 	positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
+
+    //     // Filter the setpoint
+    // lpf2pInit(&setpointFilter[0], ANGEL_PID_RATE, 20);
+    // lpf2pInit(&setpointFilter[1], ANGEL_PID_RATE, 20);
 }
 
 bool stateControlTest(void)
@@ -45,7 +82,7 @@ bool stateControlTest(void)
 void stateControl(control_t* control, sensorData_t* sensors, state_t* state, setpoint_t* setpoint, const u32 tick)
 {
     static u16 cnt = 0;
-
+#ifndef TEST
     if (RATE_DO_EXECUTE(POSITION_PID_RATE, tick)) {
         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
             positionController(&actualThrust, &attitudeDesired, setpoint, state, POSITION_PID_DT);
@@ -59,11 +96,11 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
         if (setpoint->mode.x == modeDisable || setpoint->mode.y == modeDisable) {
             attitudeDesired.roll  = setpoint->attitude.roll;
-            attitudeDesired.pitch = setpoint->attitude.pitch;
+            attitudeDesired.pitch = -setpoint->attitude.pitch;
         }
 
         if (control->flipDir == CENTER) {
-            attitudeDesired.yaw += setpoint->attitude.yaw / ANGEL_PID_RATE; /*期望YAW 速率模式*/
+            attitudeDesired.yaw -= setpoint->attitude.yaw / ANGEL_PID_RATE; /*期望YAW 速率模式*/
             if (attitudeDesired.yaw > 180.0f)
                 attitudeDesired.yaw -= 360.0f;
             if (attitudeDesired.yaw < -180.0f)
@@ -72,6 +109,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
         attitudeDesired.roll += configParam.trimR; //叠加微调值
         attitudeDesired.pitch += configParam.trimP;
+
+        // attitudeDesired.roll  = lpf2pApply(&setpointFilter[0], attitudeDesired.roll);
+        // attitudeDesired.pitch = lpf2pApply(&setpointFilter[1], attitudeDesired.pitch);
 
         attitudeAnglePID(&state->attitude, &attitudeDesired, &rateDesired);
     }
@@ -119,7 +159,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // /*这里取消复位的原因是，让飞行器翅膀不拍动的时候，还能看到舵机的反应，从而确认PID计算结果是否正常，或者是接线是否有问题*/
         positionResetAllPID();                     /*复位位置PID*/
         // adrc_reset(&ADRCRatePitch);
-		// adrc_reset(&ADRCRateRoll);
+		adrc_reset(&ADRCRateRoll);
         attitudeDesired.yaw = state->attitude.yaw; /*复位计算的期望yaw值*/
 
         if (cnt++ > 1500) {
@@ -129,6 +169,156 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     } else {
         cnt = 0;
     }
+#endif
+
+#ifdef TEST
+        static u32 tick_init = 0;
+        static int16_t control_roll_target = 0;
+        static int16_t control_roll_current = 0;
+        static u16 control_thrust_target = 0;
+        static u16 control_thrust_current = 0;
+        static int16_t control_roll_delta = 0;
+        static u16 control_thrust_delta = 0;
+        static bool start_flag = 0;
+        static bool start_scan_flag = 0;
+        static u8 scan_cnt = 0;
+        static bool key_flag = 0;
+
+
+        actualThrust = setpoint->thrust;
+        if (actualThrust > 60000.f){
+            key_flag = 1; 
+        }
+
+        if((key_flag == 1) && (actualThrust < 60000.f))
+        {
+            start_flag = !start_flag;
+            key_flag = 0; 
+        }
+            
+        
+        if (start_flag){
+            switch(phase)
+            {
+                case start:
+                {
+                    GPIO_SetBits(GPIOC, GPIO_Pin_4);
+                    phase = waiting;
+                    tick_init = tick;
+                };break;
+                case waiting:
+                {
+                    if (((tick - tick_init) % 1000) == 0) {
+                        control_thrust_target = thrust_init_cmd - thrust_count * THRUST_DELTA;
+                        control_roll_target   = SCAN_STARTPOINT;
+                        control_thrust_delta = control_thrust_target / 1000; // 100hz刷新一次，用时10s完成加速
+                        control_roll_delta   = control_roll_target / 1000; // 100hz刷新一次，用时10s完成加速
+                        phase                = accelerating;
+                        tick_init            = tick;
+                    }
+                };break;
+                case accelerating:
+                {
+                    if(start_scan_flag ==1){//scan模型下的加速度过程
+                        if(((tick-tick_init) % SCAN_ACCEL_TIME) == 0){
+                            control_roll_current = control_roll_target;
+                            phase = scanning;
+                            tick_init = tick;
+                        }else{
+                            if(((tick-tick_init) % SCAN_ACCEL_DIV_MS) == 0 )
+                            {
+                                control_roll_current += control_roll_delta; 
+                            }
+                        }
+                    }else{//waiting 模式下的加速过程
+                        if(((tick-tick_init) % 10000) == 0){
+                            control_thrust_current = control_thrust_target;
+                            control_roll_current = control_roll_target;
+                            phase = scanning;
+                            tick_init = tick;
+                            start_scan_flag = 1;       //开始扫描
+                            scan_cnt = 0;
+                        }else{
+                            if(((tick-tick_init) % 10) == 0){
+                                control_thrust_current += control_thrust_delta;
+                                control_roll_current += control_roll_delta; 
+                            }
+                        }
+                    }
+                };break;
+                case scanning:
+                {
+                    if(((tick-tick_init) % 5000) == 0 )
+                    {
+                        scan_cnt++;
+                        control_roll_target = scan_cnt * SCAN_DELTA + SCAN_STARTPOINT;
+                        control_roll_delta = (control_roll_target - control_roll_current) / (SCAN_ACCEL_TIME / SCAN_ACCEL_DIV_MS);
+                        if(scan_cnt < 16){
+                            phase = accelerating;
+                            tick_init = tick;
+                        }else{
+                            control_roll_target = 0;
+                            control_thrust_target = 0;
+                            control_roll_current = 0;
+                            control_thrust_current = 0;
+                            GPIO_ResetBits(GPIOC, GPIO_Pin_4);
+                            phase = holdon;
+                            tick_init = tick;
+                        }
+                    }
+                };break;
+                case holdon:
+                {
+                    if(((tick-tick_init) % HOLDON_TIME) == 0 )//10s
+                    {
+                        phase = start; 
+                        thrust_count++;
+                        start_scan_flag = 0;
+                        if(thrust_count > THRUST_NUM)
+                        {
+                            thrust_count=0;
+                            control_roll_target = 0;
+                            control_thrust_target = 0;
+                            control_roll_current = 0;
+                            control_thrust_current = 0;
+                            phase = 5;          //进入default状态
+                        }
+                    } 
+                };break;
+                default:
+                {
+                    control_roll_target = 0;
+                    control_thrust_target = 0;
+                    control_roll_current = 0;
+                    control_thrust_current = 0;
+                };
+            }
+            cnt = 0;
+        }
+        else{
+            if (cnt++ > 1500) {
+                cnt = 0;
+                configParamGiveSemaphore();
+            }
+            GPIO_ResetBits(GPIOC, GPIO_Pin_4);
+            control_roll_target = 0;
+            control_thrust_target = 0;
+            control_roll_current = 0;
+            control_thrust_current = 0;
+            phase = start;
+            start_scan_flag = 0;
+            tick_init = tick;
+        }
+
+        control->thrust = constrainf(control_thrust_current, 0.0f, 50000.0f);
+        control->roll = control_roll_current;
+        control->pitch = 0;
+        control->yaw = 0;
+
+#endif
+
+
+
 }
 
 void getrateDesired(attitude_t *get)
@@ -141,3 +331,11 @@ void getattitudeDesired(attitude_t *get)
 {
 	*get = attitudeDesired;
 }
+
+#ifdef TEST
+void setThrust_cmd(uint16_t Thrust_cmd)
+{
+    thrust_init_cmd = Thrust_cmd;
+}
+
+#endif

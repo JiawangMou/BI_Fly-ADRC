@@ -223,7 +223,7 @@ void DebugMon_Handler(void)
 {
 }
 
-static enum expModuleID lastModuleID = NO_MODULE;
+//static enum expModuleID lastModuleID = NO_MODULE;
 
 /************************************************************
 *光流模块和灯环模块共用DMA1_Stream4, 这里需要分开处理一下

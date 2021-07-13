@@ -81,11 +81,11 @@ bool attitudeControlTest()
 
 void attitudeRatePID(Axis3f *actualRate, attitude_t *desiredRate, control_t *output) /* ½ÇËÙ¶È»·PID */
 {
-	output->roll = pidOutLimit(pidUpdate(&pidRateRoll, desiredRate->roll - actualRate->x));
+	// output->roll = pidOutLimit(pidUpdate(&pidRateRoll, desiredRate->roll - actualRate->x));
 	output->pitch = pidOutLimit(pidUpdate(&pidRatePitch, desiredRate->pitch - actualRate->y));
-	// ADRC_RateControl(&ADRCRateRoll,desiredRate->roll,actualRate->x);
+	ADRC_RateControl(&ADRCRateRoll,desiredRate->roll,actualRate->x);
 	// ADRC_RateControl(&ADRCRatePitch,desiredRate->pitch,actualRate->y);
-	// output->roll = pidOutLimit(ADRCRateRoll.u);
+	output->roll = pidOutLimit(ADRCRateRoll.u);
 	// output->pitch = pidOutLimit(ADRCRatePitch.u);
 	// output->pitch = 0;
 	output->yaw = pidOutLimit(pidUpdate(&pidRateYaw, desiredRate->yaw - actualRate->z));

@@ -1,7 +1,11 @@
 #ifndef __CONFIG_PARAM_H
 #define __CONFIG_PARAM_H
+
 #include "sys.h"
 #include <stdbool.h>
+
+
+
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -89,7 +93,6 @@ typedef struct
 typedef struct 
 {
 	float N1;//跟踪微分器解决速度超调h1=N1*h
-	float r1;
 	float beta_1;
 	float beta_2;
 	float zeta;
@@ -121,7 +124,8 @@ typedef struct
 typedef struct 
 {
 	tdParam_t td;
-	nlsef_TOCParam_t nlsef_TOC;
+	// nlsef_TOCParam_t nlsef_TOC;
+	nlsefParam_t nlsef;
 	lesoParam_t leso;
 }adrcInit_t;
 
@@ -130,6 +134,7 @@ typedef struct
 	adrcInit_t roll;
 	adrcInit_t pitch;
 }adrcParam_t;
+
 typedef struct	
 {
 	u8 version;				/*软件版本号*/
@@ -163,6 +168,7 @@ void changeServoinitpos_configParam(u16 s1,u16 s2,u16 s3);
 u16 getservoinitpos_configParam(u8 pwm_id);
 accBias_t getaccbias_configParam( void );
 void accbias_writeFlash(void);
+
 
 #endif /*__CONFIG_PARAM_H */
 

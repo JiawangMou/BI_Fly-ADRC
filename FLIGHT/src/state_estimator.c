@@ -148,10 +148,13 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     }
 
     Axis3f accelBF; // BF:body frame ?
-
-    accelBF.x = sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
-    accelBF.y = sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
-    accelBF.z = sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
+//TODO: 验证坐标系变成NED坐标系后，直接如下将加速度的值取反是否合理
+    // accelBF.x = sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
+    // accelBF.y = sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
+    // accelBF.z = sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
+    accelBF.x = -sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
+    accelBF.y = -sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
+    accelBF.z = -sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
 
     // accelBF.x = sensorData->acc.x * GRAVITY_CMSS;
     // accelBF.y = sensorData->acc.y * GRAVITY_CMSS;
