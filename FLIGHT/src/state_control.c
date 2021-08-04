@@ -35,21 +35,22 @@ extern adrcObject_t ADRCRateRoll;
 
 #ifdef TEST
 
-#define SCAN_NUM 15
-#define SCAN_STARTPOINT (-30000)
-#define SCAN_ENDPOINT 30000
 #define THRUST_NUM 10
 #define THRUST_STARTPOINT 10000
 #define THRUST_ENDPOINT 50000
 #define THRUST_DELTA ((THRUST_ENDPOINT - THRUST_STARTPOINT) / THRUST_NUM )
-#define SCAN_DELTA ((SCAN_ENDPOINT - SCAN_STARTPOINT) / SCAN_NUM)
-#define SCAN_ACCEL_TIME 2000 // scan 模型下的加速时间 单位：ms
-#define HOLDON_TIME 10000    // holdon 模式持续时间10s  单位：ms
-#define SCAN_ACCEL_DIV_MS 10 // scan模式下，加速1s的细分，100表示10ms改变一次速度
+
+#define THRUST_WAIT_ACCEL_TIME 10000 // scan 模型下的加速时间 单位：ms
+#define THRUST_SCAN_TIME 5000 // scan 模型下的扫描时间 单位：ms
+#define THRUST_SCAN_ACCEL_TIME 2000 // scan 模型下的加速时间 单位：ms
+#define THRUST_ACCEL_DIV_MS 10 // scan模式下，加速1s的细分，10表示10ms改变一次速度
+#define THRUST_WAIT_ACCEL_COUNT (THRUST_WAIT_ACCEL_TIME / THRUST_ACCEL_DIV_MS)
+#define THRUST_SCAN_ACCEL_COUNT (THRUST_SCAN_ACCEL_TIME / THRUST_ACCEL_DIV_MS)
+
 
 
 static uint8_t thrust_count = 0;
-static uint16_t thrust_init_cmd = 50000;
+static uint16_t thrust_init_cmd = 10000;
 
 static uint8_t phase = 0;
 
@@ -173,12 +174,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
 #ifdef TEST
         static u32 tick_init = 0;
-        static int16_t control_roll_target = 0;
-        static int16_t control_roll_current = 0;
         static u16 control_thrust_target = 0;
         static u16 control_thrust_current = 0;
-        static int16_t control_roll_delta = 0;
-        static u16 control_thrust_delta = 0;
+        static u16  control_thrust_delta = 0;
         static bool start_flag = 0;
         static bool start_scan_flag = 0;
         static u8 scan_cnt = 0;
@@ -209,10 +207,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 case waiting:
                 {
                     if (((tick - tick_init) % 1000) == 0) {
-                        control_thrust_target = thrust_init_cmd - thrust_count * THRUST_DELTA;
-                        control_roll_target   = SCAN_STARTPOINT;
-                        control_thrust_delta = control_thrust_target / 1000; // 100hz刷新一次，用时10s完成加速
-                        control_roll_delta   = control_roll_target / 1000; // 100hz刷新一次，用时10s完成加速
+                        control_thrust_target = thrust_init_cmd + thrust_count * THRUST_DELTA;
+                        control_thrust_delta = control_thrust_target / THRUST_WAIT_ACCEL_COUNT; // 每次刷新增量
                         phase                = accelerating;
                         tick_init            = tick;
                     }
@@ -220,20 +216,19 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 case accelerating:
                 {
                     if(start_scan_flag ==1){//scan模型下的加速度过程
-                        if(((tick-tick_init) % SCAN_ACCEL_TIME) == 0){
-                            control_roll_current = control_roll_target;
+                        if(((tick-tick_init) % THRUST_SCAN_ACCEL_TIME ) == 0){
+                            control_thrust_current = control_thrust_target;
                             phase = scanning;
                             tick_init = tick;
                         }else{
-                            if(((tick-tick_init) % SCAN_ACCEL_DIV_MS) == 0 )
+                            if(((tick-tick_init) % THRUST_ACCEL_DIV_MS) == 0 )
                             {
-                                control_roll_current += control_roll_delta; 
+                                control_thrust_current += control_thrust_delta; 
                             }
                         }
                     }else{//waiting 模式下的加速过程
-                        if(((tick-tick_init) % 10000) == 0){
+                        if(((tick-tick_init) % THRUST_WAIT_ACCEL_TIME) == 0){
                             control_thrust_current = control_thrust_target;
-                            control_roll_current = control_roll_target;
                             phase = scanning;
                             tick_init = tick;
                             start_scan_flag = 1;       //开始扫描
@@ -241,25 +236,22 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                         }else{
                             if(((tick-tick_init) % 10) == 0){
                                 control_thrust_current += control_thrust_delta;
-                                control_roll_current += control_roll_delta; 
                             }
                         }
                     }
                 };break;
                 case scanning:
                 {
-                    if(((tick-tick_init) % 5000) == 0 )
+                    if(((tick-tick_init) % THRUST_SCAN_TIME) == 0 )
                     {
                         scan_cnt++;
-                        control_roll_target = scan_cnt * SCAN_DELTA + SCAN_STARTPOINT;
-                        control_roll_delta = (control_roll_target - control_roll_current) / (SCAN_ACCEL_TIME / SCAN_ACCEL_DIV_MS);
-                        if(scan_cnt < 16){
+                        if(scan_cnt < (THRUST_NUM + 1)){
+                            control_thrust_target = THRUST_DELTA + control_thrust_current;
+                            control_thrust_delta = THRUST_DELTA / THRUST_SCAN_ACCEL_COUNT;
                             phase = accelerating;
                             tick_init = tick;
                         }else{
-                            control_roll_target = 0;
                             control_thrust_target = 0;
-                            control_roll_current = 0;
                             control_thrust_current = 0;
                             GPIO_ResetBits(GPIOC, GPIO_Pin_4);
                             phase = holdon;
@@ -269,27 +261,12 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 };break;
                 case holdon:
                 {
-                    if(((tick-tick_init) % HOLDON_TIME) == 0 )//10s
-                    {
-                        phase = start; 
-                        thrust_count++;
-                        start_scan_flag = 0;
-                        if(thrust_count > THRUST_NUM)
-                        {
-                            thrust_count=0;
-                            control_roll_target = 0;
-                            control_thrust_target = 0;
-                            control_roll_current = 0;
-                            control_thrust_current = 0;
-                            phase = 5;          //进入default状态
-                        }
-                    } 
-                };break;
+                    control_thrust_target = 0;
+                    control_thrust_current = 0;
+                };break;               
                 default:
                 {
-                    control_roll_target = 0;
                     control_thrust_target = 0;
-                    control_roll_current = 0;
                     control_thrust_current = 0;
                 };
             }
@@ -301,9 +278,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 configParamGiveSemaphore();
             }
             GPIO_ResetBits(GPIOC, GPIO_Pin_4);
-            control_roll_target = 0;
             control_thrust_target = 0;
-            control_roll_current = 0;
             control_thrust_current = 0;
             phase = start;
             start_scan_flag = 0;
@@ -311,7 +286,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
 
         control->thrust = constrainf(control_thrust_current, 0.0f, 50000.0f);
-        control->roll = control_roll_current;
+        control->roll = 0;
         control->pitch = 0;
         control->yaw = 0;
 
