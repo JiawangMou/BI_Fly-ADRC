@@ -25,12 +25,12 @@ static u16 ratioToCCRx(u16 val) { return ((val) >> (16 - MOTORS_PWM_BITS) & ((1 
 
 void motorsInit(void) /*电机初始化*/
 {
+#ifdef FOUR_WING
     GPIO_InitTypeDef        GPIO_InitStructure;
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_OCInitTypeDef       TIM_OCInitStructure;
 
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD,
-        ENABLE);                                                               //使能PORTA PORTB PORTC PORTD时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD,ENABLE);                                                               //使能PORTA PORTB PORTC PORTD时钟
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4, ENABLE); // TIM3和TIM4时钟使能
 
     // TIM8 时钟
@@ -138,6 +138,86 @@ void motorsInit(void) /*电机初始化*/
     TIM_CtrlPWMOutputs(TIM_MOTOR_2, ENABLE);
 #endif
 
+#endif
+
+#ifdef DOUBLE_WING
+    GPIO_InitTypeDef        GPIO_InitStructure;
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+    TIM_OCInitTypeDef       TIM_OCInitStructure;
+
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOD,ENABLE);                                                               //使能PORTA PORTB PORTC PORTD时钟
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4, ENABLE); // TIM3和TIM4时钟使能
+
+    TIM_DeInit(TIM_MOTOR); //重新初始化TIM4为默认状态
+    TIM_DeInit(TIM_SERVO); //重新初始化TIM3为默认状态
+
+    // Servos AF
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource8, GPIO_AF_TIM3);  // PC8 复用为TIM3 CH3	PWM_LEFT
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_TIM3);  // PC7 复用为TIM3 CH2	PWM_MIDDLE
+    GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_TIM3);  // PB1 复用为TIM3 CH4	PWM_RIGHT
+    // Motors AF
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4); // PD12复用为TIM4 CH1	PWMF1
+
+    // Servo GPIO Inits 
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_7 | GPIO_Pin_8; // PC7 8
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;            //复用功能
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;       //速度100MHz
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;           //推挽复用输出
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;            //上拉
+    GPIO_Init(GPIOC, &GPIO_InitStructure);                   //初始化PC7 8
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1; // PB1
+    GPIO_Init(GPIOB, &GPIO_InitStructure);    //初始化PB1
+
+    // Motors GPIO Inits 
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 ; // PD12
+    GPIO_Init(GPIOD, &GPIO_InitStructure);                   //初始化PD12
+
+    // Motors TIM Base Inits
+    TIM_TimeBaseStructure.TIM_Period            = MOTORS_PWM_PERIOD;   //自动重装载值
+    TIM_TimeBaseStructure.TIM_Prescaler         = MOTORS_PWM_PRESCALE; //定时器分频
+    TIM_TimeBaseStructure.TIM_CounterMode       = TIM_CounterMode_Up;  //向上计数模式
+    TIM_TimeBaseStructure.TIM_ClockDivision     = 0;                   //时钟分频
+    TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;                   //重复计数次数
+    TIM_TimeBaseInit(TIM_MOTOR, &TIM_TimeBaseStructure);               //初始化TIM_MOTOR (TIM4)
+    // Servo TIM Base Inits
+    TIM_TimeBaseStructure.TIM_Period    = SERVOS_PWM_PERIOD;        //自动重装载值
+    TIM_TimeBaseStructure.TIM_Prescaler = SERVOS_PWM_PRESCALE;      //定时器分频
+    TIM_TimeBaseInit(TIM_SERVO, &TIM_TimeBaseStructure);            //初始化TIM_SERVO (TIM3)
+
+    // TIM OC Inits
+    TIM_OCInitStructure.TIM_OCMode      = TIM_OCMode_PWM1;        // PWM模式1
+    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; //使能输出
+    TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;   
+    TIM_OCInitStructure.TIM_Pulse       = 0;                      // CCRx
+    TIM_OCInitStructure.TIM_OCPolarity  = TIM_OCPolarity_High;    //高电平有效
+    TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_Low;
+    TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;    //空闲高电平
+    TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCIdleState_Set;
+
+    TIM_OC1Init(TIM_MOTOR, &TIM_OCInitStructure); //初始化TIM4 CH1输出比较
+
+    TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_LEFT);   //舵机中位值
+    TIM_OC3Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH3输出比较	PWM_LEFT
+    TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_RIGHT);  //舵机中位值
+    TIM_OC4Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH4输出比较	PWM_RIGHT
+    TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_MIDDLE); //舵机中位值
+    TIM_OC2Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH2输出比较	PWM_MIDDLE
+
+    // TIM Preload Enable
+    TIM_OC1PreloadConfig(TIM_MOTOR, TIM_OCPreload_Enable); //使能TIM4在CCR1上的预装载寄存器
+
+
+    TIM_OC2PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR2上的预装载寄存器
+    TIM_OC3PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR3上的预装载寄存器
+    TIM_OC4PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR4上的预装载寄存器
+
+    TIM_ARRPreloadConfig(TIM_MOTOR, ENABLE); // TIM4	ARPE使能
+    TIM_ARRPreloadConfig(TIM_SERVO, ENABLE); // TIM3	ARPE使能
+
+    TIM_Cmd(TIM_MOTOR, ENABLE); //使能TIM4
+    TIM_Cmd(TIM_SERVO, ENABLE); //使能TIM3
+#endif
     isInit = true;
 }
 
@@ -186,15 +266,6 @@ void motorsSetRatio(u32 id, u16 ithrust)
         case PWMPD13:
             TIM_SetCompare2(TIM_MOTOR, ratioToCCRx(ratio));
             break;
-            // case 2: /*PWM_LEFT*/
-            // 	TIM_SetCompare3(TIM3, ratioToCCRx(ratio));
-            // 	break;
-            // case 3: /*PWM_RIGHT*/
-            // 	TIM_SetCompare1(TIM3, ratioToCCRx(ratio));
-            // 	break;
-            // case 4: /*PWM_MIDDLE
-            // 	TIM_SetCompare4(TIM3, ratioToCCRx(ratio));
-            // 	break;
         case PWMPC7:
             TIM_SetCompare2(TIM_MOTOR_2, ratioToCCRx(ratio));
             break;
@@ -215,26 +286,33 @@ Others: 无
 ********************************************/
 void servoSetPWM(u8 id, u16 value)
 {
-    #ifdef BI_Fly_1
+#ifdef FOUR_WING
 	value = servoPWMLimit(value);
-    #endif
-    #ifdef BI_Fly_2
-	value = servoPWMLimit(id,value);
-    #endif
     switch (id) {
     case PWM_LEFT:
         TIM_SetCompare3(TIM3, (uint32_t)value);
         break;
     case PWM_RIGHT:
-        TIM_SetCompare1(TIM3, (uint32_t)value);
-        break;
-    case PWM_MIDDLE:
         TIM_SetCompare4(TIM3, (uint32_t)value);
         break;
     }
+#elif defined DOUBLE_WING
+	value = servoPWMLimit(value);
+    switch (id) {
+    case PWM_LEFT:
+        TIM_SetCompare3(TIM3, (uint32_t)value);
+        break;
+    case PWM_RIGHT:
+        TIM_SetCompare4(TIM3, (uint32_t)value);
+        break;
+    case PWM_MIDDLE:
+        TIM_SetCompare2(TIM3, (uint32_t)value);
+        break;
+    }
+#endif
 }
 
-#ifdef BI_Fly_1
+
 u32 servoPWMLimit(u16 value)
 {
     u16 _temp = 0;
@@ -247,23 +325,5 @@ u32 servoPWMLimit(u16 value)
 
     return (u32)_temp;
 }
-#endif
 
-#ifdef BI_Fly_2
-u32 servoPWMLimit(u8 id, u16 value)
-{
-    u16 _temp      = 0;
-    u16 HLimit     = SERVO_MAXPWM - getservoinitpos_configParam(id);
-    u16 LLimit     = getservoinitpos_configParam(id) - SERVO_MINPWM;
-    u16 servoRange = (HLimit > LLimit) ? LLimit : HLimit;
-	
-    if (value > getservoinitpos_configParam(id) + servoRange)
-        _temp = getservoinitpos_configParam(id) + servoRange;
-    else if (value < getservoinitpos_configParam(id) - servoRange)
-        _temp = getservoinitpos_configParam(id) - servoRange;
-    else
-        _temp = value;
 
-    return (u32)_temp;
-}
-#endif

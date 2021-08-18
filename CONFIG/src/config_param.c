@@ -34,10 +34,10 @@
 
 configParam_t configParam;
 
-#ifdef BI_Fly_1
+#ifdef FOUR_WING
 static configParam_t configParamDefault =
-	{
-		.version = VERSION, /*软件版本号*/
+{
+	.version = VERSION, /*软件版本号*/
 
 		.pidAngle = /*角度PID*/
 		{
@@ -264,9 +264,7 @@ static configParam_t configParamDefault =
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 40000.0, /*定高油门基础值*/
 };
-#endif
-
-#ifdef BI_Fly_2
+#elif defined DOUBLE_WING
 static configParam_t configParamDefault =
 	{
 		.version = VERSION, /*软件版本号*/

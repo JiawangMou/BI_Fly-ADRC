@@ -20,7 +20,7 @@ typedef struct
 	u32 f1;
 	u32 f2;
 	u32 s_left;
-	u32 s_rgith;
+	u32 s_right;
 	u32 s_middle;
 	u32 r1;
 	

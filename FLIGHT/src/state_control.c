@@ -116,12 +116,14 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
         attitudeAnglePID(&state->attitude, &attitudeDesired, &rateDesired);
     }
+#ifdef ADRC_CONTROL
     /*ADRC-ESO*/
     // adrc_leso(&ADRCRatePitch.leso, sensors->gyro.y,ADRCRatePitch.u);
     adrc_leso(&ADRCRateRoll.leso, sensors->gyro.x,ADRCRateRoll.u);	
 	/*ADRC-TD*/
     // adrc_td(&ADRCRatePitch.td, rateDesired.pitch - ADRCRatePitch.leso.z1);
     adrc_td(&ADRCRateRoll.td,  rateDesired.roll - ADRCRateRoll.leso.z1);
+#endif
 
 
     //角速度环（内环）
@@ -143,15 +145,12 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
         attitudeRatePID(&sensors->gyro, &rateDesired, control);
 
-// #ifdef BI_Fly_2
-        // control->yaw = setpoint->attitude.yaw * 100;
-// #endif
     }
     control->thrust = constrainf(actualThrust, 0.0f, 55000.0f);
     // control->thrust = actualThrust;
 
     if (control->thrust < 5.f) {
-        control->roll = 0;
+        // control->roll = 0;
         // control->pitch = 0;
         // control->yaw = 0;
 
@@ -160,7 +159,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // /*这里取消复位的原因是，让飞行器翅膀不拍动的时候，还能看到舵机的反应，从而确认PID计算结果是否正常，或者是接线是否有问题*/
         positionResetAllPID();                     /*复位位置PID*/
         // adrc_reset(&ADRCRatePitch);
+#ifdef ADRC_CONTROL
 		adrc_reset(&ADRCRateRoll);
+#endif
         attitudeDesired.yaw = state->attitude.yaw; /*复位计算的期望yaw值*/
 
         if (cnt++ > 1500) {
@@ -296,15 +297,12 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
 }
 
-void getrateDesired(attitude_t *get)
-{
-	get->pitch = rateDesired.pitch;
-	get->roll = rateDesired.roll;	
-	get->yaw = rateDesired.yaw;
+void getRateDesired(attitude_t *get){
+    *get = rateDesired;
 }
-void getattitudeDesired(attitude_t *get)
-{
-	*get = attitudeDesired;
+
+void getAngleDesired(attitude_t *get){
+    *get = attitudeDesired;
 }
 
 #ifdef TEST

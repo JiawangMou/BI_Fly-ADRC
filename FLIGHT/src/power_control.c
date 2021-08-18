@@ -79,6 +79,7 @@ u16 Servo_Int16ToPWM(u8 id, float value)
 
 void motorControl(control_t *control) /*功率输出控制*/
 {
+#ifdef FOUR_WING
 //	s16 r = control->roll / 2.0f;
 //	s16 p = control->pitch / 2.0f;
 	s16 r = control->roll;
@@ -86,14 +87,9 @@ void motorControl(control_t *control) /*功率输出控制*/
 	//控制分配	改！
 	motorPWM.f2 = limitThrust(control->thrust + r);
 	motorPWM.f1 = limitThrust(control->thrust - r);
-#ifdef BI_Fly_1
 	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, -p + control->yaw * 1.5f );
-	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, p + control->yaw * 1.5f );
-#endif
-#ifdef BI_Fly_2
-	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, p + control->yaw * 1.5f );
-	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, -p + control->yaw * 1.5f );
-#endif
+	motorPWM.s_right = Servo_Int16ToPWM(PWM_MIDDLE, p + control->yaw * 1.5f );
+
 
 	if (motorSetEnable)
 	{
@@ -102,8 +98,28 @@ void motorControl(control_t *control) /*功率输出控制*/
 	motorsSetRatio(PWMF1, sqrt(motorPWM.f1) * 256); /*控制电机输出百分比*/
 	motorsSetRatio(PWMF2, sqrt(motorPWM.f2) * 256);
 	servoSetPWM(PWM_LEFT, motorPWM.s_left); /*舵机输出占空比设置*/
+	servoSetPWM(PWM_RIGHT, motorPWM.s_right);
+
+#elif defined DOUBLE_WING
+	s16 r = control->roll;
+	s16 p = control->pitch;
+	//控制分配
+	motorPWM.f1 = limitThrust(control->thrust );
+
+	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, -p - r);
+	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, control->yaw );
+	motorPWM.s_right = Servo_Int16ToPWM(PWM_RIGHT, p - r);
+
+	if (motorSetEnable)
+	{
+		motorPWM = motorPWMSet;
+	}
+	motorsSetRatio(PWMF1, sqrt(motorPWM.f1) * 256); /*控制电机输出百分比*/
+
+	servoSetPWM(PWM_LEFT, motorPWM.s_left); /*舵机输出占空比设置*/
 	servoSetPWM(PWM_MIDDLE, motorPWM.s_middle);
-	//	motorsSetRatio(PWMR, motorPWM.r1);
+	servoSetPWM(PWM_RIGHT, motorPWM.s_right);
+#endif
 }
 
 void getMotorPWM(motorPWM_t *get)
@@ -117,7 +133,7 @@ void setMotorPWM(bool enable, u16 f1_set, u16 f2_set, u16 s1_set, u16 s2_set, u1
 	motorPWMSet.f1 = f1_set;
 	motorPWMSet.f2 = f2_set;
 	motorPWMSet.s_left = s1_set;
-	motorPWMSet.s_rgith = s2_set;
+	motorPWMSet.s_right = s2_set;
 	motorPWMSet.s_middle = s3_set;
 	motorPWMSet.r1 = r1_set;
 }

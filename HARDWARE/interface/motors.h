@@ -66,13 +66,13 @@
 
 #define MOTORS_MAXPWM (0.4 * 65535)
 
-#ifdef BI_Fly_1
+#ifdef FOUR_WING
 #define SERVO_MAXPWM 2050 //2.1ms
 #define SERVO_MINPWM 950  //0.9ms
 #define SERVO_HalfRANGE ((SERVO_MAXPWM - SERVO_MINPWM) / 2)
-#endif
 
-#ifdef BI_Fly_2
+#elif defined DOUBLE_WING
+
 #define SERVO_HalfRANGE 350
 #define SERVO_MAXPWM 2100 //2.1ms
 #define SERVO_MINPWM 900  //0.9ms
@@ -82,10 +82,6 @@ void motorsInit(void);                    /*电机初始化*/
 bool motorsTest(void);                    /*电机测试*/
 void motorsSetRatio(u32 id, u16 ithrust); /*设置电机占空比*/
 void servoSetPWM(u8 id, u16 value);
-#ifdef BI_Fly_1
 u32 servoPWMLimit(u16 value); /*限制实际重装载值在900~2100范围内*/
-#endif
-#ifdef BI_Fly_2
-u32 servoPWMLimit(u8 id, u16 value);
-#endif
+
 #endif /* __MOTORS_H */

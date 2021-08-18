@@ -4,7 +4,7 @@
 
 
 
-#define U_LPF_CUTOFF_FREQ 100
+#define U_LPF_CUTOFF_FREQ 50
 
 
 adrcObject_t ADRCAnglePitch;

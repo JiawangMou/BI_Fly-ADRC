@@ -521,27 +521,26 @@ static void atkpSendPeriod(void)
     //     u32 timestamp = getSysTickCnt();
     //     sendTestData(attitude.roll, attitude.pitch, attitude.yaw, pos.z, acc, accRawData, zPredict, timestamp);
     // }
-    // if (!(count_ms % PERIOD_STATUS)) {
-    //     attitude_t attitude;
-    //     Axis3f     acc, vel, pos;
-    //     getAttitudeData(&attitude);
-    //     getStateData(&acc, &vel, &pos);
-    //     sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
-    // }
-    // if (!(count_ms % PERIOD_SENSOR)) {
-    //     Axis3i16 acc;
-    //     Axis3i16 gyro;
-    //     Axis3i16 mag;
-    //     Acc_Send acc_send;
-    //     getSensorRawData(&acc, &gyro, &mag);
-    //     getAcc_SendData(&acc_send);
-    //     sendSenser(acc_send.acc_beforefusion.x, acc_send.acc_beforefusion.y, acc_send.acc_beforefusion.z, gyro.x,
-    //         gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
-    // }
+    if (!(count_ms % PERIOD_STATUS)) {
+        attitude_t attitude;
+        Axis3f     acc, vel, pos;
+        getAttitudeData(&attitude);
+        getStateData(&acc, &vel, &pos);
+        sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
+    }
+    if (!(count_ms % PERIOD_SENSOR)) {
+        Axis3i16 acc;
+        Axis3i16 gyro;
+        Axis3i16 mag;
+        Acc_Send acc_send;
+        getSensorRawData(&acc, &gyro, &mag);
+        getAcc_SendData(&acc_send);
+        sendSenser(acc_send.acc_beforefusion.x, acc_send.acc_beforefusion.y, acc_send.acc_beforefusion.z, gyro.x,
+            gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
+    }
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
-		Axis3f acc,vel,pos;
-		Axis3i16 gyro_UnLPF;
+#ifdef ADRC_CONTROL
 		sensorData_t sensordata;
 		float thrustBase = 0.1f * configParam.thrustBase;
 		attitude_t rateDesired_temp;
@@ -549,17 +548,36 @@ static void atkpSendPeriod(void)
 		attitude_t attitudeDesired;
         control_t control;
 		getAttitudeData(&attitude);
-		getattitudeDesired(&attitudeDesired);
-		getStateData(&acc, &vel, &pos);
+		getAngleDesired(&attitudeDesired);
         getSensorData(&sensordata);
-		getrateDesired( &rateDesired_temp );
-		getgyro_UnLPFData( &gyro_UnLPF);
+		getRateDesired( &rateDesired_temp );
         control  = getControlData();
         u32 timestamp = getSysTickCnt();
-        sendUserData(1, rateDesired_temp.roll, control.thrust, control.roll,  timestamp, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
+        sendUserData(1, rateDesired_temp.roll, sensordata.gyro.x, ADRCRateRoll.td.TD_input,  ADRCRateRoll.td.x1, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
 		// sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
 		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
 		sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired_temp.pitch, sensordata.gyro.y, attitude.yaw,rateDesired_temp.yaw, sensordata.gyro.z);
+#endif    
+
+#ifdef PID_CONTROL
+        Axis3f acc, vel, pos;
+        float  thrustBase = 0.1f * configParam.thrustBase;
+
+        attitude_t   rateDesired, angleDesired, attitude;
+        sensorData_t sensor;
+        control_t control;
+        getSensorData(&sensor);
+        getRateDesired(&rateDesired);
+        getAngleDesired(&angleDesired);
+        getAttitudeData(&attitude);
+
+        getStateData(&acc, &vel, &pos);
+        control  = getControlData();
+        sendUserData(1, angleDesired.roll, attitude.roll, rateDesired.roll, sensor.gyro.x, pidAngleRoll.outP, pidAngleRoll.outI, pidRateRoll.outP,
+            pidRateRoll.outI, pidRateRoll.outD);
+        sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
+            sensor.gyro.z, control.pitch, control.yaw, control.roll);
+#endif
     }
     // if (!(count_ms % PERIOD_RCDATA)) {
     //     sendRCData(rcdata.thrust, rcdata.yaw, rcdata.roll, rcdata.pitch, 0, 0, 0, 0, 0, 0);
@@ -575,7 +593,7 @@ static void atkpSendPeriod(void)
     //     f1 = (float)motorPWM.f1 / 65535 * 1000;
     //     f2 = (float)motorPWM.f2 / 65535 * 1000;
     //     s1 = (float)motorPWM.s_left;
-    //     s2 = (float)motorPWM.s_rgith;
+    //     s2 = (float)motorPWM.s_right;
     //     s3 = (float)motorPWM.s_middle;
     //     r1 = (float)motorPWM.r1 / 65535 * 1000;
 
@@ -688,7 +706,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
             // sendPid(4, pidX.kp, pidX.ki, pidX.kd, pidY.kp, pidY.ki, pidY.kd, pidZ.kp, pidZ.ki, pidZ.kd,
             //     pidX.outputLimit, pidY.outputLimit, pidZ.outputLimit);
             // sendPid(5,getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE),0,0,0,0,0,0,0,0,0,0);
-            
+
 			sendPid(1, pidRateRoll.kp, pidRateRoll.ki, pidRateRoll.kd,
 					   pidRatePitch.kp, pidRatePitch.ki, pidRatePitch.kd,
 					   pidRateYaw.kp, pidRateYaw.ki, pidRateYaw.kd 
@@ -701,29 +719,73 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 					   pidZ.kp, pidZ.ki, pidZ.kd,
 					   pidVX.kp, pidVX.ki, pidVX.kd
 				   );
+#ifdef FOUR_WING
+    #ifdef ADRC_CONTROL 
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
-					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_MIDDLE), ADRCRateRoll.nlsef.beta_2,
-                       ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1, ADRCRateRoll.nlsef.alpha2
+					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), 0,
+                       ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
 				   );
-            sendPid(5, ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 1000.0f, ADRCRateRoll.leso.b0,
-					   0, 0, 0,
+            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
+					   ADRCRateRoll.leso.b0 *10 , 0, 0,
                        0, 0, 0
 				   );
-
-            
+    #elif defined PID_CONTROL
+            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE), 0, 0, 0, 0);
+    #endif
+#elif defined DOUBLE_WING
+    #ifdef ADRC_CONTROL
+			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
+					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE),
+                       ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
+				   );
+            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
+					   ADRCRateRoll.leso.b0 *10 , 0, 0,
+                       0, 0, 0
+				   );
+    #elif defined PID_CONTROL
+            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
+    #endif
+#endif         
         }
         if (anlPacket->data[0] == D_ACK_RESET_PARAM) /*恢复默认参数*/
         {
             resetConfigParamPID();
-
-			attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
+            attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
             positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
             sendPid(1, pidRateRoll.kp, pidRateRoll.ki, pidRateRoll.kd, pidRatePitch.kp, pidRatePitch.ki,
                 pidRatePitch.kd, pidRateYaw.kp, pidRateYaw.ki, pidRateYaw.kd);
             sendPid(2, pidAngleRoll.kp, pidAngleRoll.ki, pidAngleRoll.kd, pidAnglePitch.kp, pidAnglePitch.ki,
                 pidAnglePitch.kd, pidAngleYaw.kp, pidAngleYaw.ki, pidAngleYaw.kd);
             sendPid(3, pidVZ.kp, pidVZ.ki, pidVZ.kd, pidZ.kp, pidZ.ki, pidZ.kd, pidVX.kp, pidVX.ki, pidVX.kd);
-            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE), 0, 0, 0, 0);
+#ifdef FOUR_WING
+    #ifdef ADRC_CONTROL 
+			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
+					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), 0,
+                       ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
+				   );
+            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
+					   ADRCRateRoll.leso.b0 * 10, 0, 0,
+                       0, 0, 0
+				   );
+    #elif defined PID_CONTROL
+            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), 0, 0, 0, 0);
+    #endif
+	1233210
+	
+#elif defined DOUBLE_WING
+    #ifdef ADRC_CONTROL
+			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
+					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10,
+                       ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
+				   );
+            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
+					   ADRCRateRoll.leso.b0 * 10, 0, 0,
+                       0, 0, 0
+				   );
+    #elif defined PID_CONTROL
+            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
+    #endif
+#endif  
         }
     } else if (anlPacket->msgID == DOWN_RCDATA) {
         rcdata = *((joystickFlyui16_t*)anlPacket->data);
@@ -824,14 +886,32 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         pidX.kd                   = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
         pidY                      = pidX; //位置保持PID，X\Y方向是一样的
         u16 s_left_set            =  0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
-        u16 s_middle_set          =  0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
-        ADRCRateRoll.nlsef.beta_2 = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
-        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-        ADRCRateRoll.nlsef.alpha1 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-        ADRCRateRoll.nlsef.alpha2 = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
-        changeServoinitpos_configParam(s_left_set, 0, s_middle_set);
+        u16 s_right_set           =  0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
+#ifdef FOUR_WING
+    #ifdef ADRC_CONTROL
+        ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        ADRCRateRoll.nlsef.alpha1 =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+    #elif defined PID_CONTROL
+
+    #endif
+        changeServoinitpos_configParam(s_left_set, s_right_set, 0);
         servoSetPWM(PWM_LEFT, s_left_set);
+        servoSetPWM(PWM_RIGHT, s_right_set);
+#elif defined DOUBLE_WING
+        u16 s_middle_set          = 0.1 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
+    #ifdef ADRC_CONTROL
+        ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        ADRCRateRoll.nlsef.alpha1 =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+    #elif defined PID_CONTROL
+    #endif
+        changeServoinitpos_configParam(s_left_set, s_right_set, s_middle_set);
+        servoSetPWM(PWM_LEFT, s_left_set);
+        servoSetPWM(PWM_RIGHT, s_right_set);
         servoSetPWM(PWM_MIDDLE, s_middle_set);
+#endif
+
         /*自己开发的地面站用通讯协议*/
         // pidX.kp = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
         // pidX.ki = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
@@ -852,9 +932,26 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID5) {
-        ADRCRateRoll.leso.w0 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-        ADRCRateRoll.td.r    = 100.0 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-        ADRCRateRoll.leso.b0 = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+#ifdef FOUR_WING
+    #ifdef ADRC_CONTROL
+        ADRCRateRoll.nlsef.alpha2 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        ADRCRateRoll.leso.w0      = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        ADRCRateRoll.td.r         = 100.0 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        ADRCRateRoll.leso.b0      = 0.01 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
+    #elif defined PID_CONTROL
+    #endif
+#elif defined DOUBLE_WING
+    #ifdef ADRC_CONTROL
+        ADRCRateRoll.nlsef.alpha2 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        ADRCRateRoll.leso.w0      = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        ADRCRateRoll.td.r         = 100.0 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        ADRCRateRoll.leso.b0      = 0.01 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
+    #elif defined PID_CONTROL
+    #endif
+#endif
+#ifdef ADRC_CONTROL
+
+#endif
         u8 cksum = atkpCheckSum(anlPacket);
 		sendCheck(anlPacket->msgID,cksum);
 
@@ -873,7 +970,9 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         uint16_t temp1  = ((uint16_t)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
         setThrust_cmd(temp1);
 #endif
+#ifdef ADRC_CONTROL
         attitudeADRCwriteToConfigParam();
+#endif
 		attitudePIDwriteToConfigParam();
 		positionPIDwriteToConfigParam();
 		u8 cksum = atkpCheckSum(anlPacket);
