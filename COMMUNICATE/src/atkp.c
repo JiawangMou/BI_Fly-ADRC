@@ -730,12 +730,12 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        0, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE), 0, 0, 0, 0);
+            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0, 0);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
-					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE),
+					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10,
                        ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
 				   );
             sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
