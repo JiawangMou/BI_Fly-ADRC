@@ -725,9 +725,9 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), 0,
                        ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
 				   );
-            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
-					   ADRCRateRoll.leso.b0 *10 , 0, 0,
-                       0, 0, 0
+            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
+					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
+                       ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
             sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0, 0);
@@ -736,11 +736,11 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
     #ifdef ADRC_CONTROL
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
 					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10,
-                       ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
+                       ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.alpha1
 				   );
-            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
-					   ADRCRateRoll.leso.b0 *10 , 0, 0,
-                       0, 0, 0
+            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
+					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
+                       ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
             sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
@@ -761,11 +761,11 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
     #ifdef ADRC_CONTROL 
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
 					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), 0,
-                       ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
+                       ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.alpha1
 				   );
-            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
-					   ADRCRateRoll.leso.b0 * 10, 0, 0,
-                       0, 0, 0
+            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
+					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
+                       ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
             sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), 0, 0, 0, 0);
@@ -776,11 +776,11 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
     #ifdef ADRC_CONTROL
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
 					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10,
-                       ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.alpha1
+                       ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.alpha1
 				   );
-            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.td.r / 10000, 
-					   ADRCRateRoll.leso.b0 * 10, 0, 0,
-                       0, 0, 0
+             sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
+					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
+                       ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
             sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
@@ -889,8 +889,8 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u16 s_right_set           =  0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
 #ifdef FOUR_WING
     #ifdef ADRC_CONTROL
-        ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
         ADRCRateRoll.nlsef.alpha1 =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
     #elif defined PID_CONTROL
 
@@ -901,8 +901,8 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 #elif defined DOUBLE_WING
         u16 s_middle_set          = 0.1 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
     #ifdef ADRC_CONTROL
-        ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        ADRCRateRoll.nlsef.beta_1 =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
         ADRCRateRoll.nlsef.alpha1 =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
     #elif defined PID_CONTROL
     #endif
@@ -936,16 +936,16 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
     #ifdef ADRC_CONTROL
         ADRCRateRoll.nlsef.alpha2 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
         ADRCRateRoll.leso.w0      = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-        ADRCRateRoll.td.r         = 100.0 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
-        ADRCRateRoll.leso.b0      = 0.01 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
+        ADRCRateRoll.leso.b0      = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        ADRCRateRoll.td.r         = 1000.0 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
     #elif defined PID_CONTROL
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
         ADRCRateRoll.nlsef.alpha2 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
         ADRCRateRoll.leso.w0      = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-        ADRCRateRoll.td.r         = 100.0 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
-        ADRCRateRoll.leso.b0      = 0.01 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
+        ADRCRateRoll.leso.b0      = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        ADRCRateRoll.td.r         = 1000.0 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
     #elif defined PID_CONTROL
     #endif
 #endif

@@ -396,7 +396,7 @@ static configParam_t configParamDefault =
 				},
 				.leso=
 				{
-					.b0 = 0.26,
+					.b0 = 0.6,
 					.w0 = 600,
 				},
 
