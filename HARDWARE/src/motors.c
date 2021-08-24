@@ -38,21 +38,17 @@ void motorsInit(void) /*电机初始化*/
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
 #endif
     TIM_DeInit(TIM8);
-
-
     TIM_DeInit(TIM4); //重新初始化TIM4为默认状态
     TIM_DeInit(TIM3); //重新初始化TIM3为默认状态
 
     // Servos AF
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource8, GPIO_AF_TIM3);  // PC8 复用为TIM3 CH3	PWM_LEFT
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_TIM3);  // PA6 复用为TIM3 CH1	PWM_RIght
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_TIM3);  // PB1 复用为TIM3 CH4	PWM_MIDDLE
 
     // Motors AF
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_TIM8);  // PC7 复用为TIM8 CH2	PWMR
     GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4); // PD12复用为TIM4 CH1	PWMF1
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_TIM4); // PD13复用为TIM4 CH2	PWMF2
-
+ 
     // GPIO Inits
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_7 | GPIO_Pin_8; // PC7 8
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;            //复用功能
@@ -61,14 +57,12 @@ void motorsInit(void) /*电机初始化*/
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;            //上拉
     GPIO_Init(GPIOC, &GPIO_InitStructure);                   //初始化PC7 8
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; // PA6
-    GPIO_Init(GPIOA, &GPIO_InitStructure);    //初始化PA6
 
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1; // PB1
     GPIO_Init(GPIOB, &GPIO_InitStructure);    //初始化PB1
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13; // PD12 13
-    GPIO_Init(GPIOD, &GPIO_InitStructure);                   //初始化PD12 13
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 ; // PD12
+    GPIO_Init(GPIOD, &GPIO_InitStructure);      //初始化PD12
 
     // TIM Base Inits
     TIM_TimeBaseStructure.TIM_Period            = MOTORS_PWM_PERIOD;   //自动重装载值
@@ -96,7 +90,6 @@ void motorsInit(void) /*电机初始化*/
     TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCIdleState_Set;
 
     TIM_OC1Init(TIM_MOTOR, &TIM_OCInitStructure); //初始化TIM4 CH1输出比较
-    TIM_OC2Init(TIM_MOTOR, &TIM_OCInitStructure); //初始化TIM4 CH2输出比较
     TIM_OC2Init(TIM_MOTOR_2, &TIM_OCInitStructure); //初始化TIM8 CH2输出比较
 
     /* Automatic Output enable, Break, dead time and lock configuration*/
@@ -112,17 +105,13 @@ void motorsInit(void) /*电机初始化*/
 
     TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_LEFT);   //舵机中位值
     TIM_OC3Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH3输出比较	PWM_LEFT
-    TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_RIGHT);  //舵机中位值
-    TIM_OC1Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH1输出比较	PWM_RIGHT
     TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_MIDDLE); //舵机中位值
     TIM_OC4Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH4输出比较	PWM_MIDDLE
 
     // TIM Preload Enable
-    TIM_OC2PreloadConfig(TIM_MOTOR, TIM_OCPreload_Enable); //使能TIM4在CCR2上的预装载寄存器
     TIM_OC1PreloadConfig(TIM_MOTOR, TIM_OCPreload_Enable); //使能TIM4在CCR1上的预装载寄存器
     TIM_OC2PreloadConfig(TIM_MOTOR_2, TIM_OCPreload_Enable); //使能TIM8在CCR2上的预装载寄存器
 
-    TIM_OC1PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR1上的预装载寄存器
     TIM_OC3PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR3上的预装载寄存器
     TIM_OC4PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR4上的预装载寄存器
 
@@ -292,7 +281,7 @@ void servoSetPWM(u8 id, u16 value)
     case PWM_LEFT:
         TIM_SetCompare3(TIM3, (uint32_t)value);
         break;
-    case PWM_RIGHT:
+    case PWM_MIDDLE:
         TIM_SetCompare4(TIM3, (uint32_t)value);
         break;
     }

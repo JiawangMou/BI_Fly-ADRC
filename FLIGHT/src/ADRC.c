@@ -217,8 +217,10 @@ float adrc_TOCnlsef(nlsef_TOCObject_t* nlsef_t)
 
 float adrc_nlsef(nlsefObject_t *nlsef_t)
 {
-    nlsef_t->e1_out = 50.0f*nlsef_t->beta_1*Fal_ADRC(nlsef_t->e1/50.0f,nlsef_t->alpha1,nlsef_t->zeta);
-    nlsef_t->e2_out = nlsef_t->beta_2*Fal_ADRC(nlsef_t->e2,nlsef_t->alpha2,nlsef_t->zeta);
+    // nlsef_t->e1_out = 50.0f*nlsef_t->beta_1*Fal_ADRC(nlsef_t->e1/50.0f,nlsef_t->alpha1,nlsef_t->zeta);
+    // nlsef_t->e2_out = nlsef_t->beta_2*Fal_ADRC(nlsef_t->e2,nlsef_t->alpha2,nlsef_t->zeta);
+    nlsef_t->e1_out = nlsef_t->beta_1 * nlsef_t->e1;
+    nlsef_t->e2_out = nlsef_t->beta_2 * nlsef_t->e2;
     return  nlsef_t->e1_out + nlsef_t->e2_out;
 }
 // void Nolinear_Conbination_ADRC(Fhan_Data *fhan_Input)

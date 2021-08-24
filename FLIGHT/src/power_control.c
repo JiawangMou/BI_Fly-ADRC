@@ -88,7 +88,7 @@ void motorControl(control_t *control) /*功率输出控制*/
 	motorPWM.f2 = limitThrust(control->thrust + r);
 	motorPWM.f1 = limitThrust(control->thrust - r);
 	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, -p + control->yaw * 1.5f );
-	motorPWM.s_right = Servo_Int16ToPWM(PWM_MIDDLE, p + control->yaw * 1.5f );
+	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, p + control->yaw * 1.5f );
 
 
 	if (motorSetEnable)
@@ -98,7 +98,7 @@ void motorControl(control_t *control) /*功率输出控制*/
 	motorsSetRatio(PWMF1, sqrt(motorPWM.f1) * 256); /*控制电机输出百分比*/
 	motorsSetRatio(PWMF2, sqrt(motorPWM.f2) * 256);
 	servoSetPWM(PWM_LEFT, motorPWM.s_left); /*舵机输出占空比设置*/
-	servoSetPWM(PWM_RIGHT, motorPWM.s_right);
+	servoSetPWM(PWM_MIDDLE, motorPWM.s_middle);
 
 #elif defined DOUBLE_WING
 	s16 r = control->roll;

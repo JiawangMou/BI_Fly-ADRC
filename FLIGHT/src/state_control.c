@@ -150,7 +150,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     // control->thrust = actualThrust;
 
     if (control->thrust < 5.f) {
-        // control->roll = 0;
+#ifdef FOUR_WING
+        control->roll = 0;
+#endif
         // control->pitch = 0;
         // control->yaw = 0;
 

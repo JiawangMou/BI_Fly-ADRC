@@ -32,7 +32,7 @@
 #define MCU_FLASH_SIZE_ADDRESS  0x1FFF7A22
 
 //FOUR_WING 四翅  DOUBLE_WING 二翅
-#define DOUBLE_WING  
+#define FOUR_WING  
 
 
 //自定义的一些配置宏用于完成代码的切换
@@ -40,7 +40,7 @@
 //#define ENABLE_GET_TASK_STATUS     //查看系统每个线程大概占用了多少CPU的资源
 
 // BOARD_VERTICAL 板子竖着放置  BOARD_HORIZONTAL 板子水平放置
-#define BOARD_HORIZONTAL            //板子水平放置
+#define BOARD_VERTICAL            //板子水平放置
 
 
 #define PCBV4_5                     //PCBV4.5将电池的电压检测换到主控上来检测，检测引脚为PA5 模拟输入 PA4 灌电流，电机的引脚换了
