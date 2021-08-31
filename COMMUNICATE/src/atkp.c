@@ -66,7 +66,7 @@
 #define PERIOD_MOTOR 40
 #define PERIOD_SENSOR2 40
 #define PERIOD_SPEED 50
-#define PERIOD_USERDATA 20
+#define PERIOD_USERDATA 2
 #define PERIOD_PIDOUT 20
 
 #define ATKP_RX_QUEUE_SIZE 10 /*ATKP包接收队列消息个数*/
@@ -505,7 +505,7 @@ static void sendUserData(u8 group, s16 a_x, s16 a_y, s16 a_z, s16 v_x, s16 v_y, 
 static void atkpSendPeriod(void)
 {
     static u16 count_ms = 1;
-    //// TEST: 300HZ 发送数据
+    // TEST: 300HZ 发送数据
 
     // if (!(count_ms % 3)) {
     //     attitude_t attitude;
@@ -521,23 +521,23 @@ static void atkpSendPeriod(void)
     //     u32 timestamp = getSysTickCnt();
     //     sendTestData(attitude.roll, attitude.pitch, attitude.yaw, pos.z, acc, accRawData, zPredict, timestamp);
     // }
-    if (!(count_ms % PERIOD_STATUS)) {
-        attitude_t attitude;
-        Axis3f     acc, vel, pos;
-        getAttitudeData(&attitude);
-        getStateData(&acc, &vel, &pos);
-        sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
-    }
-    if (!(count_ms % PERIOD_SENSOR)) {
-        Axis3i16 acc;
-        Axis3i16 gyro;
-        Axis3i16 mag;
-        Acc_Send acc_send;
-        getSensorRawData(&acc, &gyro, &mag);
-        getAcc_SendData(&acc_send);
-        sendSenser(acc_send.acc_beforefusion.x, acc_send.acc_beforefusion.y, acc_send.acc_beforefusion.z, gyro.x,
-            gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
-    }
+    // if (!(count_ms % PERIOD_STATUS)) {
+    //     attitude_t attitude;
+    //     Axis3f     acc, vel, pos;
+    //     getAttitudeData(&attitude);
+    //     getStateData(&acc, &vel, &pos);
+    //     sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
+    // }
+    // if (!(count_ms % PERIOD_SENSOR)) {
+    //     Axis3i16 acc;
+    //     Axis3i16 gyro;
+    //     Axis3i16 mag;
+    //     Acc_Send acc_send;
+    //     getSensorRawData(&acc, &gyro, &mag);
+    //     getAcc_SendData(&acc_send);
+    //     sendSenser(acc_send.acc_beforefusion.x, acc_send.acc_beforefusion.y, acc_send.acc_beforefusion.z, gyro.x,
+    //         gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
+    // }
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
 #ifdef ADRC_CONTROL
@@ -554,29 +554,51 @@ static void atkpSendPeriod(void)
         control  = getControlData();
         u32 timestamp = getSysTickCnt();
         sendUserData(1, rateDesired_temp.roll, sensordata.gyro.x, ADRCRateRoll.td.TD_input,  ADRCRateRoll.td.x1, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
-		// sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
-		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
 		sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired_temp.pitch, sensordata.gyro.y, attitude.yaw,rateDesired_temp.yaw, sensordata.gyro.z);
+        // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
+		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
 #endif    
 
 #ifdef PID_CONTROL
-        Axis3f acc, vel, pos;
-        float  thrustBase = 0.1f * configParam.thrustBase;
+        // Axis3f acc, vel, pos;
+        // float  thrustBase = 0.1f * configParam.thrustBase;
 
-        attitude_t   rateDesired, angleDesired, attitude;
-        sensorData_t sensor;
+        // attitude_t   rateDesired, angleDesired, attitude;
+        // sensorData_t sensor;
+        // control_t control;
+        // getSensorData(&sensor);
+        // getRateDesired(&rateDesired);
+        // getAngleDesired(&angleDesired);
+        // getAttitudeData(&attitude);
+
+        // getStateData(&acc, &vel, &pos);
+        // control  = getControlData();
+        // sendUserData(1, angleDesired.roll, attitude.roll, rateDesired.roll, sensor.gyro.x, pidAngleRoll.outP, pidAngleRoll.outI, pidRateRoll.outP,
+        //     pidRateRoll.outI, pidRateRoll.outD);
+        // sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
+        //     sensor.gyro.z, control.pitch, control.yaw, control.roll);
+
+		sensorData_t sensordata;
+		// float thrustBase = 0.1f * configParam.thrustBase;
+		// attitude_t rateDesired_temp;
+		attitude_t attitude;
+		// attitude_t attitudeDesired;
         control_t control;
-        getSensorData(&sensor);
-        getRateDesired(&rateDesired);
-        getAngleDesired(&angleDesired);
-        getAttitudeData(&attitude);
-
-        getStateData(&acc, &vel, &pos);
+        Axis3i16 acc;
+        Axis3i16 gyro;
+        Axis3i16 mag;
+		getAttitudeData(&attitude);
+		// getAngleDesired(&attitudeDesired);
+        getSensorData(&sensordata);
+		// getRateDesired( &rateDesired_temp );
+        getSensorRawData(&acc, &gyro, &mag);
         control  = getControlData();
-        sendUserData(1, angleDesired.roll, attitude.roll, rateDesired.roll, sensor.gyro.x, pidAngleRoll.outP, pidAngleRoll.outI, pidRateRoll.outP,
-            pidRateRoll.outI, pidRateRoll.outD);
-        sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
-            sensor.gyro.z, control.pitch, control.yaw, control.roll);
+        u32 timestamp = getSysTickCnt();
+        sendUserData(1, gyro.x, sensordata.gyro.x, attitude.roll, gyro.y, sensordata.gyro.y, attitude.pitch, control.roll, (s16)(timestamp >> 16),(s16)(timestamp & 0x00ffff));
+        // sendUserData(1, rateDesired_temp.roll, sensordata.gyro.x, ADRCRateRoll.td.TD_input,  ADRCRateRoll.td.x1, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
+		// sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired_temp.pitch, sensordata.gyro.y, attitude.yaw,rateDesired_temp.yaw, sensordata.gyro.z);
+        // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
+		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
 #endif
     }
     // if (!(count_ms % PERIOD_RCDATA)) {
@@ -730,7 +752,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0, 0);
+            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
