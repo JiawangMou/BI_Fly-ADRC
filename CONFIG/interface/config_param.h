@@ -135,6 +135,15 @@ typedef struct
 	adrcInit_t pitch;
 }adrcParam_t;
 
+typedef struct dynNotchConfig_s
+{
+    uint16_t dyn_notch_min_hz;
+    uint16_t dyn_notch_max_hz;
+    uint16_t dyn_notch_q;
+    uint8_t  dyn_notch_count;
+
+} dynNotchConfig_t;
+
 typedef struct	
 {
 	u8 version;				/*软件版本号*/
@@ -145,6 +154,9 @@ typedef struct
 //	magBias_t magBias;		/*磁力计校准值*/
 	adrcParam_t adrcAngle;	/*角度ADRC*/
 	adrcParam_t adrcRate;	/*角速度ADRC*/
+#ifdef USE_DYN_NOTCH_FILTER
+	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
+#endif // USE_DYN_NOTCH_FILTER
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
 	u16 thrustBase;			/*油门基础值*/

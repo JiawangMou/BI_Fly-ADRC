@@ -16,6 +16,7 @@
 ********************************************************************************/
 
 //#define ENABLE_PID_TUNING	/* 使能PID调节 yaw值不更新 */
+#define FULLTHROTTLE 55000
 
 void stateControlInit(void);
 bool stateControlTest(void);

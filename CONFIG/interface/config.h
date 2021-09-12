@@ -52,6 +52,8 @@
 #define PID_CONTROL
 
 
+#define USE_DYN_NOTCH_FILTER
+
 // #define TEST
 
 

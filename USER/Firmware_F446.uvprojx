@@ -335,7 +335,7 @@
               <MiscControls>--preinclude stm32f4xx_conf.h --diag_suppress=767</MiscControls>
               <Define>STM32F446xx,ARM_MATH_CM4,USE_STDPERIPH_DRIVER,USE_USB_OTG_FS</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\SYSTEM\delay;..\SYSTEM\sys;..\SYSTEM\usart;..\USER;..\FWLIB\inc;..\CONFIG\interface;..\HARDWARE\interface;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\FLIGHT\interface;..\COMMON\interface;..\COMMUNICATE\interface;..\EXP_MODULES\interface;..\VL53L1X;..\VL53L1X\vl53l1_platform;..\DSP_Lib\include</IncludePath>
+              <IncludePath>..\CORE;..\SYSTEM\delay;..\SYSTEM\sys;..\SYSTEM\usart;..\USER;..\FWLIB\inc;..\CONFIG\interface;..\HARDWARE\interface;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\FLIGHT\interface;..\COMMON\interface;..\COMMUNICATE\interface;..\EXP_MODULES\interface;..\VL53L1X;..\VL53L1X\vl53l1_platform;..\DSP_Lib\include;..\FT\interface</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -909,11 +909,6 @@
               <FileType>1</FileType>
               <FilePath>..\FLIGHT\src\attitude_adrc.c</FilePath>
             </File>
-            <File>
-              <FileName>fft.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\FLIGHT\src\fft.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -935,14 +930,14 @@
               <FilePath>..\COMMON\src\filter.c</FilePath>
             </File>
             <File>
-              <FileName>filter2.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\COMMON\src\filter2.c</FilePath>
-            </File>
-            <File>
               <FileName>maths.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\COMMON\src\maths.c</FilePath>
+            </File>
+            <File>
+              <FileName>dyn_notch_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\COMMON\src\dyn_notch_filter.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -953,6 +948,16 @@
               <FileName>readme.txt</FileName>
               <FileType>5</FileType>
               <FilePath>..\readme.txt</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>FT</GroupName>
+          <Files>
+            <File>
+              <FileName>sdft.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FT\src\sdft.c</FilePath>
             </File>
           </Files>
         </Group>

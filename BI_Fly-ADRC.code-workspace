@@ -12,7 +12,10 @@
 			"config.h": "c",
 			"nvic.h": "c",
 			"sys.h": "c",
-			"state_control.h": "c"
+			"state_control.h": "c",
+			"system.h": "c",
+			"dyn_notch_filter.h": "c",
+			"stabilizer.h": "c"
 		}
 	}
 }

@@ -214,3 +214,8 @@ mode_e getZmode(void)
 {
     return setpoint.mode.z;
 }
+
+int8_t calculateThrottlePercentAbs(void)
+{
+    return control.thrust * 100 / FULLTHROTTLE;
+}

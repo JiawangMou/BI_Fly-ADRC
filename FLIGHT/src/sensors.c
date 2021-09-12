@@ -13,6 +13,9 @@
 #include "axis.h"
 #include "spl06.h"
 #include "atkp.h"
+#include "axis.h"
+#include "config.h"
+#include "dyn_notch_filter.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -95,6 +98,11 @@ static lpf2pData BaroLpf;
 
 static smoothFilter_t gyroPitchSF;
 static smoothFilter_t gyroRollSF;
+
+//动态陷波滤波器
+#define DYNNOTCH_LOOP_HZ 1000 //单位：Hz
+#define DYNNOTCH_LOOP_DT_US (u32)(1e6f / DYNNOTCH_LOOP_HZ) //单位 ：us
+#define DYNNOTCH_LOOP_DT_mS (u32)(1e3f / DYNNOTCH_LOOP_HZ) //单位 ：ms
 
 #ifdef PCBV4_5
 #define BAT_LPF_CUTOFF_FREQ 20
@@ -262,6 +270,9 @@ void sensorsDeviceInit(void)
 	// (You may choose either smooth or butterworth after)
 	smoothFilterInit(&gyroPitchSF, 50);
 	smoothFilterInit(&gyroRollSF, 50);
+#ifdef USE_DYN_NOTCH_FILTER
+	dynNotchInit(&configParam.dynNotchConfig ,DYNNOTCH_LOOP_DT_US);
+#endif // USE_DYN_NOTCH_FILTER
 #ifdef PCBV4_5
 	lpf2pInit(&BatLpf, 1000, BAT_LPF_CUTOFF_FREQ);
 #endif
@@ -652,6 +663,7 @@ void processMagnetometerMeasurements(const uint8_t *buffer)
 /*处理加速计和陀螺仪数据*/
 void processAccGyroMeasurements(const uint8_t *buffer)
 {
+	Axis3f gyrodata;
 #ifdef BOARD_VERTICAL
     int16_t ay = -((((int16_t)buffer[0]) << 8)  | buffer[1]);
     int16_t az =  ((((int16_t)buffer[2]) << 8)  | buffer[3]);
@@ -688,26 +700,29 @@ void processAccGyroMeasurements(const uint8_t *buffer)
         // processAccScale(ax, ay, az); /*计算accScale*/
 	}
 
-	sensors.gyro.x =  (gx - gyroBias.x) * SENSORS_DEG_PER_LSB_CFG; /*单位 °/s */
-	sensors.gyro.y =  (gy - gyroBias.y) * SENSORS_DEG_PER_LSB_CFG;
-	sensors.gyro.z =  (gz - gyroBias.z) * SENSORS_DEG_PER_LSB_CFG;
+	gyro_UnLPF.x =  (gx - gyroBias.x) * SENSORS_DEG_PER_LSB_CFG; /*单位 °/s */
+	gyro_UnLPF.y =  (gy - gyroBias.y) * SENSORS_DEG_PER_LSB_CFG;
+	gyro_UnLPF.z =  (gz - gyroBias.z) * SENSORS_DEG_PER_LSB_CFG;
 
 	// applyAxis3fLpf(gyroLpf, &sensors.gyro);
 	// To use butterworth lpf in roll & yaw, use smooth in pitch
-	sensors.gyro.axis[0] = lpf2pApply(&gyroLpf[0], sensors.gyro.axis[0]);
-	sensors.gyro.axis[1] = smoothFilterApply(&gyroPitchSF, sensors.gyro.axis[1]);
-	sensors.gyro.axis[2] = lpf2pApply(&gyroLpf[2], sensors.gyro.axis[2]);
+	gyrodata.x = lpf2pApply(&gyroLpf[0], gyro_UnLPF.x);
+	gyrodata.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
+	gyrodata.z = lpf2pApply(&gyroLpf[2], gyro_UnLPF.z);
 
+#ifdef USE_DYN_NOTCH_FILTER
+	dynNotchPush(0, gyrodata.axis[0]);
+	gyrodata.axis[0] = dynNotchFilter(0, gyrodata.axis[0]);
+#endif // USE_DYN_NOTCH_FILTER
+	for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+		sensors.gyro.axis[axis] = gyrodata.axis[axis];
+	}
 	// sensors.acc.x = -(ax)*SENSORS_G_PER_LSB_CFG / accScale.x; /*单位 g(9.8m/s^2)*/
 	// sensors.acc.y =  (ay)*SENSORS_G_PER_LSB_CFG / accScale.y;	/*重力加速度缩放因子accScale 根据样本计算得出*/
 	// sensors.acc.z =  (az)*SENSORS_G_PER_LSB_CFG / accScale.z;
     sensors.acc.x =  accRaw.x / accScale.x; /*单位 g(9.8m/s^2)*/
     sensors.acc.y =  accRaw.y / accScale.y; /*单位 g(9.8m/s^2)*/
     sensors.acc.z =  accRaw.z / accScale.z; /*单位 g(9.8m/s^2)*/
-
-    gyro_UnLPF.x = sensors.gyro.x;
-    gyro_UnLPF.y = sensors.gyro.y;
-    gyro_UnLPF.z = sensors.gyro.z;
 
     applyAxis3fLpf(accLpf, &sensors.acc);
 
@@ -738,6 +753,9 @@ float getBatteryVoltage(){
 /*传感器任务*/
 void sensorsTask(void *param)
 {
+	u32	lastTime   = 0;
+	u32	curentTime = 0;
+	u16	dutytime   = 0;
 //	float accraw_num[3] = {0, 0, 0};
 	sensorsInit(); /*传感器初始化*/
 	vTaskDelay(150);
@@ -748,6 +766,7 @@ void sensorsTask(void *param)
 	{
 		if (xSemaphoreTake(sensorsDataReady, portMAX_DELAY) == pdTRUE)
 		{
+			lastTime = getSysTickCnt();
 			/*确定数据长度*/
 			u8 dataLen = (u8)(SENSORS_MPU6500_BUFF_LEN +
 							  (isMagPresent ? SENSORS_MAG_BUFF_LEN : 0) +
@@ -757,13 +776,16 @@ void sensorsTask(void *param)
 
 			/*处理原始数据，并放入数据队列中*/
 			processAccGyroMeasurements(&(buffer[0]));
+#ifdef USE_DYN_NOTCH_FILTER
+			dynNotchUpdate(Y);
+#endif // USE_DYN_NOTCH_FILTER
 			if (isMagPresent)
 			{
 				processMagnetometerMeasurements(&(buffer[SENSORS_MPU6500_BUFF_LEN]));
 			}
 			if (isBaroPresent)
 			{
-				//				bmp3_get_sensor_data(BMP3_ALL, &BMP_buffer_comp , BMP388_DEV);
+				//bmp3_get_sensor_data(BMP3_ALL, &BMP_buffer_comp , BMP388_DEV);
 				processBarometerMeasurements(&(buffer[isMagPresent ? SENSORS_MPU6500_BUFF_LEN + SENSORS_MAG_BUFF_LEN : SENSORS_MPU6500_BUFF_LEN]));
 			}
 
@@ -781,6 +803,8 @@ void sensorsTask(void *param)
 			#ifdef PCBV4_5
 			processBatteryVoltage();
 			#endif
+			curentTime = getSysTickCnt();
+			dutytime = curentTime - lastTime;
 			xTaskResumeAll();
 		}
 	}

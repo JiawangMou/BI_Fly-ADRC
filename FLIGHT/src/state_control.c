@@ -23,8 +23,8 @@
  * All rights reserved
  ********************************************************************************/
 
-static float      actualThrust;
 static attitude_t attitudeDesired;
+static float      actualThrust;
 static attitude_t rateDesired;
 
 extern adrcObject_t ADRCAnglePitch;
@@ -146,7 +146,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         attitudeRatePID(&sensors->gyro, &rateDesired, control);
 
     }
-    control->thrust = constrainf(actualThrust, 0.0f, 55000.0f);
+    control->thrust = constrainf(actualThrust, 0.0f, (float)FULLTHROTTLE);
     // control->thrust = actualThrust;
 
     if (control->thrust < 5.f) {
