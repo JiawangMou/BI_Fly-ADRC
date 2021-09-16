@@ -16,6 +16,7 @@
 #include "axis.h"
 #include "config.h"
 #include "dyn_notch_filter.h"
+#include "arm_math.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -85,7 +86,9 @@ static Axis3i16 gyroRaw;
 static Axis3i16 accRaw;
 static Axis3i16 magRaw;
 
-static Axis3i16 gyro_UnLPF;
+static Axis3f gyro_UnLPF;
+static Axis3f gyro_LPF;
+static Axis3f gyro_Notched;
 // static Axis3f gyroBff;
 
 /*低通滤波参数*/
@@ -663,7 +666,9 @@ void processMagnetometerMeasurements(const uint8_t *buffer)
 /*处理加速计和陀螺仪数据*/
 void processAccGyroMeasurements(const uint8_t *buffer)
 {
-	Axis3f gyrodata;
+
+	// static u16 N_count = 0;
+	// static u8 freqHz= 10;
 #ifdef BOARD_VERTICAL
     int16_t ay = -((((int16_t)buffer[0]) << 8)  | buffer[1]);
     int16_t az =  ((((int16_t)buffer[2]) << 8)  | buffer[3]);
@@ -706,17 +711,27 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 
 	// applyAxis3fLpf(gyroLpf, &sensors.gyro);
 	// To use butterworth lpf in roll & yaw, use smooth in pitch
-	gyrodata.x = lpf2pApply(&gyroLpf[0], gyro_UnLPF.x);
-	gyrodata.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
-	gyrodata.z = lpf2pApply(&gyroLpf[2], gyro_UnLPF.z);
+	gyro_LPF.x = lpf2pApply(&gyroLpf[0], gyro_UnLPF.x);
+	gyro_LPF.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
+	gyro_LPF.z = lpf2pApply(&gyroLpf[2], gyro_UnLPF.z);
+	// float fft_inputbuf = 10 + 2 * arm_sin_f32(2 * PI * N_count * freqHz / 1000);
+	// N_count++;
+	// if(N_count >= 1000)
+	// {
+	// 	N_count =0;
+	// 	freqHz++;
+	// 	if(freqHz >= 125)
+	// 		freqHz = 10;
+	// }
 
 #ifdef USE_DYN_NOTCH_FILTER
-	dynNotchPush(0, gyrodata.axis[0]);
-	gyrodata.axis[0] = dynNotchFilter(0, gyrodata.axis[0]);
+	dynNotchPush(0, gyro_LPF.x);
+	gyro_Notched.x = dynNotchFilter(0, gyro_LPF.x);
 #endif // USE_DYN_NOTCH_FILTER
-	for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-		sensors.gyro.axis[axis] = gyrodata.axis[axis];
-	}
+	sensors.gyro.x = gyro_Notched.x;
+	sensors.gyro.y = gyro_LPF.y;
+	sensors.gyro.z = gyro_LPF.z;
+	
 	// sensors.acc.x = -(ax)*SENSORS_G_PER_LSB_CFG / accScale.x; /*单位 g(9.8m/s^2)*/
 	// sensors.acc.y =  (ay)*SENSORS_G_PER_LSB_CFG / accScale.y;	/*重力加速度缩放因子accScale 根据样本计算得出*/
 	// sensors.acc.z =  (az)*SENSORS_G_PER_LSB_CFG / accScale.z;
@@ -777,7 +792,7 @@ void sensorsTask(void *param)
 			/*处理原始数据，并放入数据队列中*/
 			processAccGyroMeasurements(&(buffer[0]));
 #ifdef USE_DYN_NOTCH_FILTER
-			dynNotchUpdate(Y);
+			dynNotchUpdate(X);
 #endif // USE_DYN_NOTCH_FILTER
 			if (isMagPresent)
 			{
@@ -920,7 +935,16 @@ void resetaccBias_accScale(void)
     accScale.z = 1;
 }
 
-void getgyro_UnLPFData( Axis3i16 *temp )
+void getgyro_UnLPFData( Axis3f *temp )
 {
 	*temp = gyro_UnLPF;
+}
+
+void getgyro_NotchedData( Axis3f *temp )
+{
+	*temp = gyro_Notched;
+}
+void getgyro_LPFData( Axis3f *temp )
+{
+	*temp = gyro_LPF;
 }

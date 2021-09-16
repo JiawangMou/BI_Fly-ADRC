@@ -22,10 +22,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "ADRC.h"
+#include "axis.h"
 #include "state_control.h"
 #include "sensors.h"
 #include "config_param.h"
 #include "attitude_adrc.h"
+#include "dyn_notch_filter.h"
 
 /*FeeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -587,15 +589,20 @@ static void atkpSendPeriod(void)
         Axis3i16 acc;
         Axis3i16 gyro;
         Axis3i16 mag;
+        Axis3f gyro_LPF;
+        Axis3f gyro_Notched;        
 		getAttitudeData(&attitude);
 		// getAngleDesired(&attitudeDesired);
         getSensorData(&sensordata);
-		// getRateDesired( &rateDesired_temp );
+        getgyro_NotchedData( &gyro_Notched);
+        getgyro_LPFData( &gyro_LPF);
         getSensorRawData(&acc, &gyro, &mag);
+		// getRateDesired( &rateDesired_temp );
         control  = getControlData();
         u32 timestamp = getSysTickCnt();
-        sendUserData(1, gyro.x, sensordata.gyro.x, attitude.roll, gyro.y, sensordata.gyro.y, attitude.pitch, control.roll, (s16)(timestamp >> 16),(s16)(timestamp & 0x00ffff));
-        // sendUserData(1, rateDesired_temp.roll, sensordata.gyro.x, ADRCRateRoll.td.TD_input,  ADRCRateRoll.td.x1, ADRCRateRoll.td.x2,ADRCRateRoll.leso.z1, ADRCRateRoll.leso.z2, ADRCRateRoll.nlsef.e1_out,ADRCRateRoll.nlsef.e2_out );
+        float(* Notchcenterfreq)[1] =  getdynNotchcenterfreq();
+        sendUserData(1, gyro.x, gyro_LPF.x, gyro_Notched.x, gyro.y, gyro_LPF.y, gyro_Notched.y,(s16)(Notchcenterfreq[X][0]*10),0,(s16)(timestamp & 0x00ffff));
+        // sendUserData(2,(int16_t)Notchcenterfreq[X][0] ,(int16_t)Notchcenterfreq[X][1],0,0, 0,0,0,0,0);
 		// sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired_temp.pitch, sensordata.gyro.y, attitude.yaw,rateDesired_temp.yaw, sensordata.gyro.z);
         // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
 		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);

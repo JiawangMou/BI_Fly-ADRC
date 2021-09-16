@@ -48,8 +48,9 @@ bool sensorsReadAcc(Axis3f *acc);
 bool sensorsReadMag(Axis3f *mag);
 bool sensorsReadBaro(baro_t *baro);
 
-void getgyro_UnLPFData( Axis3i16 *temp );
-
+void getgyro_UnLPFData( Axis3f *temp );
+void getgyro_NotchedData( Axis3f *temp );
+void getgyro_LPFData( Axis3f *temp );
 
 /*磁力计标定数据获取*/
 void setMagCalibData(Axis3i16 offset, Axis3u16 radius);

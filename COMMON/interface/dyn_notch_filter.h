@@ -26,7 +26,7 @@
 
 #include "dyn_notch.h"
 
-#define DYN_NOTCH_COUNT_MAX 5
+#define DYN_NOTCH_COUNT_MAX 1
 
 void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs);
 void dynNotchPush(const int axis, const float sample);
@@ -34,3 +34,6 @@ void dynNotchUpdate(axis_e axis);
 float dynNotchFilter(const int axis, float value);
 uint16_t getMaxFFT(void);
 void resetMaxFFT(void);
+// float * getdynNotchcenterfreq(axis_e axis);
+float (*getdynNotchcenterfreq(void))[DYN_NOTCH_COUNT_MAX];
+

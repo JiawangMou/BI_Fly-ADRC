@@ -171,12 +171,12 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     sdftEndBin = MIN(SDFT_BIN_COUNT - 1, dynNotch.maxHz / sdftResolutionHz + 0.5f); // can't use more than SDFT_BIN_COUNT bins.
     gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ, DYN_NOTCH_CALC_TICKS / looprateHz); // minimum PT1 k value
 
-    sdftInit(&sdft[1], sdftStartBin, sdftEndBin, sampleCount);
+    sdftInit(&sdft[0], sdftStartBin, sdftEndBin, sampleCount);
 
     for (int p = 0; p < dynNotch.count; p++) {
          // any init value is fine, but evenly spreading centerFreqs across frequency range makes notch filters stick to peaks quicker
-        dynNotch.centerFreq[1][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
-        biquadFilterInit(&dynNotch.notch[1][p], dynNotch.centerFreq[1][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
+        dynNotch.centerFreq[0][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
+        biquadFilterInit(&dynNotch.notch[0][p], dynNotch.centerFreq[0][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
     }
 }
 
@@ -223,7 +223,6 @@ void dynNotchUpdate(axis_e axis)
 // Find frequency peaks and update filters
 static  void dynNotchProcess(void)
 {
-    uint32_t startTime = 0;
     switch (state.step) {
         case STEP_WINDOW: // 6us @ F722
         {
@@ -354,5 +353,14 @@ void resetMaxFFT(void)
     dynNotch.maxCenterFreq = 0;
 }
 
+//float * getdynNotchcenterfreq(axis_e axis)
+//{
+//    return dynNotch.centerFreq[axis];
+//}
+
+float (*getdynNotchcenterfreq(void))[DYN_NOTCH_COUNT_MAX]
+{
+   return dynNotch.centerFreq;
+}
 #endif
 
