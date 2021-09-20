@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "filter.h"
+#include "myqueue.h"
 #include "arm_math.h"
 
 /********************************************************************************	 
@@ -160,10 +161,11 @@ void biquadFilterInitLPF(biquadFilter_t *filter, float filterFreq, uint32_t refr
 void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight)
 {
     biquadFilterUpdate(filter, filterFreq, refreshRate, Q, filterType, weight);
-
+    initQueue(&filter->queue_buffer);
     // zero initial samples
     filter->x1 = filter->x2 = 0;
     filter->y1 = filter->y2 = 0;
+    filter->change_flag = 0;
 }
 
 void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight)

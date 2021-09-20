@@ -142,8 +142,8 @@ typedef struct dynNotchConfig_s
     uint16_t dyn_notch_q;
     uint8_t  dyn_notch_count;
 
-} dynNotchConfig_t;
 
+} dynNotchConfig_t;
 typedef struct	
 {
 	u8 version;				/*Èí¼þ°æ±¾ºÅ*/

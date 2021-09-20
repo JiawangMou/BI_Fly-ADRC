@@ -49,7 +49,12 @@ bool sensorsReadMag(Axis3f *mag);
 bool sensorsReadBaro(baro_t *baro);
 
 void getgyro_UnLPFData( Axis3f *temp );
+#ifdef USE_DYN_NOTCH_FILTER
 void getgyro_NotchedData( Axis3f *temp );
+float getgyro_unNotchData( void);
+float getgyro_NotchData(void);
+#endif // USE_DYN_NOTCH_FILTER
+
 void getgyro_LPFData( Axis3f *temp );
 
 /*磁力计标定数据获取*/
@@ -66,6 +71,7 @@ Axis3f getaccBias(void);
 /*获取accScale的值*/
 Axis3f getaccScale(void);
 void resetaccBias_accScale(void);
+
 
 #ifdef PCBV4_5
 float getBatteryVoltage(void);

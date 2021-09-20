@@ -564,8 +564,6 @@ static void atkpSendPeriod(void)
 #ifdef PID_CONTROL
         // Axis3f acc, vel, pos;
         // float  thrustBase = 0.1f * configParam.thrustBase;
-
-        // attitude_t   rateDesired, angleDesired, attitude;
         // sensorData_t sensor;
         // control_t control;
         // getSensorData(&sensor);
@@ -582,28 +580,39 @@ static void atkpSendPeriod(void)
 
 		sensorData_t sensordata;
 		// float thrustBase = 0.1f * configParam.thrustBase;
-		// attitude_t rateDesired_temp;
+		attitude_t rateDesired;
 		attitude_t attitude;
-		// attitude_t attitudeDesired;
+		attitude_t attitudeDesired;
         control_t control;
-        Axis3i16 acc;
-        Axis3i16 gyro;
-        Axis3i16 mag;
+        // Axis3i16 acc;
+        // Axis3i16 gyro;
+        // Axis3i16 mag;
         Axis3f gyro_LPF;
-        Axis3f gyro_Notched;        
+        Axis3f gyro_UnLPF;
+//      Axis3f gyro_Notched;        
 		getAttitudeData(&attitude);
-		// getAngleDesired(&attitudeDesired);
+		getAngleDesired(&attitudeDesired);
         getSensorData(&sensordata);
-        getgyro_NotchedData( &gyro_Notched);
+        // getgyro_NotchedData( &gyro_Notched);
         getgyro_LPFData( &gyro_LPF);
-        getSensorRawData(&acc, &gyro, &mag);
-		// getRateDesired( &rateDesired_temp );
+        // getSensorRawData(&acc, &gyro, &mag);
+        getgyro_UnLPFData(&gyro_UnLPF);
+		getRateDesired( &rateDesired );
         control  = getControlData();
         u32 timestamp = getSysTickCnt();
-        float(* Notchcenterfreq)[1] =  getdynNotchcenterfreq();
-        sendUserData(1, gyro.x, gyro_LPF.x, gyro_Notched.x, gyro.y, gyro_LPF.y, gyro_Notched.y,(s16)(Notchcenterfreq[X][0]*10),0,(s16)(timestamp & 0x00ffff));
-        // sendUserData(2,(int16_t)Notchcenterfreq[X][0] ,(int16_t)Notchcenterfreq[X][1],0,0, 0,0,0,0,0);
-		// sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired_temp.pitch, sensordata.gyro.y, attitude.yaw,rateDesired_temp.yaw, sensordata.gyro.z);
+#ifdef USE_DYN_NOTCH_FILTER        
+        float(* Notchcenterfreq)[DYN_NOTCH_COUNT_MAX] =  getdynNotchcenterfreq();
+        peak_t *peaks =  getdynNotchpeak();
+        float roll_unNotchData = getgyro_unNotchData();
+        float roll_Notchdata = getgyro_NotchData();
+        sendUserData(1, gyro_UnLPF.x, gyro_LPF.x, roll_Notchdata,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,roll_unNotchData,(s16)(timestamp & 0x00ffff));
+        sendUserData(2, peaks[0].bin ,peaks[0].value,peaks[1].bin,peaks[1].value, peaks[2].bin,peaks[2].value, 
+                        (s16)(Notchcenterfreq[X][0]*10),(s16)(Notchcenterfreq[X][1]*10),(s16)(Notchcenterfreq[X][2]*10));
+#else
+        sendUserData(1, gyro.x, gyro_LPF.x, sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp & 0x00ffff));
+        sendUserData(2, gyro.y, gyro_LPF.y, sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);        
+#endif
+		// sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired.pitch, sensordata.gyro.y, attitude.yaw,rateDesired.yaw, sensordata.gyro.z);
         // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
 		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
 #endif

@@ -88,16 +88,21 @@ static Axis3i16 magRaw;
 
 static Axis3f gyro_UnLPF;
 static Axis3f gyro_LPF;
-static Axis3f gyro_Notched;
+static float gyro_UnNotch;
+#ifdef USE_DYN_NOTCH_FILTER
+	static Axis3f gyro_Notched;
+#endif
 // static Axis3f gyroBff;
 
 /*低通滤波参数*/
 #define GYRO_LPF_CUTOFF_FREQ 30
+#define GYRO_LPF_CUTOFF_FREQ_1 80
 #define ACCEL_LPF_CUTOFF_FREQ 10
 #define BARO_LPF_CUTOFF_FREQ 20
 static lpf2pData accLpf[3];
 static lpf2pData gyroLpf[3];
 static lpf2pData BaroLpf;
+static lpf2pData GyroLpf_1;
 
 static smoothFilter_t gyroPitchSF;
 static smoothFilter_t gyroRollSF;
@@ -260,7 +265,7 @@ void sensorsDeviceInit(void)
 	mpu6500SetAccelDLPF(MPU9250_ACCEL_DLPF_BW_21);		 // 设置加速计数字低通滤波,同时ACCEL_FCHOICE_B没有设置，默认为0，与A_DLPF_CFG共同决定输出频率，截止频率为21.2Hz，输出频率为1KHz
 
 	mpu6500SetRate(0);						// 设置采样速率: 1000 / (1 + 0) = 1000Hz
-	mpu6500SetDLPFMode(MPU6500_DLPF_BW_41); // 设置陀螺数字低通滤波
+	mpu6500SetDLPFMode(MPU6500_DLPF_BW_92); // 设置陀螺数字低通滤波
 
 	for (u8 i = 0; i < 3; i++) // 初始化加速计和陀螺二阶低通滤波
 	{
@@ -268,7 +273,7 @@ void sensorsDeviceInit(void)
 		lpf2pInit(&accLpf[i], 1000, ACCEL_LPF_CUTOFF_FREQ);
 	}
 	lpf2pInit(&BaroLpf, 1000, BARO_LPF_CUTOFF_FREQ);
-
+	lpf2pInit(&GyroLpf_1, 1000, GYRO_LPF_CUTOFF_FREQ_1);
 	// Add Smooth Filter for Pitch & Roll
 	// (You may choose either smooth or butterworth after)
 	smoothFilterInit(&gyroPitchSF, 50);
@@ -714,21 +719,18 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	gyro_LPF.x = lpf2pApply(&gyroLpf[0], gyro_UnLPF.x);
 	gyro_LPF.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
 	gyro_LPF.z = lpf2pApply(&gyroLpf[2], gyro_UnLPF.z);
-	// float fft_inputbuf = 10 + 2 * arm_sin_f32(2 * PI * N_count * freqHz / 1000);
-	// N_count++;
-	// if(N_count >= 1000)
-	// {
-	// 	N_count =0;
-	// 	freqHz++;
-	// 	if(freqHz >= 125)
-	// 		freqHz = 10;
-	// }
+
 
 #ifdef USE_DYN_NOTCH_FILTER
-	dynNotchPush(0, gyro_LPF.x);
-	gyro_Notched.x = dynNotchFilter(0, gyro_LPF.x);
+	gyro_UnNotch = lpf2pApply(&GyroLpf_1, gyro_UnLPF.x);
+	dynNotchPush(0, gyro_UnNotch);
+	gyro_Notched.x = dynNotchFilter(0, gyro_UnNotch);
+#else
+	sensors.gyro.x = gyro_LPF.x;
 #endif // USE_DYN_NOTCH_FILTER
-	sensors.gyro.x = gyro_Notched.x;
+//TODO
+	sensors.gyro.x = gyro_LPF.x;
+
 	sensors.gyro.y = gyro_LPF.y;
 	sensors.gyro.z = gyro_LPF.z;
 	
@@ -939,12 +941,22 @@ void getgyro_UnLPFData( Axis3f *temp )
 {
 	*temp = gyro_UnLPF;
 }
-
+#ifdef USE_DYN_NOTCH_FILTER
 void getgyro_NotchedData( Axis3f *temp )
 {
 	*temp = gyro_Notched;
 }
+#endif // USE_DYN_NOTCH_FILTER
+
 void getgyro_LPFData( Axis3f *temp )
 {
 	*temp = gyro_LPF;
+}
+float getgyro_unNotchData( void)
+{
+	return gyro_UnNotch;
+}
+float getgyro_NotchData( void)
+{
+	return gyro_Notched.x;
 }

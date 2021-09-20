@@ -263,9 +263,9 @@ static configParam_t configParamDefault =
 #ifdef USE_DYN_NOTCH_FILTER
 		.dynNotchConfig = 
 		{
-			.dyn_notch_min_hz = 10,
-    		.dyn_notch_max_hz = 125,
-    		.dyn_notch_q = 300,
+			.dyn_notch_min_hz = 0,
+    		.dyn_notch_max_hz = 50,
+    		.dyn_notch_q = 600,
     		.dyn_notch_count = 1,
 		},
 #endif // USE_DYN_NOTCH_FILTER
@@ -499,13 +499,15 @@ static configParam_t configParamDefault =
 				},
 			},
 		},	
+#ifdef USE_DYN_NOTCH_FILTER
 		.dynNotchConfig = 
 		{
-			.dyn_notch_min_hz = 10,
+			.dyn_notch_min_hz = 0,
     		.dyn_notch_max_hz = 125,
-    		.dyn_notch_q = 300,
+    		.dyn_notch_q = 900,
     		.dyn_notch_count = 1,
-		},	
+		},
+#endif // USE_DYN_NOTCH_FILTER
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 40000.0, /*定高油门基础值*/

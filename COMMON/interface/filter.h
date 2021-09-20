@@ -2,6 +2,7 @@
 #define __FILTER_H
 #include <stdint.h>
 #include <stdbool.h>
+#include "myqueue.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -71,6 +72,8 @@ typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
     float x1, x2, y1, y2;
     float weight;
+    bool change_flag;
+    QUEUE queue_buffer; 
 } biquadFilter_t;
 
 typedef struct laggedMovingAverage_s {

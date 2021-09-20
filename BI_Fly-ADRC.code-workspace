@@ -15,7 +15,10 @@
 			"state_control.h": "c",
 			"system.h": "c",
 			"dyn_notch_filter.h": "c",
-			"stabilizer.h": "c"
+			"stabilizer.h": "c",
+			"queue.h": "c",
+			"myqueue.h": "c",
+			"stdbool.h": "c"
 		}
 	}
 }

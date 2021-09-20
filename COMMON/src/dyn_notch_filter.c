@@ -91,12 +91,7 @@ typedef enum {
     STEP_COUNT
 } step_e;
 
-typedef struct peak_s {
 
-    int bin;
-    float value;
-
-} peak_t;
 
 typedef struct state_s {
 
@@ -167,12 +162,12 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     // the upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
 
     sdftResolutionHz = sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 1.95hz per bin at 1k and 250Hz maxHz
-    sdftStartBin = MAX(2, dynNotch.minHz / sdftResolutionHz + 0.5f); // can't use bin 0 because it is DC.
+    sdftStartBin = MAX(1, dynNotch.minHz / sdftResolutionHz + 0.5f); // can't use bin 0 because it is DC.
     sdftEndBin = MIN(SDFT_BIN_COUNT - 1, dynNotch.maxHz / sdftResolutionHz + 0.5f); // can't use more than SDFT_BIN_COUNT bins.
     gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ, DYN_NOTCH_CALC_TICKS / looprateHz); // minimum PT1 k value
 
     sdftInit(&sdft[0], sdftStartBin, sdftEndBin, sampleCount);
-
+    
     for (int p = 0; p < dynNotch.count; p++) {
          // any init value is fine, but evenly spreading centerFreqs across frequency range makes notch filters stick to peaks quicker
         dynNotch.centerFreq[0][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
@@ -247,7 +242,7 @@ static  void dynNotchProcess(void)
             // Search for N biggest peaks in frequency spectrum
             for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {
                 // Check if bin is peak
-                if ((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
+                if((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
                     // Check if peak is big enough to be one of N biggest peaks.
                     // If so, insert peak and sort peaks in descending height order
                     for (int p = 0; p < dynNotch.count; p++) {
@@ -306,24 +301,32 @@ static  void dynNotchProcess(void)
                     const float gainMultiplier = constrainf(peaks[p].value / sdftMeanSq, 1.0f, 8.0f);
 
                     // Finally update notch center frequency p on current axis
-                    dynNotch.centerFreq[state.axis][p] += gain * gainMultiplier * (centerFreq - dynNotch.centerFreq[state.axis][p]);
+                    float err_centerfreq = centerFreq - dynNotch.centerFreq[state.axis][p];
+                    if(ABS(err_centerfreq) > 1.0f)
+                    {
+                        dynNotch.centerFreq[state.axis][p] += gain * gainMultiplier * err_centerfreq;
+                        dynNotch.notch[state.axis][p].change_flag = true;
+                    }
                 }
             }
-
-            // if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
+            if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
                 for (int p = 0; p < dynNotch.count; p++) {
-                    dynNotch.maxCenterFreq = MAX(dynNotch.maxCenterFreq, dynNotch.centerFreq[state.axis][p]);
+                    if(dynNotch.notch[state.axis][p].change_flag == true)
+                        dynNotch.maxCenterFreq = MAX(dynNotch.maxCenterFreq, dynNotch.centerFreq[state.axis][p]);
                 }
-            // }
+            }
             break;
         }
         case STEP_UPDATE_FILTERS: // 7us @ F722
         {
             for (int p = 0; p < dynNotch.count; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
-                if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
-                    biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
-                }
+                if(dynNotch.notch[state.axis][p].change_flag == true)
+                    if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
+                        biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
+                        dynNotch.notch[state.axis][p].x1 = dynNotch.notch[state.axis][p].x2 = 0;
+                        dynNotch.notch[state.axis][p].y1 = dynNotch.notch[state.axis][p].y2 = 0;
+                    }   
             }
 
             // state.axis = (state.axis + 1) % XYZ_AXIS_COUNT;
@@ -335,7 +338,17 @@ static  void dynNotchProcess(void)
 
 float dynNotchFilter(const int axis, float value) 
 {
+    float _temp = 0;
     for (uint8_t p = 0; p < dynNotch.count; p++) {
+        if(dynNotch.notch[axis][p].change_flag == true){  //if coefficient of filter was changed, firstly update the filter buffer(x1, x2.y1,y2) using the previous input data
+            for(u8 i = 0; i < BUF_SIZE; i++)
+            {
+                out_Queue(&dynNotch.notch[axis][p].queue_buffer, &_temp);
+                _temp = biquadFilterApplyDF1(&dynNotch.notch[axis][p], _temp);
+            }
+            dynNotch.notch[axis][p].change_flag = false;
+        }
+        In_Queue(&dynNotch.notch[axis][p].queue_buffer,value);
         value = biquadFilterApplyDF1(&dynNotch.notch[axis][p], value);
     }
 
@@ -361,6 +374,11 @@ void resetMaxFFT(void)
 float (*getdynNotchcenterfreq(void))[DYN_NOTCH_COUNT_MAX]
 {
    return dynNotch.centerFreq;
+}
+
+peak_t *getdynNotchpeak(void)
+{
+    return peaks;
 }
 #endif
 

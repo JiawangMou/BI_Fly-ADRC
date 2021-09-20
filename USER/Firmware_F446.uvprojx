@@ -939,6 +939,11 @@
               <FileType>1</FileType>
               <FilePath>..\COMMON\src\dyn_notch_filter.c</FilePath>
             </File>
+            <File>
+              <FileName>myqueue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\COMMON\src\myqueue.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
