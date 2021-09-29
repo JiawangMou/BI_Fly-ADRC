@@ -53,6 +53,7 @@ void getgyro_UnLPFData( Axis3f *temp );
 void getgyro_NotchedData( Axis3f *temp );
 float getgyro_unNotchData( void);
 float getgyro_NotchData(void);
+float getgyro_smoothfilterData( void);
 #endif // USE_DYN_NOTCH_FILTER
 
 void getgyro_LPFData( Axis3f *temp );

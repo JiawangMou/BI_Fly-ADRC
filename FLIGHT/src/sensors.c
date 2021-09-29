@@ -88,6 +88,7 @@ static Axis3i16 magRaw;
 
 static Axis3f gyro_UnLPF;
 static Axis3f gyro_LPF;
+static Axis3f gyro_SF;
 static float gyro_UnNotch;
 #ifdef USE_DYN_NOTCH_FILTER
 	static Axis3f gyro_Notched;
@@ -276,8 +277,8 @@ void sensorsDeviceInit(void)
 	lpf2pInit(&GyroLpf_1, 1000, GYRO_LPF_CUTOFF_FREQ_1);
 	// Add Smooth Filter for Pitch & Roll
 	// (You may choose either smooth or butterworth after)
-	smoothFilterInit(&gyroPitchSF, 50);
-	smoothFilterInit(&gyroRollSF, 50);
+	smoothFilterInit(&gyroPitchSF, 52);
+	smoothFilterInit(&gyroRollSF, 52);
 #ifdef USE_DYN_NOTCH_FILTER
 	dynNotchInit(&configParam.dynNotchConfig ,DYNNOTCH_LOOP_DT_US);
 #endif // USE_DYN_NOTCH_FILTER
@@ -717,20 +718,20 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	// applyAxis3fLpf(gyroLpf, &sensors.gyro);
 	// To use butterworth lpf in roll & yaw, use smooth in pitch
 	gyro_LPF.x = lpf2pApply(&gyroLpf[0], gyro_UnLPF.x);
+	gyro_SF.x = smoothFilterApply(&gyroRollSF, gyro_UnLPF.x);
 	gyro_LPF.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
 	gyro_LPF.z = lpf2pApply(&gyroLpf[2], gyro_UnLPF.z);
-
 
 #ifdef USE_DYN_NOTCH_FILTER
 	gyro_UnNotch = lpf2pApply(&GyroLpf_1, gyro_UnLPF.x);
 	dynNotchPush(0, gyro_UnNotch);
 	gyro_Notched.x = dynNotchFilter(0, gyro_UnNotch);
+	// sensors.gyro.x = gyro_Notched.x;
 #else
 	sensors.gyro.x = gyro_LPF.x;
 #endif // USE_DYN_NOTCH_FILTER
 //TODO
 	sensors.gyro.x = gyro_LPF.x;
-
 	sensors.gyro.y = gyro_LPF.y;
 	sensors.gyro.z = gyro_LPF.z;
 	
@@ -959,4 +960,8 @@ float getgyro_unNotchData( void)
 float getgyro_NotchData( void)
 {
 	return gyro_Notched.x;
+}
+float getgyro_smoothfilterData( void)
+{
+	return gyro_SF.x;
 }

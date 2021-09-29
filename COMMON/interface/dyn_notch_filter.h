@@ -23,8 +23,8 @@
 #include <stdint.h>
 #include "axis.h"
 #include "time.h"
+#include "config_param.h"
 
-#include "dyn_notch.h"
 
 #define DYN_NOTCH_COUNT_MAX 3
 

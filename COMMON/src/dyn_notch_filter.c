@@ -302,7 +302,7 @@ static  void dynNotchProcess(void)
 
                     // Finally update notch center frequency p on current axis
                     float err_centerfreq = centerFreq - dynNotch.centerFreq[state.axis][p];
-                    if(ABS(err_centerfreq) > 1.0f)
+                    if(ABS(err_centerfreq) > 0.5f)
                     {
                         dynNotch.centerFreq[state.axis][p] += gain * gainMultiplier * err_centerfreq;
                         dynNotch.notch[state.axis][p].change_flag = true;
