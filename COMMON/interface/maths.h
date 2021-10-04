@@ -91,6 +91,8 @@
 
 #define ABS(x) 		(((x) < 0) ? (-x) : (x))
 
+#define ROUND(x)    (uint16_t)(((uint16_t)(x+0.5) > (uint16_t)(x)) ? ((uint16_t)(x+1)): ((uint16_t)(x)))
+
 typedef struct stdev_s
 {
     float m_oldM, m_newM, m_oldS, m_newS;

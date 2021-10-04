@@ -13,7 +13,7 @@ typedef struct Queue
 }QUEUE;
 
 
-void initQueue(QUEUE *queue_q);
+void initQueue(QUEUE *queue_q,uint8_t bufsize);
 
 //判空
 bool isemptyQueue(QUEUE *queue_q);
@@ -30,3 +30,5 @@ void In_Queue(QUEUE *queue_q , QUEUETYPE value);
 void out_Queue(QUEUE *queue_q , QUEUETYPE *value);
 
 void Queue_traversal(QUEUE *queue_q);
+//读取队列中的一个值
+QUEUETYPE read_Queue(QUEUE *queue_q , uint8_t ID);

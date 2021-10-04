@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #include "myqueue.h"
@@ -8,9 +9,9 @@
 
 
 
-void initQueue(QUEUE *queue_q)
+void initQueue(QUEUE *queue_q,uint8_t bufsize);
 {
-    queue_q->BUF = (QUEUETYPE *)malloc(sizeof(QUEUETYPE)*BUF_SIZE);
+    queue_q->BUF = (QUEUETYPE *)malloc(sizeof(QUEUETYPE)*bufsize);
     if(queue_q->BUF != NULL)     //队列内存分配成功
     {
         queue_q->front = queue_q->rear = 0; //初始化头尾指针
@@ -79,4 +80,9 @@ void Queue_traversal(QUEUE *queue_q)
             ret=(ret+1)%BUF_SIZE;
         }
     }
+}
+//ID: 为0 时表示要读取队列的第一个数
+QUEUETYPE read_Queue(QUEUE *queue_q , uint8_t ID)
+{
+    return queue_q->BUF[(queue_q->front + ID)%BUF_SIZE];
 }
