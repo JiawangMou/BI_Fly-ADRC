@@ -81,8 +81,8 @@
 #define NOTCH_AXIS_COUNT 1
 #define DYN_NOTCH_CALC_TICKS       (NOTCH_AXIS_COUNT * STEP_COUNT) // 3 axes and 4 steps per axis
 #define DYN_NOTCH_OSD_MIN_THROTTLE 20
-#define PEAKS_SEARCH_STARTBIN   15
-#define DYN_COMB_QUEUE_SIZE 80
+#define PEAKS_SEARCH_STARTBIN   15  //从30Hz以上开始搜索
+#define DYN_COMB_QUEUE_SIZE 50
 
 typedef enum {
 
@@ -201,7 +201,7 @@ void dynCombInit(const dynCombConfig_t *config, const uint16_t sampleHZ)
     sampleCount = MAX(1, looprateHz / (2 * dynComb.maxHz)); // sanmplerate between every downsample step: 4.00 when maxHz=125 hz, gyro sample = 1k,  
     sampleCountRcp = 1.0f / sampleCount;
 
-    sdftSampleRateHz = looprateHz / sampleCount; // dynNotch downsampling looprateHz: 250Hz when maxHz=125 hz, gyro sample = 1k,
+    sdftSampleRateHz = looprateHz / sampleCount; // dynComb downsampling looprateHz: 250Hz when maxHz=125 hz, gyro sample = 1k,
     // eg 8k, user max 250hz, int(1000/250) = 4 , sdftSampleRateHz = 250hz, range 125Hz
     // the upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
 
@@ -292,7 +292,7 @@ static  void dynNotchProcess(void)
                     // If so, insert peak and sort peaks in descending height order
                     for (int p = 0; p < DYN_NOTCH_COUNT_MAX; p++) {
                         if (sdftData[bin] > peaks[p].value) {
-                            for (int k = dynNotch.count - 1; k > p; k--) {
+                            for (int k = DYN_NOTCH_COUNT_MAX - 1; k > p; k--) {
                                 peaks[k] = peaks[k - 1];
                             }
                             peaks[p].bin = bin;
@@ -321,7 +321,7 @@ static  void dynNotchProcess(void)
         case STEP_CALC_FREQUENCIES: // 4us @ F722
         {
             for (int i = 13; i >= 7; i-- ){
-                for(int p = 0; p < dynNotch.count; p++){
+                for(int p = 0; p < DYN_NOTCH_COUNT_MAX; p++){
                     if(peaks[p].bin != 0){
                         times = ROUND((float)(peaks[p].bin - 1) / i);
                         error[p] = ABS((peaks[p].bin -1) - i * times);
@@ -354,9 +354,9 @@ static  void dynNotchProcess(void)
                     // Estimate true peak position aka. meanBin (fit parabola y(x) over y0, y1 and y2, solve dy/dx=0 for x)
                     const float denom = 2.0f * (y0 - 2 * y1 + y2);
                     if (denom != 0.0f) {
-                        meanBin = ROUND((((y0 - y2) / denom)+ peaks[2].bin - 1) * sdftSampleRateHz/ times);
+                        meanBin = ROUND((((y0 - y2) / denom)+ peaks[2].bin) * sdftSampleRateHz/ times);
                     }else{
-                        meanBin = ROUND((peaks[2].bin - 1) * sdftSampleRateHz/ times);
+                        meanBin = ROUND(peaks[2].bin * sdftSampleRateHz/ times);
                     }
 
                     // Convert bin to frequency: freq = bin * binResoultion (bin 0 is 0Hz)
