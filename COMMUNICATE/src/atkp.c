@@ -606,7 +606,7 @@ static void atkpSendPeriod(void)
         float roll_unNotchData = getgyro_unNotchData();
         float roll_Notchdata = getgyro_NotchData();
         float roll_SFdata = getgyro_smoothfilterData();
-        sendUserData(1, gyro_UnLPF.x, gyro_UnLPF.y, gyro_UnLPF.z,roll_SFdata,roll_Notchdata,sensordata.gyro.x,control.roll,roll_unNotchData,(s16)(timestamp & 0x00ffff));
+        sendUserData(1, gyro_UnLPF.x, gyro_UnLPF.y, gyro_UnLPF.z,roll_SFdata,gyro_LPF.x,sensordata.gyro.x,control.roll,roll_Notchdata,(s16)(timestamp & 0x00ffff));
         sendUserData(2, peaks[0].bin ,peaks[0].value,peaks[1].bin,peaks[1].value, peaks[2].bin,peaks[2].value, 
                         (s16)(Notchcenterfreq[X][0]*10),(s16)(Notchcenterfreq[X][1]*10),(s16)(Notchcenterfreq[X][2]*10));
 #else

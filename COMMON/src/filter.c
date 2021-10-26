@@ -165,7 +165,6 @@ void biquadFilterInit(biquadFilter_t *filter, float filterFreq, uint32_t refresh
     // zero initial samples
     filter->x1 = filter->x2 = 0;
     filter->y1 = filter->y2 = 0;
-    filter->change_flag = 0;
 }
 
 void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight)

@@ -301,17 +301,11 @@ static  void dynNotchProcess(void)
                     const float gainMultiplier = constrainf(peaks[p].value / sdftMeanSq, 1.0f, 8.0f);
 
                     // Finally update notch center frequency p on current axis
-                    float err_centerfreq = centerFreq - dynNotch.centerFreq[state.axis][p];
-                    if(ABS(err_centerfreq) > 0.5f)
-                    {
-                        dynNotch.centerFreq[state.axis][p] += gain * gainMultiplier * err_centerfreq;
-                        dynNotch.notch[state.axis][p].change_flag = true;
-                    }
+                    dynNotch.centerFreq[state.axis][p] += gain * gainMultiplier * (centerFreq - dynNotch.centerFreq[state.axis][p]);
                 }
             }
             if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
                 for (int p = 0; p < dynNotch.count; p++) {
-                    if(dynNotch.notch[state.axis][p].change_flag == true)
                         dynNotch.maxCenterFreq = MAX(dynNotch.maxCenterFreq, dynNotch.centerFreq[state.axis][p]);
                 }
             }
@@ -321,11 +315,8 @@ static  void dynNotchProcess(void)
         {
             for (int p = 0; p < dynNotch.count; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
-                if(dynNotch.notch[state.axis][p].change_flag == true)
                     if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
                         biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
-                        dynNotch.notch[state.axis][p].x1 = dynNotch.notch[state.axis][p].x2 = 0;
-                        dynNotch.notch[state.axis][p].y1 = dynNotch.notch[state.axis][p].y2 = 0;
                     }   
             }
 
@@ -338,23 +329,12 @@ static  void dynNotchProcess(void)
 
 float dynNotchFilter(const int axis, float value) 
 {
-    float _temp = 0;
     for (uint8_t p = 0; p < dynNotch.count; p++) {
-        if(dynNotch.notch[axis][p].change_flag == true){  //if coefficient of filter was changed, firstly update the filter buffer(x1, x2.y1,y2) using the previous input data
-            for(u8 i = 0; i < BUF_SIZE; i++)
-            {
-                out_Queue(&dynNotch.notch[axis][p].queue_buffer, &_temp);
-                _temp = biquadFilterApplyDF1(&dynNotch.notch[axis][p], _temp);
-            }
-            dynNotch.notch[axis][p].change_flag = false;
-        }
-        In_Queue(&dynNotch.notch[axis][p].queue_buffer,value);
         value = biquadFilterApplyDF1(&dynNotch.notch[axis][p], value);
     }
 
     return value;
 }
-
 
 uint16_t getMaxFFT(void)
 {

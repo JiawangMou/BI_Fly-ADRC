@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 23 /*13 表示V1.3*/
+#define VERSION 43 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -263,10 +263,10 @@ static configParam_t configParamDefault =
 #ifdef USE_DYN_NOTCH_FILTER
 		.dynNotchConfig = 
 		{
-			.dyn_notch_min_hz = 0,
-    		.dyn_notch_max_hz = 50,
-    		.dyn_notch_q = 600,
-    		.dyn_notch_count = 1,
+			.dyn_notch_min_hz = 10,
+    		.dyn_notch_max_hz = 125,
+    		.dyn_notch_q = 300,
+    		.dyn_notch_count = 3,
 		},
 #endif // USE_DYN_NOTCH_FILTER
 		.trimP = 0.f,		 /*pitch微调*/
