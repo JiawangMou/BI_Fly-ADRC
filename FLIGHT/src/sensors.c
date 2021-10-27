@@ -730,7 +730,7 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	sensors.gyro.x = gyro_LPF.x;
 #endif // USE_DYN_NOTCH_FILTER
 //TODO
-	sensors.gyro.x = gyro_LPF.x ;
+	sensors.gyro.x = gyro_Notched.x;
 	sensors.gyro.y = gyro_LPF.y;
 	sensors.gyro.z = gyro_LPF.z;
 	
