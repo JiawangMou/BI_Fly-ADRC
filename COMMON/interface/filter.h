@@ -39,6 +39,12 @@ typedef struct
 	uint8_t head;
 	int32_t current_sum;
 } smoothFilter_t;
+typedef struct
+{
+    uint16_t N;
+    float coefficient;
+    bool change_flag;
+}combFilter_t;
 
 struct filter_s;
 typedef struct filter_s filter_t;
@@ -140,5 +146,8 @@ float lpf2pReset(lpf2pData* lpfData, float sample);
 void  smoothFilterInit(smoothFilter_t* filter, uint8_t n);
 void  smoothFilterReset(smoothFilter_t* filter, uint8_t n);
 float smoothFilterApply(smoothFilter_t* filter, int16_t data);
+void combFilterInit(combFilter_t* filter, uint8_t n, float coeff);
+void combFilterupdate(combFilter_t* filter, uint8_t n);
+float combFilterApply(combFilter_t *filter, float input,QUEUE *buffer);
 
 #endif //__FILTER_H

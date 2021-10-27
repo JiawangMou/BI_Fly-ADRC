@@ -18,7 +18,10 @@
 			"stabilizer.h": "c",
 			"queue.h": "c",
 			"myqueue.h": "c",
-			"stdbool.h": "c"
+			"stdbool.h": "c",
+			"maths.h": "c",
+			"cstdlib": "c",
+			"xstring": "c"
 		}
 	}
 }

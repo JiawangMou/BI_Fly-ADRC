@@ -141,9 +141,15 @@ typedef struct dynNotchConfig_s
     uint16_t dyn_notch_max_hz;
     uint16_t dyn_notch_q;
     uint8_t  dyn_notch_count;
-
-
 } dynNotchConfig_t;
+
+typedef struct dynCombConfig_s
+{
+    uint16_t dyn_comb_min_hz;
+    uint16_t dyn_comb_max_hz;
+	uint8_t centerFreq;
+	float coefficient;
+} dynCombConfig_t;
 typedef struct	
 {
 	u8 version;				/*软件版本号*/
@@ -155,8 +161,13 @@ typedef struct
 	adrcParam_t adrcAngle;	/*角度ADRC*/
 	adrcParam_t adrcRate;	/*角速度ADRC*/
 #ifdef USE_DYN_NOTCH_FILTER
-	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
+	// dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
+	dynCombConfig_t dyncombConfig;/*动态notch滤波器参数*/
 #endif // USE_DYN_NOTCH_FILTER
+
+// #ifdef USE_DYN_COMB_FILTER
+// 	dynCombConfig_t dyncombConfig;/*动态notch滤波器参数*/
+// #endif // USE_DYN_NOTCH_FILTER
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
 	u16 thrustBase;			/*油门基础值*/

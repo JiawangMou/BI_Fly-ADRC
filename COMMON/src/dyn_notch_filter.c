@@ -40,7 +40,7 @@
 #include "filter.h"
 #include "maths.h"
 #include "sdft.h"
-
+#include "myqueue.h"
 #include "time.h"
 
 #include "dyn_notch_filter.h"
@@ -81,6 +81,8 @@
 #define NOTCH_AXIS_COUNT 1
 #define DYN_NOTCH_CALC_TICKS       (NOTCH_AXIS_COUNT * STEP_COUNT) // 3 axes and 4 steps per axis
 #define DYN_NOTCH_OSD_MIN_THROTTLE 20
+#define PEAKS_SEARCH_STARTBIN   15  //从30Hz以上开始搜索
+#define DYN_COMB_QUEUE_SIZE 50
 
 typedef enum {
 
@@ -117,8 +119,19 @@ typedef struct dynNotch_s {
 
 } dynNotch_t;
 
+typedef struct dynComb_s {
+    float minHz;
+    float maxHz;
+    float centerFreq;
+    uint16_t sampleHz;
+    combFilter_t combfilter;
+} dynComb_t;
+
 // dynamic notch instance (singleton)
-static  dynNotch_t dynNotch;
+static dynNotch_t dynNotch;
+static dynComb_t dynComb;
+static QUEUE rollrate_queue;
+
 
 // accumulator for oversampled data => no aliasing and less noise
 static  int   sampleIndex;
@@ -140,7 +153,10 @@ static  int     sdftStartBin;
 static  int     sdftEndBin;
 static  float   sdftMeanSq;
 static  float   gain;
-
+uint8_t times = 0;
+uint8_t error[3] = {0};
+static uint8_t flag = 0;
+static uint8_t base_freq = 0;
 
 void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeUs)
 {
@@ -174,11 +190,36 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
         biquadFilterInit(&dynNotch.notch[0][p], dynNotch.centerFreq[0][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
     }
 }
+void dynCombInit(const dynCombConfig_t *config, const uint16_t sampleHZ)
+{
+    // initialise even if FEATURE_DYNAMIC_FILTER not set, since it may be set later
+    dynComb.minHz = config->dyn_comb_min_hz;
+    dynComb.maxHz = MAX(2 * dynComb.minHz, config->dyn_comb_max_hz);
+    //dynComb.looptimeUs = targetLooptimeUs;
+    // dynNotchUpdate() is running at looprateHz (which is PID looprate aka. 1e6f / gyro.targetLooptime)
+    const uint16_t looprateHz = sampleHZ;
+    sampleCount = MAX(1, looprateHz / (2 * dynComb.maxHz)); // sanmplerate between every downsample step: 4.00 when maxHz=125 hz, gyro sample = 1k,  
+    sampleCountRcp = 1.0f / sampleCount;
 
+    sdftSampleRateHz = looprateHz / sampleCount; // dynComb downsampling looprateHz: 250Hz when maxHz=125 hz, gyro sample = 1k,
+    // eg 8k, user max 250hz, int(1000/250) = 4 , sdftSampleRateHz = 250hz, range 125Hz
+    // the upper limit of DN is always going to be the Nyquist frequency (= sampleRate / 2)
+
+    sdftResolutionHz = sdftSampleRateHz / SDFT_SAMPLE_SIZE; // 1.95hz per bin at 1k and 250Hz maxHz
+    sdftStartBin = MAX(1, dynComb.minHz / sdftResolutionHz + 0.5f); // can't use bin 0 because it is DC.
+    sdftEndBin = MIN(SDFT_BIN_COUNT - 1, dynComb.maxHz / sdftResolutionHz + 0.5f); // can't use more than SDFT_BIN_COUNT bins.
+    gain = pt1FilterGain(DYN_NOTCH_SMOOTH_HZ, DYN_NOTCH_CALC_TICKS / looprateHz); // minimum PT1 k value
+
+    sdftInit(&sdft[0], sdftStartBin, sdftEndBin, sampleCount);
+    dynComb.centerFreq = config->centerFreq;
+    combFilterInit(&dynComb.combfilter, looprateHz / dynComb.centerFreq , config->coefficient);
+    initQueue(&rollrate_queue,DYN_COMB_QUEUE_SIZE);
+}
 // Collect gyro data, to be downsampled and analysed in dynNotchUpdate() function
 void dynNotchPush(const int axis, const float sample)
 {
     sampleAccumulator[axis] += sample;
+    In_Queue(&rollrate_queue , sample);
 }
 
 static void dynNotchProcess(void);
@@ -229,25 +270,29 @@ static  void dynNotchProcess(void)
                 sdftMeanSq += sdftData[bin];                                // sdftData is already squared (see sdftWinSq)
             }
             sdftMeanSq /= sdftEndBin - sdftStartBin - 1;
+            if(sdftMeanSq <= 8.0f)
+                sdftMeanSq = 8.0f;
             break;
         }
         case STEP_DETECT_PEAKS: // 6us @ F722
         {
             // Get memory ready for new peak data on current axis
-            for (int p = 0; p < dynNotch.count; p++) {
+            for (int p = 0; p < DYN_NOTCH_COUNT_MAX; p++) {
                 peaks[p].bin = 0;
                 peaks[p].value = 0.0f;
             }
 
             // Search for N biggest peaks in frequency spectrum
-            for (int bin = (sdftStartBin + 1); bin < sdftEndBin; bin++) {
+            for (int bin = PEAKS_SEARCH_STARTBIN; bin < sdftEndBin; bin++) {
                 // Check if bin is peak
-                if((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])) {
+                if((sdftData[bin] > sdftData[bin - 1]) && (sdftData[bin] > sdftData[bin + 1])&& 
+                   (sdftData[bin] > sdftData[bin - 2]) && (sdftData[bin] > sdftData[bin + 2])&& 
+                   (sdftData[bin] > sdftMeanSq)) {
                     // Check if peak is big enough to be one of N biggest peaks.
                     // If so, insert peak and sort peaks in descending height order
-                    for (int p = 0; p < dynNotch.count; p++) {
+                    for (int p = 0; p < DYN_NOTCH_COUNT_MAX; p++) {
                         if (sdftData[bin] > peaks[p].value) {
-                            for (int k = dynNotch.count - 1; k > p; k--) {
+                            for (int k = DYN_NOTCH_COUNT_MAX - 1; k > p; k--) {
                                 peaks[k] = peaks[k - 1];
                             }
                             peaks[p].bin = bin;
@@ -255,12 +300,12 @@ static  void dynNotchProcess(void)
                             break;
                         }
                     }
-                    bin++; // If bin is peak, next bin can't be peak => jump it
+                    bin= bin + 4;// If bin is peak, next four bins can't be peak => jump it
                 }
             }
 
             // Sort N biggest peaks in ascending bin order (example: 3, 8, 25, 0, 0, ..., 0)
-            for (int p = dynNotch.count - 1; p > 0; p--) {
+            for (int p = DYN_NOTCH_COUNT_MAX- 1; p > 0; p--) {
                 for (int k = 0; k < p; k++) {
                     // Swap peaks but ignore swapping void peaks (bin = 0). This leaves
                     // void peaks at the end of peaks array without moving them
@@ -275,22 +320,43 @@ static  void dynNotchProcess(void)
         }
         case STEP_CALC_FREQUENCIES: // 4us @ F722
         {
-            for (int p = 0; p < dynNotch.count; p++) {
+            for (int i = 13; i >= 7; i-- ){
+                for(int p = 0; p < DYN_NOTCH_COUNT_MAX; p++){
+                    if(peaks[p].bin != 0){
+                        times = ROUND((float)(peaks[p].bin - 1) / i);
+                        error[p] = ABS((peaks[p].bin -1) - i * times);
+                        if(error[p] <= times * 0.75)
+                            flag++;
+                    }
+                    else{
+                        flag = 0;
+                    }
+                } 
+                if(flag == 3)
+                {
+                    base_freq = i;
+                    break;
+                }
+                if((flag != 3)&&(i == 7))
+                    base_freq = 0;
+            }
 
-                // Only update dynNotch.centerFreq if there is a peak (ignore void peaks) and if peak is above noise floor
-                if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
+            if(flag == 3){
+                if (peaks[2].bin != 0 && peaks[2].value > sdftMeanSq) {
 
-                    float meanBin = peaks[p].bin;
+                    float meanBin = 0;
 
                     // Height of peak bin (y1) and shoulder bins (y0, y2)
-                    const float y0 = sdftData[peaks[p].bin - 1];
-                    const float y1 = sdftData[peaks[p].bin];
-                    const float y2 = sdftData[peaks[p].bin + 1];
+                    const float y0 = sdftData[peaks[2].bin - 1];
+                    const float y1 = sdftData[peaks[2].bin];
+                    const float y2 = sdftData[peaks[2].bin + 1];
 
                     // Estimate true peak position aka. meanBin (fit parabola y(x) over y0, y1 and y2, solve dy/dx=0 for x)
                     const float denom = 2.0f * (y0 - 2 * y1 + y2);
                     if (denom != 0.0f) {
-                        meanBin += (y0 - y2) / denom;
+                        meanBin = ROUND((((y0 - y2) / denom)+ peaks[2].bin) * sdftSampleRateHz/ times);
+                    }else{
+                        meanBin = ROUND(peaks[2].bin * sdftSampleRateHz/ times);
                     }
 
                     // Convert bin to frequency: freq = bin * binResoultion (bin 0 is 0Hz)
@@ -308,12 +374,18 @@ static  void dynNotchProcess(void)
                 for (int p = 0; p < dynNotch.count; p++) {
                         dynNotch.maxCenterFreq = MAX(dynNotch.maxCenterFreq, dynNotch.centerFreq[state.axis][p]);
                 }
+                // if(calculateThrottlePercentAbs() > DYN_NOTCH_OSD_MIN_THROTTLE) {
+                //     for (int p = 0; p < dynNotch.count; p++) {
+                //         if(dynNotch.notch[state.axis][p].change_flag == true)
+                //             dynNotch.maxCenterFreq = MAX(dynNotch.maxCenterFreq, dynNotch.centerFreq[state.axis][p]);
+                //     }
+                // }
             }
             break;
         }
         case STEP_UPDATE_FILTERS: // 7us @ F722
         {
-            for (int p = 0; p < dynNotch.count; p++) {
+            // for (int p = 0; p < dynNotch.count; p++) {
                 // Only update notch filter coefficients if the corresponding peak got its center frequency updated in the previous step
                     if (peaks[p].bin != 0 && peaks[p].value > sdftMeanSq) {
                         biquadFilterUpdate(&dynNotch.notch[state.axis][p], dynNotch.centerFreq[state.axis][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
@@ -321,6 +393,10 @@ static  void dynNotchProcess(void)
             }
 
             // state.axis = (state.axis + 1) % XYZ_AXIS_COUNT;
+
+            if(dynComb.combfilter.change_flag == true)
+                combFilterupdate(&dynComb.combfilter, dynComb.sampleHz / dynComb.centerFreq);
+
         }
     }
 
@@ -334,6 +410,10 @@ float dynNotchFilter(const int axis, float value)
     }
 
     return value;
+}
+float dynCombFilter(const int axis, float value)
+{
+    return combFilterApply(&dynComb.combfilter, value, &rollrate_queue);
 }
 
 uint16_t getMaxFFT(void)

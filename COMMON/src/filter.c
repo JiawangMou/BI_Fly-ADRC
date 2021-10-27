@@ -389,3 +389,20 @@ float smoothFilterApply(smoothFilter_t* filter, int16_t data){
 	if(filter -> head >= filter -> n) filter -> head = 0;
 	return (float)(filter -> current_sum) / filter -> n;
 }
+
+void combFilterInit(combFilter_t* filter, uint8_t n, float coeff){
+	filter -> N = n;
+    filter -> coefficient = coeff;
+}
+
+void combFilterupdate(combFilter_t* filter, uint8_t n){
+	filter -> N = n;
+}
+float combFilterApply(combFilter_t *filter, float input,QUEUE *buffer)
+{
+    const float result = filter->coefficient * (input - read_Queue(buffer , filter->N));
+
+    return result;
+}
+
+

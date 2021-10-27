@@ -89,6 +89,7 @@ static Axis3i16 magRaw;
 static Axis3f gyro_UnLPF;
 static Axis3f gyro_LPF;
 static Axis3f gyro_SF;
+static Axis3f gyro_COMB;
 static float gyro_UnNotch;
 #ifdef USE_DYN_NOTCH_FILTER
 	static Axis3f gyro_Notched;
@@ -280,7 +281,8 @@ void sensorsDeviceInit(void)
 	smoothFilterInit(&gyroPitchSF, 52);
 	smoothFilterInit(&gyroRollSF, 52);
 #ifdef USE_DYN_NOTCH_FILTER
-	dynNotchInit(&configParam.dynNotchConfig ,DYNNOTCH_LOOP_DT_US);
+	// dynNotchInit(&configParam.dynNotchConfig ,DYNNOTCH_LOOP_DT_US);
+	dynCombInit(&configParam.dynCombConfig, DYNNOTCH_LOOP_HZ);
 #endif // USE_DYN_NOTCH_FILTER
 #ifdef PCBV4_5
 	lpf2pInit(&BatLpf, 1000, BAT_LPF_CUTOFF_FREQ);
@@ -963,4 +965,8 @@ float getgyro_NotchData( void)
 float getgyro_smoothfilterData( void)
 {
 	return gyro_SF.x;
+}
+float getgyro_CombData( void)
+{
+	return gyro_COMB.x;
 }

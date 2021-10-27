@@ -261,12 +261,19 @@ static configParam_t configParamDefault =
 			},
 		},		
 #ifdef USE_DYN_NOTCH_FILTER
-		.dynNotchConfig = 
+		// .dynNotchConfig = 
+		// {
+		// 	.dyn_notch_min_hz = 0,
+    	// 	.dyn_notch_max_hz = 50,
+    	// 	.dyn_notch_q = 600,
+    	// 	.dyn_notch_count = 3,
+		// },
+		.dynCombConfig = 
 		{
-			.dyn_notch_min_hz = 10,
-    		.dyn_notch_max_hz = 125,
-    		.dyn_notch_q = 300,
-    		.dyn_notch_count = 3,
+			.dyn_comb_min_hz = 30,
+    		.dyn_comb_max_hz = 80,
+			.centerFreq = 18;
+			.coefficient = 0.3;
 		},
 #endif // USE_DYN_NOTCH_FILTER
 		.trimP = 0.f,		 /*pitchÎ¢µ÷*/
