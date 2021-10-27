@@ -35,7 +35,7 @@
 static float wBaro    = 0.65f; /*气压校正权重*/
 static float wOpflowP = 1.0f;  /*光流位置校正权重*/
 static float wOpflowV = 2.0f;  /*光流速度校正权重*/
-static float wAccBias = 0.1f;  /*加速度校正权重*/
+static float wAccBias = 0.15f;  /*加速度校正权重*/
 
 static bool isRstHeight = false; /*复位高度*/
 static bool isRstAll    = true;  /*复位估测*/
@@ -92,18 +92,19 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     if (getVl53l1xstate() == true) /*激光传感器可用*/
     {
         vl53lxxReadRange(&sensorData->zrange); /*读取激光数据*/
+        fusedHeight = sensorData->zrange.distance;
+        weight = sensorData->zrange.quality * 2;
+        // rangeLpf += (sensorData->zrange.distance - rangeLpf) * 0.1f; /*低通 单位cm*/
 
-        rangeLpf += (sensorData->zrange.distance - rangeLpf) * 0.1f; /*低通 单位cm*/
-
-        float quality = sensorData->zrange.quality;
-        if (quality < 0.3f) /*低于这个可行度，激光数据不可用*/
-        {
-            quality = 0.f;
-        } else {
-            weight       = quality;
-            startBaroAsl = sensorData->baro.asl - rangeLpf;
-        }
-        fusedHeight = rangeLpf * quality + (1.0f - quality) * relateHight; /*融合高度*/
+        // float quality = sensorData->zrange.quality;
+        // if (quality < 0.3f) /*低于这个可行度，激光数据不可用*/
+        // {
+        //     quality = 0.f;
+        // } else {
+        //     weight       = quality;
+        //     startBaroAsl = sensorData->baro.asl - rangeLpf;
+        // }
+        // fusedHeight = rangeLpf * quality + (1.0f - quality) * relateHight; /*融合高度*/
     } else /*无激光模块（永远不会进入这一块）*/
     {
         fusedHeight = relateHight; /*融合高度*/
@@ -251,9 +252,7 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
 
     state->position.x = estimator.pos[X];
     state->position.y = estimator.pos[Y];
-    state->position.z = fusedHeightLpf;
-    // state->velocity.z = (fusedHeightLpf - fHLast) / dt;
-    // state->position.z = estimator.pos[Z];
+    state->position.z = estimator.pos[Z];
 }
 
 /*读取融合高度 单位cm*/
