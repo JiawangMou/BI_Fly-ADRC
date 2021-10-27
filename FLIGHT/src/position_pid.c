@@ -35,6 +35,15 @@
 //临时版本，定高变为单环PID,输出限幅直接到油门输出
 #define PIDZ_OUTPUT_LIMIT 65500.0f // Z轴速度限幅(油门量)
 
+/*Dterm filter cutoff frequency*/
+#define POS_X_PID_DTERM_CUTOFF_FREQ 100.0
+#define POS_Y_PID_DTERM_CUTOFF_FREQ 60.0
+#define POS_Z_PID_DTERM_CUTOFF_FREQ 100.0
+
+#define VEL_X_PID_DTERM_CUTOFF_FREQ 90.0
+#define VEL_Y_PID_DTERM_CUTOFF_FREQ 40.0
+#define VEL_Z_PID_DTERM_CUTOFF_FREQ 90.0
+
 static float thrustLpf        = THRUST_BASE; /*油门低通*/
 static float thrustHover      = 0.f;
 static bool  enterVelModeFlag = false;
@@ -47,18 +56,18 @@ PidObject pidX;
 PidObject pidY;
 PidObject pidZ;
 
-void positionControlInit(float velocityPidDt, float posPidDt)
+void positionControlInit(float velocityPidDt, float posPidDt) 
 {
-    pidInit(&pidVX, 0, configParam.pidPos.vx, velocityPidDt);     /*vx PID初始化*/
-    pidInit(&pidVY, 0, configParam.pidPos.vy, velocityPidDt);     /*vy PID初始化*/
-    pidInit(&pidVZ, 0, configParam.pidPos.vz, velocityPidDt);     /*vz PID初始化*/
+    pidInit(&pidVX, 0, configParam.pidPos.vx, velocityPidDt,VEL_X_PID_DTERM_CUTOFF_FREQ);     /*vx PID初始化*/
+    pidInit(&pidVY, 0, configParam.pidPos.vy, velocityPidDt,VEL_Y_PID_DTERM_CUTOFF_FREQ);     /*vy PID初始化*/
+    pidInit(&pidVZ, 0, configParam.pidPos.vz, velocityPidDt,VEL_Z_PID_DTERM_CUTOFF_FREQ);     /*vz PID初始化*/
     pidSetOutputLimit(&pidVX, configParam.pidPos.vx.outputLimit); /* 输出限幅 */
     pidSetOutputLimit(&pidVY, configParam.pidPos.vy.outputLimit); /* 输出限幅 */
     pidSetOutputLimit(&pidVZ, configParam.pidPos.vz.outputLimit); /* 输出限幅 */
 
-    pidInit(&pidX, 0, configParam.pidPos.x, posPidDt);          /*x PID初始化*/
-    pidInit(&pidY, 0, configParam.pidPos.y, posPidDt);          /*y PID初始化*/
-    pidInit(&pidZ, 0, configParam.pidPos.z, posPidDt);          /*z PID初始化*/
+    pidInit(&pidX, 0, configParam.pidPos.x, posPidDt,POS_X_PID_DTERM_CUTOFF_FREQ);          /*x PID初始化*/
+    pidInit(&pidY, 0, configParam.pidPos.y, posPidDt,POS_Y_PID_DTERM_CUTOFF_FREQ);          /*y PID初始化*/
+    pidInit(&pidZ, 0, configParam.pidPos.z, posPidDt,POS_Z_PID_DTERM_CUTOFF_FREQ);          /*z PID初始化*/
     pidSetOutputLimit(&pidX, configParam.pidPos.x.outputLimit); /* 输出限幅 */
     pidSetOutputLimit(&pidY, configParam.pidPos.y.outputLimit); /* 输出限幅 */
     pidSetOutputLimit(&pidZ, configParam.pidPos.z.outputLimit); /* 输出限幅 */
