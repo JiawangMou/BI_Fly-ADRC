@@ -153,9 +153,9 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     // accelBF.x = sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
     // accelBF.y = sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
     // accelBF.z = sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
-    accelBF.x = -sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
-    accelBF.y = -sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
-    accelBF.z = -sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
+    accelBF.x = sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
+    accelBF.y = sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
+    accelBF.z = sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
 
     // accelBF.x = sensorData->acc.x * GRAVITY_CMSS;
     // accelBF.y = sensorData->acc.y * GRAVITY_CMSS;

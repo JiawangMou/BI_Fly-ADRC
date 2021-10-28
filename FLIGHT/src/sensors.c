@@ -676,11 +676,11 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	// static u16 N_count = 0;
 	// static u8 freqHz= 10;
 #ifdef BOARD_VERTICAL
-    int16_t ay = -((((int16_t)buffer[0]) << 8)  | buffer[1]);
-    int16_t az =  ((((int16_t)buffer[2]) << 8)  | buffer[3]);
+    int16_t ay =  ((((int16_t)buffer[0]) << 8)  | buffer[1]);
+    int16_t az = -((((int16_t)buffer[2]) << 8)  | buffer[3]);
     int16_t ax = -((((int16_t)buffer[4]) << 8)  | buffer[5]);
-    int16_t gy = -((((int16_t)buffer[8]) << 8)  | buffer[9]);
-    int16_t gz =  ((((int16_t)buffer[10]) << 8) | buffer[11]);
+    int16_t gy =  ((((int16_t)buffer[8]) << 8)  | buffer[9]);
+    int16_t gz = -((((int16_t)buffer[10]) << 8) | buffer[11]);
     int16_t gx = -((((int16_t)buffer[12]) << 8) | buffer[13]);
 #elif defined BOARD_HORIZONTAL
 //板子横着放置时需要重新根据板子的放置方向确定一下符号，下面的为未确认的结果
@@ -690,6 +690,13 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	int16_t gx = ((((int16_t)buffer[8]) << 8) | buffer[9]);
 	int16_t gy = -((((int16_t)buffer[10]) << 8) | buffer[11]);
 	int16_t gz = -((((int16_t)buffer[12]) << 8) | buffer[13]);
+#elif defined BOARD_VERTICAL2
+	int16_t ay = - ((((int16_t)buffer[0]) << 8) | buffer[1]);
+	int16_t az =   ((((int16_t)buffer[2]) << 8) | buffer[3]);
+	int16_t ax = - ((((int16_t)buffer[4]) << 8) | buffer[5]);
+	int16_t gy = - ((((int16_t)buffer[8]) << 8) | buffer[9]);
+	int16_t gz =   ((((int16_t)buffer[10]) << 8) | buffer[11]);
+	int16_t gx = - ((((int16_t)buffer[12]) << 8) | buffer[13]);
 #else
 	#error "Board alignment is not defined. Define BOARD_VERTICAL or BOARD_HORIZONTAL in config.h."
 #endif

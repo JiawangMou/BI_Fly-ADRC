@@ -135,7 +135,7 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 	gyro.z = gyro.z * DEG2RAD;
 
 	acc_send.acc_beforefusion.x = acc.x;
-	acc_send.acc_beforefusion.y = acc.y;	
+	acc_send.acc_beforefusion.y = acc.y;
 	acc_send.acc_beforefusion.z = acc.z;
 	/*判断加速度计数据是否健康*/
 	acc_send.useAcc = imuIsAccelerometerHealthy(&acc);
@@ -149,9 +149,9 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 		acc.z *= normalise;
 
 		/*加速计读取的重力方向方向与旋转矩阵换算出的重力方向的差值，用向量叉乘计算*/
-		ex = (-acc.y * rMat[2][2] + acc.z * rMat[2][1]);
-		ey = (-acc.z * rMat[2][0] + acc.x * rMat[2][2]);
-		ez = (-acc.x * rMat[2][1] + acc.y * rMat[2][0]);
+		ex = (acc.y * rMat[2][2] - acc.z * rMat[2][1]);
+		ey = (acc.z * rMat[2][0] - acc.x * rMat[2][2]);
+		ez = (acc.x * rMat[2][1] - acc.y * rMat[2][0]);
 	}
 			
 	/*误差累计，与积分常数相乘*/
@@ -197,7 +197,7 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 	{		
 //		accBuf[0] = tempacc.x* rMat[0][0] + tempacc.y * rMat[0][1] + tempacc.z * rMat[0][2];	/*accx*/
 //		accBuf[1] = tempacc.x* rMat[1][0] + tempacc.y * rMat[1][1] + tempacc.z * rMat[1][2];	/*accy*/
-		accBuf[2] = -tempacc.x* rMat[2][0] - tempacc.y * rMat[2][1] - tempacc.z * rMat[2][2];	/*accz*/
+		accBuf[2] = tempacc.x* rMat[2][0] + tempacc.y * rMat[2][1] + tempacc.z * rMat[2][2];	/*accz*/
 		calBaseAcc(accBuf);		/*计算静态加速度*/				
 	}
 }
