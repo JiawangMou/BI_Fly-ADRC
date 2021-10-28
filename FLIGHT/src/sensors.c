@@ -705,23 +705,12 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	sensors.acc.x = smoothFilterApply(&accSF[0], accRaw.x);
 	sensors.acc.y = smoothFilterApply(&accSF[1], accRaw.y);
 	sensors.acc.z = smoothFilterApply(&accSF[2], accRaw.z);	
-    sensors.acc.x =  accRaw.x / accScale.x; /*单位 g(9.8m/s^2)*/
-    sensors.acc.y =  accRaw.y / accScale.y; /*单位 g(9.8m/s^2)*/
-    sensors.acc.z =  accRaw.z / accScale.z; /*单位 g(9.8m/s^2)*/
+    sensors.acc.x =  sensors.acc.x / accScale.x; /*单位 g(9.8m/s^2)*/
+    sensors.acc.y =  sensors.acc.y / accScale.y; /*单位 g(9.8m/s^2)*/
+    sensors.acc.z =  sensors.acc.z / accScale.z; /*单位 g(9.8m/s^2)*/
 
     // applyAxis3fLpf(accLpf, &sensors.acc);
 
-    // Axis3f gyroTmp;
-    // gyroTmp.x = sensors.gyro.x;
-    // gyroTmp.y = sensors.gyro.y;
-    // gyroTmp.z = sensors.gyro.z;
-
-    // sensors.gyro.x = (sensors.gyro.x + gyroBff.x) * 0.5f;
-    // sensors.gyro.y = (sensors.gyro.y + gyroBff.y) * 0.5f;
-    // sensors.gyro.z = (sensors.gyro.z + gyroBff.z) * 0.5f;
-    // gyroBff.x = gyroTmp.x;
-    // gyroBff.y = gyroTmp.y;
-    // gyroBff.z = gyroTmp.z;
 }
 
 #ifdef PCBV4_5

@@ -70,6 +70,7 @@ control_t getControlData(void);
 mode_e getZmode(void);
 int8_t calculateThrottlePercentAbs(void);
 state_t getState(void);
+setpoint_t getSetpoint(void);
 
 
 #endif /* __STABALIZER_H */

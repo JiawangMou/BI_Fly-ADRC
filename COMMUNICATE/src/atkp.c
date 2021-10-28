@@ -594,6 +594,7 @@ static void atkpSendPeriod(void)
         Axis3i16 acc;
         Axis3i16 gyro;
         Axis3i16 mag;
+        setpoint_t setpoint = getSetpoint();
         getSensorRawData(&acc, &gyro, &mag);
 		getAttitudeData(&attitude);
 		getAngleDesired(&attitudeDesired);
@@ -611,8 +612,8 @@ static void atkpSendPeriod(void)
         // sendUserData(1, gyro_UnLPF.x, gyro_UnLPF.y, gyro_UnLPF.z,roll_SFdata,gyro_LPF.x,sensordata.gyro.x,control.roll,roll_Notchdata,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, peaks[0].bin ,peaks[0].value,peaks[1].bin,peaks[1].value, peaks[2].bin,peaks[2].value, 
         //                 (s16)(Notchcenterfreq[X][0]*10),(s16)(Notchcenterfreq[X][1]*10),(s16)(Notchcenterfreq[X][2]*10));
-        sendUserData(1, gyro_UnLPF.x, gyro_UnLPF.y, gyro_UnLPF.z,sensordata.gyro.x,state.position.z,state.velocity.z,Z_acc,laser_height,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, acc.x ,acc.y,acc.z,0,0,0,0,0,0);
+        sendUserData(1, state.position.z, setpoint.position.z, state.velocity.z,setpoint.velocity.z,laser_height,state.acc.z,0,0,(s16)(timestamp & 0x00ffff));
+        sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,0,0,0);
 #else
         sendUserData(1, gyro.x, gyro_LPF.x, sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp & 0x00ffff));
         sendUserData(2, gyro.y, gyro_LPF.y, sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);        
