@@ -87,8 +87,8 @@ void motorControl(control_t *control) /*功率输出控制*/
 	//控制分配	改！
 	motorPWM.f2 = limitThrust(control->thrust + r);
 	motorPWM.f1 = limitThrust(control->thrust - r);
-	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, -p + control->yaw * 1.5f );
-	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, p + control->yaw * 1.5f );
+	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, p - control->yaw * 1.5f );
+	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, -p - control->yaw * 1.5f );
 
 
 	if (motorSetEnable)

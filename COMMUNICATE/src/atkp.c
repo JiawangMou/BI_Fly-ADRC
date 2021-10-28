@@ -584,7 +584,7 @@ static void atkpSendPeriod(void)
 		attitude_t attitudeDesired;
         control_t control;
 
-        Axis3f gyro_LPF;
+//        Axis3f gyro_LPF;
         Axis3f gyro_UnLPF;
         state_t state; /*四轴姿态*/
         state = getState();
