@@ -264,4 +264,10 @@ void estRstHeight(void) { isRstHeight = true; }
 /*¸´Î»ËùÓÐ¹À²â*/
 void estRstAll(void) { isRstAll = true; }
 
+float getestimator_acc(void)
+{
+    return estimator.acc[Z];
+}
+
+
 // float getPosZPredictData() { return posZPredict; }

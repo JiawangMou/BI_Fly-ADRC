@@ -105,6 +105,7 @@ static lpf2pData gyroLpf[3];
 static lpf2pData BaroLpf;
 static lpf2pData GyroLpf_1;
 
+static smoothFilter_t accSF[3];
 static smoothFilter_t gyroPitchSF;
 static smoothFilter_t gyroRollSF;
 
@@ -271,14 +272,15 @@ void sensorsDeviceInit(void)
 	for (u8 i = 0; i < 3; i++) // 初始化加速计和陀螺二阶低通滤波
 	{
 		lpf2pInit(&gyroLpf[i], 1000, GYRO_LPF_CUTOFF_FREQ);
-		lpf2pInit(&accLpf[i], 1000, ACCEL_LPF_CUTOFF_FREQ);
+		// lpf2pInit(&accLpf[i], 1000, ACCEL_LPF_CUTOFF_FREQ);
+		smoothFilterInit(&accSF[i], 53);		
 	}
 	lpf2pInit(&BaroLpf, 1000, BARO_LPF_CUTOFF_FREQ);
 	lpf2pInit(&GyroLpf_1, 1000, GYRO_LPF_CUTOFF_FREQ_1);
 	// Add Smooth Filter for Pitch & Roll
 	// (You may choose either smooth or butterworth after)
-	smoothFilterInit(&gyroPitchSF, 52);
-	smoothFilterInit(&gyroRollSF, 52);
+	smoothFilterInit(&gyroPitchSF, 50);
+	smoothFilterInit(&gyroRollSF, 50);
 #ifdef USE_DYN_NOTCH_FILTER
 	dynNotchInit(&configParam.dynNotchConfig ,DYNNOTCH_LOOP_DT_US);
 #endif // USE_DYN_NOTCH_FILTER
@@ -741,14 +743,14 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	sensors.gyro.y = gyro_LPF.y;
 	sensors.gyro.z = gyro_LPF.z;
 	
-	// sensors.acc.x = -(ax)*SENSORS_G_PER_LSB_CFG / accScale.x; /*单位 g(9.8m/s^2)*/
-	// sensors.acc.y =  (ay)*SENSORS_G_PER_LSB_CFG / accScale.y;	/*重力加速度缩放因子accScale 根据样本计算得出*/
-	// sensors.acc.z =  (az)*SENSORS_G_PER_LSB_CFG / accScale.z;
+	sensors.acc.x = smoothFilterApply(&accSF[0], accRaw.x);
+	sensors.acc.y = smoothFilterApply(&accSF[1], accRaw.y);
+	sensors.acc.z = smoothFilterApply(&accSF[2], accRaw.z);	
     sensors.acc.x =  accRaw.x / accScale.x; /*单位 g(9.8m/s^2)*/
     sensors.acc.y =  accRaw.y / accScale.y; /*单位 g(9.8m/s^2)*/
     sensors.acc.z =  accRaw.z / accScale.z; /*单位 g(9.8m/s^2)*/
 
-    applyAxis3fLpf(accLpf, &sensors.acc);
+    // applyAxis3fLpf(accLpf, &sensors.acc);
 
     // Axis3f gyroTmp;
     // gyroTmp.x = sensors.gyro.x;

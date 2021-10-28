@@ -69,5 +69,7 @@ void setFastAdjustPosParam(u16 velTimes, u16 absTimes, float height);/*…Ë÷√øÏÀŸµ
 control_t getControlData(void);
 mode_e getZmode(void);
 int8_t calculateThrottlePercentAbs(void);
+state_t getState(void);
+
 
 #endif /* __STABALIZER_H */

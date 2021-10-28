@@ -219,3 +219,8 @@ int8_t calculateThrottlePercentAbs(void)
 {
     return control.thrust * 100 / FULLTHROTTLE;
 }
+
+state_t getState(void)
+{
+    return state;
+}
