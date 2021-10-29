@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 13 /*13 表示V1.3*/
+#define VERSION 23 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -103,9 +103,9 @@ static configParam_t configParamDefault =
 				},
 			.vz =
 				{
-					.kp = 80.0,
-					.ki = 130.0,
-					.kd = 10.0,
+					.kp = 240.0,
+					.ki = 100.0,
+					.kd = 15.0,
 				},
 
 			.x =
@@ -122,9 +122,9 @@ static configParam_t configParamDefault =
 				},
 			.z =
 				{
-					.kp = 300.0,
-					.ki = 1.0,
-					.kd = 100.0,
+					.kp = 60.0,
+					.ki = 10.0,
+					.kd = 10.0,
 				},
 		},
 
