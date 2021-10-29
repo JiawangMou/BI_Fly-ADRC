@@ -142,13 +142,13 @@ void motorsInit(void) /*电机初始化*/
 
     // Servos AF
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource8, GPIO_AF_TIM3);  // PC8 复用为TIM3 CH3	PWM_LEFT
-    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_TIM3);  // PC7 复用为TIM3 CH2	PWM_MIDDLE
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_TIM3);  // PA6 复用为TIM3 CH1	PWM_MIDDLE
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_TIM3);  // PB1 复用为TIM3 CH4	PWM_RIGHT
     // Motors AF
     GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4); // PD12复用为TIM4 CH1	PWMF1
 
     // Servo GPIO Inits 
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_7 | GPIO_Pin_8; // PC7 8
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_8; // PC7 8
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;            //复用功能
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;       //速度100MHz
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;           //推挽复用输出
@@ -157,6 +157,8 @@ void motorsInit(void) /*电机初始化*/
 
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1; // PB1
     GPIO_Init(GPIOB, &GPIO_InitStructure);    //初始化PB1
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6; // PB1
+    GPIO_Init(GPIOA, &GPIO_InitStructure);    //初始化PB1
 
     // Motors GPIO Inits 
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 ; // PD12
@@ -191,13 +193,13 @@ void motorsInit(void) /*电机初始化*/
     TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_RIGHT);  //舵机中位值
     TIM_OC4Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH4输出比较	PWM_RIGHT
     TIM_OCInitStructure.TIM_Pulse = getservoinitpos_configParam(PWM_MIDDLE); //舵机中位值
-    TIM_OC2Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH2输出比较	PWM_MIDDLE
+    TIM_OC1Init(TIM_SERVO, &TIM_OCInitStructure);                                 //初始化TIM3 CH1输出比较	PWM_MIDDLE
 
     // TIM Preload Enable
     TIM_OC1PreloadConfig(TIM_MOTOR, TIM_OCPreload_Enable); //使能TIM4在CCR1上的预装载寄存器
 
 
-    TIM_OC2PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR2上的预装载寄存器
+    TIM_OC1PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR1上的预装载寄存器
     TIM_OC3PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR3上的预装载寄存器
     TIM_OC4PreloadConfig(TIM_SERVO, TIM_OCPreload_Enable); //使能TIM3在CCR4上的预装载寄存器
 
@@ -295,7 +297,7 @@ void servoSetPWM(u8 id, u16 value)
         TIM_SetCompare4(TIM3, (uint32_t)value);
         break;
     case PWM_MIDDLE:
-        TIM_SetCompare2(TIM3, (uint32_t)value);
+        TIM_SetCompare1(TIM3, (uint32_t)value);
         break;
     }
 #endif

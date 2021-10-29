@@ -32,7 +32,7 @@
 #define MCU_FLASH_SIZE_ADDRESS  0x1FFF7A22
 
 //FOUR_WING 四翅  DOUBLE_WING 二翅
-#define FOUR_WING  
+#define DOUBLE_WING  
 
 
 //自定义的一些配置宏用于完成代码的切换
@@ -49,7 +49,7 @@
 //#define PC7_OUT_ENABLE              
 
 //ADRC_CONTROL ADRC控制姿态Roll轴  PID_CONTROL PID控制姿态
-#define ADRC_CONTROL
+#define PID_CONTROL
 
 
 // #define TEST
