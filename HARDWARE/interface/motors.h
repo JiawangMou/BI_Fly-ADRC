@@ -58,8 +58,6 @@
 #define PWM_MIDDLE 4
 #define PWMR PWMPD13
 
-#define PC7_OUT_ENABLE
-
 #define MOTORS_TEST_RATIO (u16)(0.2 * (1 << 16)) //20%
 #define MOTORS_TEST_ON_TIME_MS 50
 #define MOTORS_TEST_DELAY_TIME_MS 150
