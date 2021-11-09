@@ -20,7 +20,8 @@
 			"myqueue.h": "c",
 			"stdbool.h": "c",
 			"config_param.h": "c",
-			"model.h": "c"
+			"model.h": "c",
+			"commander.h": "c"
 		}
 	}
 }

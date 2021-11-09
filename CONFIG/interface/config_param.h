@@ -2,6 +2,7 @@
 #define __CONFIG_PARAM_H
 
 #include "sys.h"
+#include "config.h"
 #include <stdbool.h>
 
 

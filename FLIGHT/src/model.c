@@ -21,11 +21,14 @@
  */
 
 #include "model.h"
+#include "sys.h"
 #include "config_param.h"
 #include "power_control.h"
+#include "sensfusion6.h"
 #include "arm_math.h"
-#include "motor.h"
-#include "ADRC.h"
+#include "maths.h"
+#include "motors.h"
+
 
 /* Invariant block signals (default storage) */
 const ConstB_model_T model_ConstB = {
@@ -64,9 +67,12 @@ real_T DCMbe[9];                       /* '<Root>/DCMbe' */
 real_T velE[3];                        /* '<Root>/velE' */
 
 tdObject_t Z_TD;
+arm_matrix_instance_f32  DCMbe_arm;
+arm_matrix_instance_f32  DCMeb_arm;
+float DCMeb[9];
 
 /* Model update function */
-u16 MBD_update(float setpoint_Z, motorPWM_t motorPWM, velocity_t state_velE,Axis3f gyro)
+u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
 {
   real_T rtb_Transpose[9];
   real_T rtb_Transpose1[9];
@@ -94,31 +100,22 @@ u16 MBD_update(float setpoint_Z, motorPWM_t motorPWM, velocity_t state_velE,Axis
   real_T rtb_vel_B_vector_tmp_0;
   int32_T i;
   motorPWM_t motorPWM;
-  arm_matrix_instance_f32  DCMbe_arm;
-  arm_matrix_instance_f32  DCMeb_arm;
-  float DCMeb[9];
-  DCMbe_arm.numCols = 3;
-  DCMbe_arm.numRows = 3;
-  DCMbe_arm.pData = DCMbe;
-
-  DCMeb_arm.numCols = 3;
-  DCMeb_arm.numRows = 3;
-  DCMeb_arm.pData = DCMeb;
 //get DCMbe
   getDCMeb(DCMeb);
-  arm_status result = arm_mat_inverse_f32 (DCMeb_arm,DCMbe_arm);
+  arm_status result = arm_mat_inverse_f32 (&DCMeb_arm,&DCMbe_arm);
 //get VelE 单位：state_velE cm -> m velE
     velE[0] = state_velE.x / 100.0f;
     velE[1] = state_velE.y / 100.0f;   
     velE[2] = state_velE.z / 100.0f;
 //get servo command
     getMotorPWM(&motorPWM);
-    model_U.angle_command[0] = ServoPWM2angle(motorPWM.s_middle,PWM_MIDDLE);
-    model_U.angle_command[1] = ServoPWM2angle(motorPWM.s_left,PWM_LEFT);
+    model_U.angle_command[0] = constrainf( ServoPWM2angle(motorPWM.s_middle,PWM_MIDDLE),-50.0f,50.0f);
+    model_U.angle_command[1] = constrainf( ServoPWM2angle(motorPWM.s_left,  PWM_LEFT  ),-50.0f,50.0f);
 //get Wb
-  model_U.Wb = gyro.axis;
+  for(int i=0;i< 3;i++)
+    model_U.Wb[i]= gyro.axis[i];
 //get aZ_E_desired
-  adrc_td(Z_TD, setpoint_Z / 100.0f);
+  adrc_td(&Z_TD, setpoint_Z / 100.0f);
   model_U.aZ_E_desired = Z_TD.fh;
 
    /* DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn' incorporates:
@@ -555,6 +552,14 @@ void model_initialize(float dt)
 {
 
   td_init(&Z_TD,&configParam.Z_TDconfig, dt);
+  //init DCMbe_arm  DCMeb_arm
+  DCMbe_arm.numCols = 3;
+  DCMbe_arm.numRows = 3;
+  DCMbe_arm.pData = DCMbe;
+
+  DCMeb_arm.numCols = 3;
+  DCMeb_arm.numRows = 3;
+  DCMeb_arm.pData = DCMeb;
   /* Registration code */
 
   /* external inputs */

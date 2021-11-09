@@ -584,7 +584,7 @@ static void atkpSendPeriod(void)
 		attitude_t attitudeDesired;
         control_t control;
 
-//        Axis3f gyro_LPF;
+      Axis3f gyro_LPF;
         Axis3f gyro_UnLPF;
         state_t state; /*四轴姿态*/
         state = getState();
@@ -600,6 +600,7 @@ static void atkpSendPeriod(void)
 		getAngleDesired(&attitudeDesired);
         getSensorData(&sensordata);
         getgyro_UnLPFData(&gyro_UnLPF);
+        getgyro_LPFData( &gyro_LPF);
 		getRateDesired( &rateDesired );
         control  = getControlData();
         u32 timestamp = getSysTickCnt();
@@ -607,7 +608,6 @@ static void atkpSendPeriod(void)
         // float(* Notchcenterfreq)[DYN_NOTCH_COUNT_MAX] =  getdynNotchcenterfreq();
         // peak_t *peaks =  getdynNotchpeak();
         // float roll_unNotchData = getgyro_unNotchData();
-        // float roll_Notchdata = getgyro_NotchData();
         // float roll_SFdata = getgyro_smoothfilterData();
         // sendUserData(1, gyro_UnLPF.x, gyro_UnLPF.y, gyro_UnLPF.z,roll_SFdata,gyro_LPF.x,sensordata.gyro.x,control.roll,roll_Notchdata,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, peaks[0].bin ,peaks[0].value,peaks[1].bin,peaks[1].value, peaks[2].bin,peaks[2].value, 

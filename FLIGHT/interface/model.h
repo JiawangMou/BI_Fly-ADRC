@@ -27,6 +27,9 @@
 #ifndef model_COMMON_INCLUDES_
 #define model_COMMON_INCLUDES_
 #include "rtwtypes.h"
+#include "ADRC.h"
+#include "stabilizer_types.h"
+#include "sensors_types.h"
 #endif                                 /* model_COMMON_INCLUDES_ */
 
 /* Model Code Variants */
@@ -99,7 +102,7 @@ extern const ConstP_model_T model_ConstP;
 
 /* Model entry point functions */
 extern void model_initialize(float dt);
-extern u16 MBD_update(float setpoint_Z, motorPWM_t motorPWM, velocity_t state_velE,Axis3f gyro);
+extern u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro);
 extern void model_terminate(void);
 
 /* Real-time Model object */

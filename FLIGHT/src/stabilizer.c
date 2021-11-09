@@ -166,11 +166,12 @@ void stabilizerTask(void* param)
 
         /*PID控制*/
         stateControl(&control, &sensorData, &state, &setpoint, tick);
-        if (commander.ctrlMode & 0x01) /*定高模式*/
+        if (getCommanderCtrlMode() & 0x01) /*定高模式*/
         {
-            adrc_td(Z_TD,float v);
             if (RATE_DO_EXECUTE(MBD_TD_RATE, tick)) /*MBD_update*/
-                MBD_update(setpoint.position.z, motorPWM_t motorPWM, velocity_t state_velE,Axis3f gyro);
+                adrc_td(&Z_TD,setpoint.position.z);
+            if (RATE_DO_EXECUTE(MBD_RATE, tick)) /*MBD_update*/
+                control.MBD_thrust = MBD_update(Z_TD.fh,state.velocity,sensorData.gyro);
         }
 
 

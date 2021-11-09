@@ -193,6 +193,7 @@ typedef struct
 	s16 pitch;
 	s16 yaw;
 	float thrust;
+	u16 MBD_thrust;
 	enum dir_e flipDir;		/*·­¹ö·½Ïò*/
 } control_t;
 

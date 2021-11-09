@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "math.h"
-#include "config.h"
+
 #include "config_param.h"
 #include "watchdog.h"
 #include "stmflash.h"
@@ -275,7 +275,7 @@ static configParam_t configParamDefault =
 		{
 			.r  = 0.8, // max_a = 0.8m/s^2
 			.N0 = 2,
-		}
+		},
 #endif
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
@@ -521,7 +521,7 @@ static configParam_t configParamDefault =
 		{
 			.r  = 0.8, // max_a = 0.8m/s^2
 			.N0 = 2,
-		}
+		},
 #endif
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/

@@ -694,11 +694,12 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	dynNotchPush(0, gyro_UnLPF.x);
 	gyro_Notched.x = dynNotchFilter(0, gyro_UnLPF.x);
 	gyro_Notched.x = lpf2pApply(&GyroLpf_1, gyro_Notched.x);
+	sensors.gyro.x = gyro_Notched.x;
 #else
 	sensors.gyro.x = gyro_LPF.x;
 #endif // USE_DYN_NOTCH_FILTER
 //TODO
-	sensors.gyro.x = gyro_Notched.x;
+
 	sensors.gyro.y = gyro_LPF.y;
 	sensors.gyro.z = gyro_LPF.z;
 	
@@ -909,14 +910,12 @@ void getgyro_LPFData( Axis3f *temp )
 {
 	*temp = gyro_LPF;
 }
+#ifdef USE_DYN_NOTCH_FILTER
 float getgyro_unNotchData( void)
 {
 	return gyro_UnNotch;
 }
-float getgyro_NotchData( void)
-{
-	return gyro_Notched.x;
-}
+#endif
 float getgyro_smoothfilterData( void)
 {
 	return gyro_SF.x;
