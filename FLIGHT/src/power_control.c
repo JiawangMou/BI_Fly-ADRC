@@ -137,3 +137,8 @@ void setMotorPWM(bool enable, u16 f1_set, u16 f2_set, u16 s1_set, u16 s2_set, u1
 	motorPWMSet.s_middle = s3_set;
 	motorPWMSet.r1 = r1_set;
 }
+
+float ServoPWM2angle(u32 PWM,u8 id)
+{
+	return PWM2ANGLE( PWM - getservoinitpos_configParam(id) );
+}

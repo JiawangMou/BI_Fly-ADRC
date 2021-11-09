@@ -65,6 +65,7 @@
 #define MOTORS_TEST_DELAY_TIME_MS 150
 
 #define MOTORS_MAXPWM (0.4 * 65535)
+#define PWM2ANGLE( x )  (x) * 0.08333333
 
 #ifdef FOUR_WING
 #define SERVO_MAXPWM 2050 //2.1ms

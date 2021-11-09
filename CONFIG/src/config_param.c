@@ -269,6 +269,14 @@ static configParam_t configParamDefault =
     		.dyn_notch_count = 3,
 		},
 #endif // USE_DYN_NOTCH_FILTER
+
+#ifdef USE_MBD
+		.Z_TDconfig = 
+		{
+			.r  = 0.8, // max_a = 0.8m/s^2
+			.N0 = 2,
+		}
+#endif
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 40000.0, /*定高油门基础值*/
@@ -508,6 +516,13 @@ static configParam_t configParamDefault =
     		.dyn_notch_count = 1,
 		},
 #endif // USE_DYN_NOTCH_FILTER
+#ifdef USE_MBD
+		.Z_TDconfig = 
+		{
+			.r  = 0.8, // max_a = 0.8m/s^2
+			.N0 = 2,
+		}
+#endif
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 40000.0, /*定高油门基础值*/

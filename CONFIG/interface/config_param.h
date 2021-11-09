@@ -157,6 +157,9 @@ typedef struct
 #ifdef USE_DYN_NOTCH_FILTER
 	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
 #endif // USE_DYN_NOTCH_FILTER
+#ifdef USE_MBD
+	tdParam_t Z_TDconfig;
+#endif
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
 	u16 thrustBase;			/*油门基础值*/

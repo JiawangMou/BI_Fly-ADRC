@@ -12,6 +12,7 @@
 #include "state_estimator.h"
 #include "system.h"
 #include "vl53lxx.h"
+#include "model.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -52,6 +53,8 @@ void stabilizerInit(void)
 
     stateControlInit(); /*姿态PID初始化*/
     powerControlInit(); /*电机初始化*/
+
+    model_initialize(MBD_TD_DT);
 
     isInit = true;
 }
@@ -162,11 +165,17 @@ void stabilizerTask(void* param)
         anomalDetec(&sensorData, &state, &control);
 
         /*PID控制*/
-
         stateControl(&control, &sensorData, &state, &setpoint, tick);
+        if (commander.ctrlMode & 0x01) /*定高模式*/
+        {
+            adrc_td(Z_TD,float v);
+            if (RATE_DO_EXECUTE(MBD_TD_RATE, tick)) /*MBD_update*/
+                MBD_update(setpoint.position.z, motorPWM_t motorPWM, velocity_t state_velE,Axis3f gyro);
+        }
 
-        //控制电机输出（500Hz）
-        if (RATE_DO_EXECUTE(RATE_500_HZ, tick)) {
+
+        //控制电机输出（250Hz）
+        if (RATE_DO_EXECUTE(RATE_250_HZ, tick)) {
             motorControl(&control);
         }
 

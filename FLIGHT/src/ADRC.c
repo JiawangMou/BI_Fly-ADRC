@@ -76,6 +76,7 @@ void td_init(tdObject_t *tdobject,tdParam_t *tdparam, float tdDt)
     tdobject->r        = tdparam->r; //时间尺度
     tdobject->h        = tdDt; //ADRC系统积分时间
     tdobject->N0       = tdparam->N0; //跟踪微分器解决速度超调h0=N*h
+    tdobject->fh       = 0;
 }
 
 void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
@@ -158,9 +159,9 @@ float adrc_fhan(float x1, float x2, float r0, float h0)
 
 void adrc_td(tdObject_t *td,float v)
 {
-    float fh = adrc_fhan(td->x1 - v, td->x2, td->r, td->h * td->N0);
+    td->fh = adrc_fhan(td->x1 - v, td->x2, td->r, td->h * td->N0);
     td->x1 += td->h * td->x2;
-    td->x2 += td->h  * fh;
+    td->x2 += td->h  * td->fh;
     td->TD_input = v;
 }
 

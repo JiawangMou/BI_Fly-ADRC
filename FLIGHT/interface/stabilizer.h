@@ -36,8 +36,8 @@
 
 #define ATTITUDE_ESTIMAT_RATE	RATE_100_HZ	//姿态解算速率
 #define ATTITUDE_ESTIMAT_DT		(1.0/ATTITUDE_ESTIMAT_RATE)
-
 #define POSITION_ESTIMAT_RATE	RATE_250_HZ	//位置预估速率
+
 #define POSITION_ESTIMAT_DT		(1.0/POSITION_ESTIMAT_RATE)
 
 #define RATE_PID_RATE			RATE_250_HZ //角速度环（内环）PID速率
@@ -51,6 +51,12 @@
 
 #define POSITION_PID_RATE		POSITION_ESTIMAT_RATE //位置环（外环）PID速率
 #define POSITION_PID_DT			(1.0/POSITION_PID_RATE)
+
+#define MBD_RATE		        RATE_250_HZ //高度模型补偿的速率
+#define MBD_DT			        (1.0/MBD_RATE)
+
+#define MBD_TD_RATE             RATE_500_HZ
+#define MBD_TD_DT               (1.0/MBD_TD_RATE)
 
 #ifdef TEST
 #define WAIT_RATE 

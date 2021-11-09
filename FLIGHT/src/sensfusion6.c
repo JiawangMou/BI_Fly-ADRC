@@ -77,7 +77,7 @@ static void calBaseAcc(float* acc)	/*计算静态加速度*/
 }
 
 /*计算旋转矩阵*/  
-//R(B2n) 机体到地球坐标系的旋转矩阵
+//R(B2n) 机体到地球坐标系的旋转矩阵 DCMeb
 void imuComputeRotationMatrix(void)
 {
 	float q0q0 = q0 * q0;
@@ -256,4 +256,12 @@ bool getIsCalibrated(void)
 void getAcc_SendData(Acc_Send *acc)
 {
 	*acc = acc_send;
+}
+
+
+void getDCMeb(float *DCMeb)
+{
+	for(u8 i= 0;i < 3;i++)
+		for(u8 j = 0;j < 3;j++ )
+			*(DCMeb + i*3 + j) = rMat[i][j];
 }

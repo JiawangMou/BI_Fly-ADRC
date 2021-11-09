@@ -70,8 +70,12 @@
 //ADRC_CONTROL ADRC控制姿态Roll轴  PID_CONTROL PID控制姿态
 #define PID_CONTROL
 
+//是否使用动态陷波滤波器
+// #define USE_DYN_NOTCH_FILTER
 
-#define USE_DYN_NOTCH_FILTER
+//是否使用模型对定高进行补偿控制
+#define USE_MBD
+
 
 // #define TEST
 

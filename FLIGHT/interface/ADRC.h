@@ -14,6 +14,7 @@ typedef struct
 	float r;//时间尺度
 	float h;//ADRC系统积分时间
 	float N0;//跟踪微分器解决速度超调h0=N*h	
+	float fh;
 }tdObject_t;
 
 typedef struct 
