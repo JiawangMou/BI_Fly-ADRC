@@ -909,6 +909,11 @@
               <FileType>1</FileType>
               <FilePath>..\FLIGHT\src\attitude_adrc.c</FilePath>
             </File>
+            <File>
+              <FileName>model.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FLIGHT\src\model.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -943,6 +948,11 @@
               <FileName>myqueue.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\COMMON\src\myqueue.c</FilePath>
+            </File>
+            <File>
+              <FileName>tf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\COMMON\src\tf.c</FilePath>
             </File>
           </Files>
         </Group>
