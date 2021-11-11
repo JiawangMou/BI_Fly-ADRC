@@ -21,7 +21,8 @@
 			"stdbool.h": "c",
 			"config_param.h": "c",
 			"model.h": "c",
-			"commander.h": "c"
+			"commander.h": "c",
+			"position_pid.h": "c"
 		}
 	}
 }

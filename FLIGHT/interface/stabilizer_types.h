@@ -1,6 +1,7 @@
 #ifndef __STABILIZER_TYPES_H
 #define __STABILIZER_TYPES_H
 #include "sys.h"
+#include "config.h"
 #include <stdbool.h>
 #include "sensors_types.h"
 
@@ -187,15 +188,7 @@ enum dir_e
 	RIGHT,
 };
 
-typedef struct
-{
-	s16 roll;
-	s16 pitch;
-	s16 yaw;
-	float thrust;
-	u16 MBD_thrust;
-	enum dir_e flipDir;		/*翻滚方向*/
-} control_t;
+
 
 typedef enum
 {
@@ -214,6 +207,19 @@ typedef struct
 	mode_e yaw;
 }mode_t;
 
+#ifdef USE_MBD
+typedef struct
+{
+	attitude_t attitude;		// deg	
+	attitude_t attitudeRate;	// deg/s
+	point_t pos_desired;		// position setpoint,TD input  cm
+	point_t position;         	// transient position setpoint cm
+	velocity_t velocity;      	// transient velocity setpoint cm/s
+	Axis3f acc;
+	mode_t mode;
+	float thrust;
+} setpoint_t;
+#else
 typedef struct
 {
 	attitude_t attitude;		// deg	
@@ -223,6 +229,37 @@ typedef struct
 	mode_t mode;
 	float thrust;
 } setpoint_t;
+#endif
+#ifdef USE_MBD
+typedef struct 
+{
+	float vel;
+	float pos;
+	float MBD;
+}thrust_t;
+
+typedef struct
+{
+	s16 roll;
+	s16 pitch;
+	s16 yaw;
+	float thrust;
+	thrust_t thrust_part;
+	enum dir_e flipDir;		/*翻滚方向*/
+} control_t;
+#else
+{
+typedef struct
+{
+	s16 roll;
+	s16 pitch;
+	s16 yaw;
+	float thrust;
+	enum dir_e flipDir;		/*翻滚方向*/
+} control_t;
+}
+#endif
+
 
 
 #define RATE_5_HZ		5

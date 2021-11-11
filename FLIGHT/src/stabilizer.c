@@ -108,7 +108,7 @@ static void fastAdjustPosZ(void)
         absModeTimes--;
         estRstAll(); /*复位估测*/
         setpoint.mode.z = modeAbs;
-        setpoint.position.z = setHeight;
+        setpoint.pos_desired.z = setHeight;
     }
 }
 
@@ -166,13 +166,23 @@ void stabilizerTask(void* param)
 
         /*PID控制*/
         stateControl(&control, &sensorData, &state, &setpoint, tick);
-        if (getCommanderCtrlMode() & 0x01) /*定高模式*/
+
+        #ifdef USE_MBD
+        /*MBD compensation*/
+        if ((getCommanderCtrlMode() & 0x01) && (getCommanderKeyland() || getCommanderKeyFlight())) /*定高模式,且不处于着落状态时*/
         {
-            if (RATE_DO_EXECUTE(MBD_TD_RATE, tick)) /*MBD_update*/
-                adrc_td(&Z_TD,setpoint.position.z);
+            if (RATE_DO_EXECUTE(MBD_TD_RATE, tick)) /*TD_update*/
+            {
+                adrc_td(&Z_TD,setpoint.pos_desired.z / 100.0f);
+                setpoint.velocity.z = Z_TD.x2 * 100;
+                setpoint.position.z = Z_TD.x1 * 100;
+                setpoint.acc.z = Z_TD.fh * 100;
+            }
+
             if (RATE_DO_EXECUTE(MBD_RATE, tick)) /*MBD_update*/
-                control.MBD_thrust = MBD_update(Z_TD.fh,state.velocity,sensorData.gyro);
+                control.thrust_part.MBD = MBD_update(setpoint.acc.z,state.velocity,sensorData.gyro);
         }
+        #endif
 
 
         //控制电机输出（250Hz）

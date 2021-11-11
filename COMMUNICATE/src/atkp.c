@@ -578,33 +578,30 @@ static void atkpSendPeriod(void)
         // sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
         //     sensor.gyro.z, control.pitch, control.yaw, control.roll);
 
-		sensorData_t sensordata;
-		attitude_t rateDesired;
-		attitude_t attitude;
-		attitude_t attitudeDesired;
-        control_t control;
+		// sensorData_t sensordata;
+		// attitude_t rateDesired;
+		// attitude_t attitude;
+		// attitude_t attitudeDesired;
+        control_t control = getControlData();
 
-      Axis3f gyro_LPF;
-        Axis3f gyro_UnLPF;
-        state_t state; /*四轴姿态*/
-        state = getState();
-        float laser_height = 0;
-        laser_height = getFusedHeight(); 
-        float Z_acc = getestimator_acc();
-        Axis3i16 acc;
-        Axis3i16 gyro;
-        Axis3i16 mag;
+    //   Axis3f gyro_LPF;
+    //     Axis3f gyro_UnLPF;
+        state_t state = getState(); /*四轴姿态*/
+        float laser_height = getFusedHeight();
+        // float Z_acc = getestimator_acc();
+        // Axis3i16 acc;
+        // Axis3i16 gyro;
+        // Axis3i16 mag;
         setpoint_t setpoint = getSetpoint();
-        getSensorRawData(&acc, &gyro, &mag);
-		getAttitudeData(&attitude);
-		getAngleDesired(&attitudeDesired);
-        getSensorData(&sensordata);
-        getgyro_UnLPFData(&gyro_UnLPF);
-        getgyro_LPFData( &gyro_LPF);
-		getRateDesired( &rateDesired );
-        control  = getControlData();
+        // getSensorRawData(&acc, &gyro, &mag);
+		// getAttitudeData(&attitude);
+		// getAngleDesired(&attitudeDesired);
+        // getSensorData(&sensordata);
+        // getgyro_UnLPFData(&gyro_UnLPF);
+        // getgyro_LPFData( &gyro_LPF);
+		// getRateDesired( &rateDesired );
         u32 timestamp = getSysTickCnt();
-#ifdef USE_DYN_NOTCH_FILTER        
+#ifdef USE_MBD        
         // float(* Notchcenterfreq)[DYN_NOTCH_COUNT_MAX] =  getdynNotchcenterfreq();
         // peak_t *peaks =  getdynNotchpeak();
         // float roll_unNotchData = getgyro_unNotchData();
@@ -612,11 +609,14 @@ static void atkpSendPeriod(void)
         // sendUserData(1, gyro_UnLPF.x, gyro_UnLPF.y, gyro_UnLPF.z,roll_SFdata,gyro_LPF.x,sensordata.gyro.x,control.roll,roll_Notchdata,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, peaks[0].bin ,peaks[0].value,peaks[1].bin,peaks[1].value, peaks[2].bin,peaks[2].value, 
         //                 (s16)(Notchcenterfreq[X][0]*10),(s16)(Notchcenterfreq[X][1]*10),(s16)(Notchcenterfreq[X][2]*10));
+        sendUserData(1, 10*state.position.z,10* setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,10*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp & 0x00ffff));
+        sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,0,0,0,0,0,0);
+#else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
         sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,0,0);
-#else
-        sendUserData(1, gyro.x, gyro_LPF.x, sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, gyro.y, gyro_LPF.y, sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);        
+
+        // sendUserData(1, gyro.x, gyro_LPF.x, sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp & 0x00ffff));
+        // sendUserData(2, gyro.y, gyro_LPF.y, sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);        
 #endif
 		// sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired.pitch, sensordata.gyro.y, attitude.yaw,rateDesired.yaw, sensordata.gyro.z);
         // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],

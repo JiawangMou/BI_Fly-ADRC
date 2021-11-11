@@ -76,8 +76,8 @@
 //是否使用模型对定高进行补偿控制
 #define USE_MBD
 
-
-// #define TEST
+// ATI力测试代码
+// #define TEST   
 
 
 #endif /* __CONFIG_H */

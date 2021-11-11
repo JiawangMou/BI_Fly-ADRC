@@ -84,9 +84,14 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 {
     static u16 cnt = 0;
 #ifndef TEST
+
     if (RATE_DO_EXECUTE(POSITION_PID_RATE, tick)) {
         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
+            #ifdef USE_MBD
+            positionController(&actualThrust,control, &attitudeDesired, setpoint, state, POSITION_PID_DT);
+            #else 
             positionController(&actualThrust, &attitudeDesired, setpoint, state, POSITION_PID_DT);
+            #endif
         }
     }
 

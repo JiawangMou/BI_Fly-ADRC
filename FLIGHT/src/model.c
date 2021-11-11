@@ -72,7 +72,7 @@ arm_matrix_instance_f32  DCMeb_arm;
 float DCMeb[9];
 
 /* Model update function */
-u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
+u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
 {
   real_T rtb_Transpose[9];
   real_T rtb_Transpose1[9];
@@ -115,52 +115,51 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
   for(int i=0;i< 3;i++)
     model_U.Wb[i]= gyro.axis[i];
 //get aZ_E_desired
-  adrc_td(&Z_TD, setpoint_Z / 100.0f);
-  model_U.aZ_E_desired = Z_TD.fh;
+  model_U.aZ_E_desired = aZ_E_desired;
 
    /* DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn' incorporates:
    *  Inport: '<Root>/angle_command'
    */
-  denAccum = (model_U.angle_command[0] - 1.6451487309864259 *
-              model_DW.DiscreteTransferFcn_states[0]) - 0.682538626130998 *
+  denAccum = (model_U.angle_command[0] - 1.6451487309864259f *
+              model_DW.DiscreteTransferFcn_states[0]) - 0.682538626130998f *
     model_DW.DiscreteTransferFcn_states[1];
-  rtb_Gain1_idx_0 = (0.009347473786143 * denAccum + 0.018694947572286 *
-                     model_DW.DiscreteTransferFcn_states[0]) + 0.009347473786143
+  rtb_Gain1_idx_0 = (0.009347473786143f * denAccum + 0.018694947572286f *
+                     model_DW.DiscreteTransferFcn_states[0]) + 0.009347473786143f
     * model_DW.DiscreteTransferFcn_states[1];
 
   /* DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn1' incorporates:
    *  Inport: '<Root>/angle_command'
    */
-  denAccum_0 = (model_U.angle_command[1] - 1.6451487309864259 *
-                model_DW.DiscreteTransferFcn1_states[0]) - 0.682538626130998 *
+  denAccum_0 = (model_U.angle_command[1] - 1.6451487309864259f *
+                model_DW.DiscreteTransferFcn1_states[0]) - 0.682538626130998f *
     model_DW.DiscreteTransferFcn1_states[1];
-  rtb_Gain1_idx_1 = (0.009347473786143 * denAccum_0 + 0.018694947572286 *
+  rtb_Gain1_idx_1 = (0.009347473786143f * denAccum_0 + 0.018694947572286f *
                      model_DW.DiscreteTransferFcn1_states[0]) +
-    0.009347473786143 * model_DW.DiscreteTransferFcn1_states[1];
+    0.009347473786143f * model_DW.DiscreteTransferFcn1_states[1];
 
   /* Saturate: '<S1>/Signal_Saturation_3' incorporates:
    *  DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn'
    */
-  if (rtb_Gain1_idx_0 > 50.0) {
-    rtb_Gain1_idx_0 = 50.0;
-  } else if (rtb_Gain1_idx_0 < -50.0) {
-    rtb_Gain1_idx_0 = -50.0;
+  if (rtb_Gain1_idx_0 > 50.0f) {
+    rtb_Gain1_idx_0 = 50.0f;
+  } else if (rtb_Gain1_idx_0 < -50.0f) {
+    rtb_Gain1_idx_0 = -50.0f;
   }
 
   /* Gain: '<S2>/Gain1' */
-  rtb_Gain1_idx_0 *= 0.017453292519943295;
+  rtb_Gain1_idx_0 *= 0.017453292519943295f;
 
   /* Saturate: '<S1>/Signal_Saturation_3' incorporates:
    *  DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn1'
    */
-  if (rtb_Gain1_idx_1 > 50.0) {
-    rtb_Gain1_idx_1 = 50.0;
-  } else if (rtb_Gain1_idx_1 < -50.0) {
-    rtb_Gain1_idx_1 = -50.0;
+  if (rtb_Gain1_idx_1 > 50.0f) {
+    rtb_Gain1_idx_1 = 50.0f;
+  } else if (rtb_Gain1_idx_1 < -50.0f) {
+    rtb_Gain1_idx_1 = -50.0f;
   }
 
   /* Gain: '<S2>/Gain1' */
-  rtb_Gain1_idx_1 *= 0.017453292519943295;
+  rtb_Gain1_idx_1 *= 0.017453292519943295f;
 
   /* Trigonometry: '<S20>/sincos' incorporates:
    *  SignalConversion generated from: '<S20>/sincos'
@@ -172,25 +171,25 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
   rtb_Transpose[0] = rtb_Cop_R_b_g[1];
 
   /* Fcn: '<S20>/Fcn21' */
-  rtb_Transpose[1] = a * 0.0;
+  rtb_Transpose[1] = 0.0f;
 
   /* Fcn: '<S20>/Fcn31' */
   rtb_Transpose[2] = a;
 
   /* Fcn: '<S20>/Fcn12' */
-  rtb_Transpose[3] = 0.0 * rtb_Cop_R_b_g[1];
+  rtb_Transpose[3] = 0.0f ;
 
   /* Fcn: '<S20>/Fcn22' */
-  rtb_Transpose[4] = a * 0.0 * 0.0 + 1.0;
+  rtb_Transpose[4] = 1.0f;
 
   /* Fcn: '<S20>/Fcn32' */
-  rtb_Transpose[5] = a * 0.0;
+  rtb_Transpose[5] = 0.0f;
 
   /* Fcn: '<S20>/Fcn13' */
   rtb_Transpose[6] = -a;
 
   /* Fcn: '<S20>/Fcn23' */
-  rtb_Transpose[7] = rtb_Cop_R_b_g[1] * 0.0;
+  rtb_Transpose[7] = 0.0f;
 
   /* Fcn: '<S20>/Fcn33' */
   rtb_Transpose[8] = rtb_Cop_R_b_g[1];
@@ -216,25 +215,25 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
   rtb_Transpose1[0] = rtb_Cop_R_b[1];
 
   /* Fcn: '<S19>/Fcn21' */
-  rtb_Transpose1[1] = a * 0.0;
+  rtb_Transpose1[1] = 0.0f;
 
   /* Fcn: '<S19>/Fcn31' */
   rtb_Transpose1[2] = a;
 
   /* Fcn: '<S19>/Fcn12' */
-  rtb_Transpose1[3] = 0.0 * rtb_Cop_R_b[1];
+  rtb_Transpose1[3] = 0.0f ;
 
   /* Fcn: '<S19>/Fcn22' */
-  rtb_Transpose1[4] = a * 0.0 * 0.0 + 1.0;
+  rtb_Transpose1[4] = 1.0f;
 
   /* Fcn: '<S19>/Fcn32' */
-  rtb_Transpose1[5] = a * 0.0;
+  rtb_Transpose1[5] = 0.0f;
 
   /* Fcn: '<S19>/Fcn13' */
   rtb_Transpose1[6] = -a;
 
   /* Fcn: '<S19>/Fcn23' */
-  rtb_Transpose1[7] = rtb_Cop_R_b[1] * 0.0;
+  rtb_Transpose1[7] = 0.0f;
 
   /* Fcn: '<S19>/Fcn33' */
   rtb_Transpose1[8] = rtb_Cop_R_b[1];
@@ -255,7 +254,7 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
    * About '<S18>/TSamp':
    *  y = u * K where K = 1 / ( w * Ts )
    */
-  rtb_Gain1_idx_1 *= 250.0;
+  rtb_Gain1_idx_1 *= 250.0f;
 
   /* SampleTimeMath: '<S17>/TSamp' incorporates:
    *  Gain: '<S8>/Gain1'
@@ -263,14 +262,14 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
    * About '<S17>/TSamp':
    *  y = u * K where K = 1 / ( w * Ts )
    */
-  rtb_Gain1_idx_0 = -rtb_Gain1_idx_0 * 250.0;
+  rtb_Gain1_idx_0 = -rtb_Gain1_idx_0 * 250.0f;
 
   /* Product: '<S1>/Product5' incorporates:
    *  Constant: '<S1>/mass'
    *  DotProduct: '<S1>/Dot Product'
    *  Inport: '<Root>/aZ_E_desired'
    */
-  rtb_Sum_d_idx_2 = model_U.aZ_E_desired * 0.027;
+  rtb_Sum_d_idx_2 = model_U.aZ_E_desired * 0.027f;
   for (i = 0; i < 3; i++) {
     /* Product: '<S1>/Product3' incorporates:
      *  Math: '<S8>/Transpose'
@@ -281,10 +280,10 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
      *  Math: '<S8>/Transpose1'
      */
     rtb_Transpose1_f = rtb_Transpose1[i];
-    rtb_Transpose1_1 = rtb_Transpose1_f * 0.0;
+    rtb_Transpose1_1 = rtb_Transpose1_f * 0.0f;
 
     /* Product: '<S1>/Product3' */
-    rtb_Transpose_2 = rtb_Transpose_o * 0.0;
+    rtb_Transpose_2 = rtb_Transpose_o * 0.0f;
 
     /* Product: '<S6>/Product1' incorporates:
      *  Sum: '<S6>/Subtract'
@@ -305,10 +304,10 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
      *  Math: '<S8>/Transpose1'
      */
     rtb_Transpose1_f = rtb_Transpose1[i + 3];
-    rtb_Transpose1_1 += rtb_Transpose1_f * 0.0;
+    rtb_Transpose1_1 += rtb_Transpose1_f * 0.0f;
 
     /* Product: '<S1>/Product3' */
-    rtb_Transpose_2 += rtb_Transpose_o * 0.0;
+    rtb_Transpose_2 += rtb_Transpose_o * 0.0f;
 
     /* Product: '<S6>/Product1' incorporates:
      *  Sum: '<S6>/Subtract'
@@ -378,7 +377,7 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
      *  Inport: '<Root>/Wb'
      *  Sum: '<S23>/Sum'
      */
-    rtb_Sum_p[i] = 0.017453292519943295 * model_U.Wb[i];
+    rtb_Sum_p[i] = 0.017453292519943295f * model_U.Wb[i];
 
     /* Sum: '<S1>/Add1' incorporates:
      *  Inport: '<Root>/DCMbe'
@@ -386,7 +385,7 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
      *  Product: '<S1>/Product4'
      *  Product: '<S1>/Product5'
      */
-    tmp[i] = ((rtb_vel_B_vector_tmp * 0.0 + DCMbe[i] * 0.0) +
+    tmp[i] = ((rtb_vel_B_vector_tmp * 0.0f + DCMbe[i] * 0.0f) +
               rtb_vel_B_vector_tmp_0 * rtb_Sum_d_idx_2) -
       (rtb_vel_B_vector_tmp_0 * model_ConstB.Product[2] + (rtb_vel_B_vector_tmp *
         model_ConstB.Product[1] + DCMbe[i] * model_ConstB.Product[0]));
@@ -454,16 +453,16 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
    *
    *  Store in Global RAM
    */
-  a = rtb_Thrust_coeff_B_vector[2] * 0.0003543;
-  rtb_Sum_d_idx_2 = (((0.0 * rtb_Cop_L_b[1] - (rtb_Gain1_idx_1 -
+  a = rtb_Thrust_coeff_B_vector[2] * 0.0003543f;
+  rtb_Sum_d_idx_2 = (((0.0f * rtb_Cop_L_b[1] - (rtb_Gain1_idx_1 -
     model_DW.UD_DSTATE) * rtb_Cop_L_b[0]) + (rtb_vel_B_vector[2] +
-    rtb_Sum_d_idx_2)) + rtb_vel_B_vector[2]) * -0.00198 - ((((0.0 *
+    rtb_Sum_d_idx_2)) + rtb_vel_B_vector[2]) * -0.00198f - ((((0.0f *
     rtb_Cop_R_b_g[1] - (rtb_Gain1_idx_0 - model_DW.UD_DSTATE_f) * rtb_Cop_R_b_g
     [0]) + rtb_vel_B_vector[2]) + (rtb_Transpose_o - rtb_Transpose1_f)) +
-    rtb_vel_B_vector[2]) * 0.00198;
+    rtb_vel_B_vector[2]) * 0.00198f;
   rtb_Sum_d_idx_2 = (sqrt(rtb_Sum_d_idx_2 * rtb_Sum_d_idx_2 -
-    (rtb_Thrust_coeff_B_vector[2] * -0.002027 + -tmp[2]) * (4.0 * a)) +
-                     -rtb_Sum_d_idx_2) / (2.0 * a);
+    (rtb_Thrust_coeff_B_vector[2] * -0.002027f + -tmp[2]) * (4.0f * a)) +
+                     -rtb_Sum_d_idx_2) / (2.0f * a);
 
   /* SampleTimeMath: '<S4>/TSamp' incorporates:
    *  MATLAB Function: '<S1>/solve for thrust'
@@ -471,7 +470,7 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
    * About '<S4>/TSamp':
    *  y = u * K where K = 1 / ( w * Ts )
    */
-  a = rtb_Sum_d_idx_2 * 250.0;
+  a = rtb_Sum_d_idx_2 * 250.0f;
 
   /* Sum: '<S1>/Add4' incorporates:
    *  Gain: '<S1>/Gain'
@@ -487,27 +486,27 @@ u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro)
    *
    *  Store in Global RAM
    */
-  rtb_Sum_d_idx_2 += (a - model_DW.UD_DSTATE_c) * 0.016129032258064516;
+  rtb_Sum_d_idx_2 += (a - model_DW.UD_DSTATE_c) * 0.016129032258064516f;
 
   /* Saturate: '<S1>/Saturation5' */
-  if (rtb_Sum_d_idx_2 > 25.580016) {
-    rtb_Sum_d_idx_2 = 25.580016;
-  } else if (rtb_Sum_d_idx_2 < 0.0) {
-    rtb_Sum_d_idx_2 = 0.0;
+  if (rtb_Sum_d_idx_2 > 25.580016f) {
+    rtb_Sum_d_idx_2 = 25.580016f;
+  } else if (rtb_Sum_d_idx_2 < 0.0f) {
+    rtb_Sum_d_idx_2 = 0.0f;
   }
 
   /* End of Saturate: '<S1>/Saturation5' */
 
   /* MATLAB Function: '<S1>/flappingHz2PWM' */
-  if (rtb_Sum_d_idx_2 < 1.5) {
+  if (rtb_Sum_d_idx_2 < 1.5f) {
     /* Outport: '<Root>/PWM_compensation' */
-    model_Y.PWM_compensation = 0.0;
+    model_Y.PWM_compensation = 0.0f;
   } else {
     /* Outport: '<Root>/PWM_compensation' incorporates:
      *  Constant: '<S1>/ModelParam_motorCb'
      *  Constant: '<S1>/ModelParam_motorCr'
      */
-    model_Y.PWM_compensation = (rtb_Sum_d_idx_2 - 1.43) / 0.0003685;
+    model_Y.PWM_compensation = (rtb_Sum_d_idx_2 - 1.43f) / 0.0003685f;
   }
 
   /* End of MATLAB Function: '<S1>/flappingHz2PWM' */

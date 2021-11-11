@@ -27,11 +27,18 @@
 
 #define PIDVX_OUTPUT_LIMIT 120.0f  // ROLL限幅	(单位°带0.15的系数)
 #define PIDVY_OUTPUT_LIMIT 120.0f  // PITCH限幅	(单位°带0.15的系数)
-#define PIDVZ_OUTPUT_LIMIT (65500) /*PID VZ限幅*/
+
 
 #define PIDX_OUTPUT_LIMIT 1200.0f // X轴速度限幅(单位cm/s 带0.1的系数)
 #define PIDY_OUTPUT_LIMIT 1200.0f // Y轴速度限幅(单位cm/s 带0.1的系数)
+
+#ifdef USE_MBD
+#define PIDZ_OUTPUT_LIMIT  (40000.0f) //Z轴速度限幅(单位cm/s)
+#define PIDVZ_OUTPUT_LIMIT (40000.0f) /*PID VZ限幅*/
+#else
 #define PIDZ_OUTPUT_LIMIT  100.0f //Z轴速度限幅(单位cm/s)
+#define PIDVZ_OUTPUT_LIMIT (65500) /*PID VZ限幅*/
+#endif
 //临时版本，定高变为单环PID,输出限幅直接到油门输出
 // #define PIDZ_OUTPUT_LIMIT 65500.0f // Z轴速度限幅(油门量)
 
@@ -73,6 +80,74 @@ void positionControlInit(float velocityPidDt, float posPidDt)
     pidSetOutputLimit(&pidZ, configParam.pidPos.z.outputLimit); /* 输出限幅 */
 }
 
+
+
+#ifdef USE_MBD
+static void velocityController(float* thrust, control_t *control,attitude_t* attitude, setpoint_t* setpoint, const state_t* state)
+{
+    static u16 altholdCount = 0;
+
+    // Roll and Pitch
+    attitude->pitch = 0.15f * pidUpdate(&pidVX, setpoint->velocity.x - state->velocity.x);
+    attitude->roll  = 0.15f * pidUpdate(&pidVY, setpoint->velocity.y - state->velocity.y);
+
+    // Thrust
+    //TEST:定高油门修改，进入速率模式之后，在定高油门上叠加加速油门
+    // float thrustRaw = 0.f;
+    // if (setpoint->mode.z == modeVelocity) {
+    //     thrustRaw        = pidUpdate(&pidVZ, setpoint->velocity.z) + thrustHover;
+    //     enterVelModeFlag = true;
+    // } else {
+    //     thrustRaw   = pidUpdate(&pidZ, setpoint->position.z - state->position.z);
+    //     thrustHover = thrustRaw;
+    // }
+
+	// Thrust
+	control->thrust_part.vel = constrainf(pidUpdate(&pidVZ, setpoint->velocity.z - state->velocity.z),-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
+    float thrustRaw = control->thrust_part.vel + control->thrust_part.pos + control->thrust_part.MBD;
+    *thrust = constrainf(thrustRaw, 1000, 65500); /*油门限幅*/
+
+    // //防止PID计算油门降得太快，让飞行器停机，影响定高效果，所以对低于基础油门的油门进行小变化范围处理，无论如何使油门不低于35000
+    // if (*thrust < THRUST_BASE)
+    //     *thrust = *thrust / 8 + 35000;
+
+    thrustLpf += (*thrust - thrustLpf) * 0.003f;
+
+    if (getCommanderKeyFlight()) /*定高飞行状态*/
+    {
+        // //TEST: 推出速率模式的时候更新基础油门
+        // if (enterVelModeFlag && (setpoint->mode.z != modeVelocity)) {
+        //     enterVelModeFlag       = false;
+        //     configParam.thrustBase = thrustLpf;
+        // }
+        if (fabs(state->acc.z) < 35.f) {
+            altholdCount++;
+            if (altholdCount > 1000) {
+                altholdCount = 0;
+                if (fabs(configParam.thrustBase - thrustLpf) > 1000.f) /*更新基础油门值*/
+                    configParam.thrustBase = thrustLpf;
+            }
+        } else {
+            altholdCount = 0;
+        }
+    } else if (getCommanderKeyland() == false) /*降落完成，油门清零*/
+    {
+        *thrust = 0;
+    }
+}
+void positionController(float* thrust, control_t *control,attitude_t* attitude, setpoint_t* setpoint, const state_t* state, float dt)
+{
+    if (setpoint->mode.x == modeAbs || setpoint->mode.y == modeAbs) {
+        setpoint->velocity.x = 0.1f * pidUpdate(&pidX, setpoint->position.x - state->position.x);
+        setpoint->velocity.y = 0.1f * pidUpdate(&pidY, setpoint->position.y - state->position.y);
+    }
+
+    if (setpoint->mode.z == modeAbs) {
+        control->thrust_part.pos = constrainf(pidUpdate(&pidZ, setpoint->position.z - state->position.z),-PIDZ_OUTPUT_LIMIT,PIDZ_OUTPUT_LIMIT);
+    }
+    velocityController(thrust,control, attitude, setpoint, state);
+}
+#else
 static void velocityController(float* thrust, attitude_t* attitude, setpoint_t* setpoint, const state_t* state)
 {
     static u16 altholdCount = 0;
@@ -125,7 +200,6 @@ static void velocityController(float* thrust, attitude_t* attitude, setpoint_t* 
         *thrust = 0;
     }
 }
-
 void positionController(float* thrust, attitude_t* attitude, setpoint_t* setpoint, const state_t* state, float dt)
 {
     if (setpoint->mode.x == modeAbs || setpoint->mode.y == modeAbs) {
@@ -139,6 +213,8 @@ void positionController(float* thrust, attitude_t* attitude, setpoint_t* setpoin
 
     velocityController(thrust, attitude, setpoint, state);
 }
+#endif
+
 
 /*获取定高油门值*/
 float getAltholdThrust(void) { return thrustLpf; }
