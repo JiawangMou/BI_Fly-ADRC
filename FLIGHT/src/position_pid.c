@@ -87,7 +87,8 @@ static void velocityController(float* thrust, control_t *control,attitude_t* att
 {
     static u16 altholdCount = 0;
 
-    // Roll and Pitch
+    // Roll and Pitch 
+    // TODO:XY 与 Z轴的位置控制控制器结构不一样，还没有统一
     attitude->pitch = 0.15f * pidUpdate(&pidVX, setpoint->velocity.x - state->velocity.x);
     attitude->roll  = 0.15f * pidUpdate(&pidVY, setpoint->velocity.y - state->velocity.y);
 

@@ -103,7 +103,7 @@ static configParam_t configParamDefault =
 				},
 			.vz =
 				{
-					.kp = 16000.0,
+					.kp = 1500.0,
 					.ki = 0.0,
 					.kd = 0.0,
 				},
@@ -122,8 +122,8 @@ static configParam_t configParamDefault =
 				},
 			.z =
 				{
-					.kp = 16000.0,
-					.ki = 1000.0,
+					.kp = 1600.0,
+					.ki = 100.0,
 					.kd = 0.0,
 				},
 		},

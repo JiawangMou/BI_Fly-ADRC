@@ -113,7 +113,7 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
     model_U.angle_command[1] = constrainf( ServoPWM2angle(motorPWM.s_left,  PWM_LEFT  ),-50.0f,50.0f);
 //get Wb
   for(int i=0;i< 3;i++)
-    model_U.Wb[i]= gyro.axis[i];
+    model_U.Wb[i]= gyro.axis[i]*DEG2RAD;
 //get aZ_E_desired
   model_U.aZ_E_desired = aZ_E_desired;
 
