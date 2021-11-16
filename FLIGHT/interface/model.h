@@ -57,7 +57,7 @@ typedef struct {
 
 /* Invariant block signals (default storage) */
 typedef struct {
-  const real_T Product[3];             /* '<S1>/Product' */
+  const real_T mg_E[3];             /* '<S1>/Product' */
   const real_T Subtract[3];            /* '<S6>/Subtract' */
   const real_T Subtract1[3];           /* '<S6>/Subtract1' */
 } ConstB_model_T;

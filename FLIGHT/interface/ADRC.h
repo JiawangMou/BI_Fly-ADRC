@@ -86,6 +86,7 @@ typedef struct
 
 void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt);
 void td_init(tdObject_t *tdobject, tdParam_t *tdparam, float ldtDt);
+void td_states_update(tdObject_t *tdobject,const float x1,const float x2);
 void nlsef_toc_init(nlsef_TOCObject_t *nlsef_tocobject, nlsef_TOCParam_t *nlsef_tocparam, float nlsefDt);
 void nlsef_init(nlsefObject_t *nlsef_object, nlsefParam_t *nlsef_param, float nlsefDt);
 void adrc_leso(lesoObject_t *adrcobject, float expect_val, float u);

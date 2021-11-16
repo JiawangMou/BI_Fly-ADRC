@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 43 /*13 表示V1.3*/
+#define VERSION 23 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -105,9 +105,8 @@ static configParam_t configParamDefault =
 				{
 					.kp = 1500.0,
 					.ki = 0.0,
-					.kd = 0.0,
+					.kd = 50.0,
 				},
-
 			.x =
 				{
 					.kp = 4.0,
@@ -273,7 +272,7 @@ static configParam_t configParamDefault =
 #ifdef USE_MBD
 		.Z_TDconfig = 
 		{
-			.r  = 0.8, // max_a = 0.8m/s^2
+			.r  = 80, // max_a = 80cm/s^2
 			.N0 = 2,
 		},
 #endif

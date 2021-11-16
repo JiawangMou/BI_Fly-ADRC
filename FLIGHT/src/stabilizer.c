@@ -173,10 +173,10 @@ void stabilizerTask(void* param)
         {
             if (RATE_DO_EXECUTE(MBD_TD_RATE, tick)) /*TD_update*/
             {
-                adrc_td(&Z_TD,setpoint.pos_desired.z / 100.0f);
-                setpoint.velocity.z = Z_TD.x2 * 100;
-                setpoint.position.z = Z_TD.x1 * 100;
-                setpoint.acc.z = Z_TD.fh * 100;
+                adrc_td(&Z_TD,setpoint.pos_desired.z);
+                setpoint.position.z = Z_TD.x1;
+                setpoint.velocity.z = Z_TD.x2;
+                setpoint.acc.z = Z_TD.fh;
             }
 
             if (RATE_DO_EXECUTE(MBD_RATE, tick)) /*MBD_update*/

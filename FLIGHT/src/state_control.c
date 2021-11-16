@@ -102,7 +102,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
         if (setpoint->mode.x == modeDisable || setpoint->mode.y == modeDisable) {
             attitudeDesired.roll  = setpoint->attitude.roll;
-            attitudeDesired.pitch = -setpoint->attitude.pitch;
+            attitudeDesired.pitch = setpoint->attitude.pitch;
         }
 
         if (control->flipDir == CENTER) {

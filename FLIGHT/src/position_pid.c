@@ -51,6 +51,22 @@
 #define VEL_Y_PID_DTERM_CUTOFF_FREQ 40.0
 #define VEL_Z_PID_DTERM_CUTOFF_FREQ 90.0
 
+#define PID_VEL_X_INTEGRATION_LIMIT 50.0 //cascade PID, Unit: cm/s
+#define PID_VEL_Y_INTEGRATION_LIMIT 50.0 //cascade PID, Unit: cm/s
+#ifdef USE_MBD
+#define PID_VEL_Z_INTEGRATION_LIMIT 10000.0 //parallel PID, MBD, Unit: PWM(0~65535) 
+#else
+#define PID_VEL_Z_INTEGRATION_LIMIT 50.0 //cascade PID, Unit: cm/s
+#endif
+
+#define PID_POS_X_INTEGRATION_LIMIT 20000.0 //cascade PID, Unit: PWM(0~65535) 
+#define PID_POS_Y_INTEGRATION_LIMIT 20000.0 //cascade PID, Unit: PWM(0~65535) 
+#ifdef USE_MBD
+#define PID_POS_Z_INTEGRATION_LIMIT 10000.0 //parallel PID, MBD, Unit: PWM(0~65535) 
+#else
+#define PID_POS_Z_INTEGRATION_LIMIT 20000.0  //cascade PID, Unit: cm/s
+#endif
+ 
 static float thrustLpf        = THRUST_BASE; /*油门低通*/
 static float thrustHover      = 0.f;
 static bool  enterVelModeFlag = false;
@@ -68,16 +84,22 @@ void positionControlInit(float velocityPidDt, float posPidDt)
     pidInit(&pidVX, 0, configParam.pidPos.vx, velocityPidDt,VEL_X_PID_DTERM_CUTOFF_FREQ);     /*vx PID初始化*/
     pidInit(&pidVY, 0, configParam.pidPos.vy, velocityPidDt,VEL_Y_PID_DTERM_CUTOFF_FREQ);     /*vy PID初始化*/
     pidInit(&pidVZ, 0, configParam.pidPos.vz, velocityPidDt,VEL_Z_PID_DTERM_CUTOFF_FREQ);     /*vz PID初始化*/
-    pidSetOutputLimit(&pidVX, configParam.pidPos.vx.outputLimit); /* 输出限幅 */
-    pidSetOutputLimit(&pidVY, configParam.pidPos.vy.outputLimit); /* 输出限幅 */
-    pidSetOutputLimit(&pidVZ, configParam.pidPos.vz.outputLimit); /* 输出限幅 */
+    pidSetIntegralLimit(&pidVX, PID_VEL_X_INTEGRATION_LIMIT);	/*VEL_X  速度积分限幅设置*/
+	pidSetIntegralLimit(&pidVY, PID_VEL_Y_INTEGRATION_LIMIT);   /*VEL_Y  速度积分限幅设置*/
+	pidSetIntegralLimit(&pidVZ, PID_VEL_Z_INTEGRATION_LIMIT);	/*VEL_Z  速度积分限幅设置*/
+    // pidSetOutputLimit(&pidVX, configParam.pidPos.vx.outputLimit); /* 输出限幅 */
+    // pidSetOutputLimit(&pidVY, configParam.pidPos.vy.outputLimit); /* 输出限幅 */
+    // pidSetOutputLimit(&pidVZ, configParam.pidPos.vz.outputLimit); /* 输出限幅 */
 
     pidInit(&pidX, 0, configParam.pidPos.x, posPidDt,POS_X_PID_DTERM_CUTOFF_FREQ);          /*x PID初始化*/
     pidInit(&pidY, 0, configParam.pidPos.y, posPidDt,POS_Y_PID_DTERM_CUTOFF_FREQ);          /*y PID初始化*/
     pidInit(&pidZ, 0, configParam.pidPos.z, posPidDt,POS_Z_PID_DTERM_CUTOFF_FREQ);          /*z PID初始化*/
-    pidSetOutputLimit(&pidX, configParam.pidPos.x.outputLimit); /* 输出限幅 */
-    pidSetOutputLimit(&pidY, configParam.pidPos.y.outputLimit); /* 输出限幅 */
-    pidSetOutputLimit(&pidZ, configParam.pidPos.z.outputLimit); /* 输出限幅 */
+    pidSetIntegralLimit(&pidX, PID_POS_X_INTEGRATION_LIMIT);	/*POS_X  速度积分限幅设置*/
+	pidSetIntegralLimit(&pidY, PID_POS_Y_INTEGRATION_LIMIT);    /*POS_Y  速度积分限幅设置*/
+	pidSetIntegralLimit(&pidZ, PID_POS_Z_INTEGRATION_LIMIT);	/*POS_Z  速度积分限幅设置*/
+    // pidSetOutputLimit(&pidX, configParam.pidPos.x.outputLimit); /* 输出限幅 */
+    // pidSetOutputLimit(&pidY, configParam.pidPos.y.outputLimit); /* 输出限幅 */
+    // pidSetOutputLimit(&pidZ, configParam.pidPos.z.outputLimit); /* 输出限幅 */
 }
 
 

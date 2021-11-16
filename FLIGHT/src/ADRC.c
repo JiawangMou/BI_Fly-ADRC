@@ -78,7 +78,11 @@ void td_init(tdObject_t *tdobject,tdParam_t *tdparam, float tdDt)
     tdobject->N0       = tdparam->N0; //跟踪微分器解决速度超调h0=N*h
     tdobject->fh       = 0;
 }
-
+void td_states_update(tdObject_t *tdobject,const float x1,const float x2)
+{
+    tdobject->x1       = x1; //跟踪微分期状态量
+    tdobject->x2       = x2; //跟踪微分期状态量微分项
+}
 void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
 {
     /*****LESO*******/

@@ -32,11 +32,11 @@
 
 /* Invariant block signals (default storage) */
 const ConstB_model_T model_ConstB = {
-  { 0.0, 0.0, -0.2646 },               /* '<S1>/Product' */
+  { 0.0, 0.0, -27000.0 },              /* '<S1>/Product' */
 
-  { 0.0, -0.07289, -0.015 },           /* '<S6>/Subtract' */
+  { 0.0, -7.289, -1.5 },               /* '<S6>/Subtract' */
 
-  { 0.0, 0.07289, -0.015 }             /* '<S6>/Subtract1' */
+  { 0.0, 7.289, -1.5 }                 /* '<S6>/Subtract1' */
 };
 
 /* Constant parameters (default storage) */
@@ -44,7 +44,7 @@ const ConstP_model_T model_ConstP = {
   /* Expression: param.ModelParam_Rb_CoR
    * Referenced by: '<S1>/param.ModelParam_Rb_CoR'
    */
-  { 0.0, 0.0, 0.06 }
+  { 0.0, 0.0, 6.0 }
 };
 
 /* Block states (default storage) */
@@ -104,9 +104,9 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
   getDCMeb(DCMeb);
   arm_status result = arm_mat_inverse_f32 (&DCMeb_arm,&DCMbe_arm);
 //get VelE 单位：state_velE cm -> m velE
-    velE[0] = state_velE.x / 100.0f;
-    velE[1] = state_velE.y / 100.0f;   
-    velE[2] = state_velE.z / 100.0f;
+    velE[0] = state_velE.x;
+    velE[1] = state_velE.y;   
+    velE[2] = state_velE.z;
 //get servo command
     getMotorPWM(&motorPWM);
     model_U.angle_command[0] = constrainf( ServoPWM2angle(motorPWM.s_middle,PWM_MIDDLE),-50.0f,50.0f);
@@ -117,7 +117,7 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
 //get aZ_E_desired
   model_U.aZ_E_desired = aZ_E_desired;
 
-   /* DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn' incorporates:
+  /* DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn' incorporates:
    *  Inport: '<Root>/angle_command'
    */
   denAccum = (model_U.angle_command[0] - 1.6451487309864259f *
@@ -164,8 +164,8 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
   /* Trigonometry: '<S20>/sincos' incorporates:
    *  SignalConversion generated from: '<S20>/sincos'
    */
-  rtb_Cop_R_b_g[1] = cos(rtb_Gain1_idx_1);
-  a = sin(rtb_Gain1_idx_1);
+  rtb_Cop_R_b_g[1] = arm_cos_f32(rtb_Gain1_idx_1);
+  a = arm_sin_f32(rtb_Gain1_idx_1);
 
   /* Fcn: '<S20>/Fcn11' */
   rtb_Transpose[0] = rtb_Cop_R_b_g[1];
@@ -177,7 +177,7 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
   rtb_Transpose[2] = a;
 
   /* Fcn: '<S20>/Fcn12' */
-  rtb_Transpose[3] = 0.0f ;
+  rtb_Transpose[3] = 0.0f;
 
   /* Fcn: '<S20>/Fcn22' */
   rtb_Transpose[4] = 1.0f;
@@ -208,8 +208,8 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
   /* Trigonometry: '<S19>/sincos' incorporates:
    *  Gain: '<S8>/Gain1'
    */
-  rtb_Cop_R_b[1] = cos(-rtb_Gain1_idx_0);
-  a = sin(-rtb_Gain1_idx_0);
+  rtb_Cop_R_b[1] = arm_cos_f32(-rtb_Gain1_idx_0);
+  a = arm_sin_f32(-rtb_Gain1_idx_0);
 
   /* Fcn: '<S19>/Fcn11' */
   rtb_Transpose1[0] = rtb_Cop_R_b[1];
@@ -221,7 +221,7 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
   rtb_Transpose1[2] = a;
 
   /* Fcn: '<S19>/Fcn12' */
-  rtb_Transpose1[3] = 0.0f ;
+  rtb_Transpose1[3] = 0.0f;
 
   /* Fcn: '<S19>/Fcn22' */
   rtb_Transpose1[4] = 1.0f;
@@ -269,7 +269,12 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
    *  DotProduct: '<S1>/Dot Product'
    *  Inport: '<Root>/aZ_E_desired'
    */
-  rtb_Sum_d_idx_2 = model_U.aZ_E_desired * 0.027f;
+  /* :  a = K(3,1) * K1; */
+  /* :  b =  - Cdz * (V_L(3,1)+Vz_b) - Cdz * (V_R(3,1)+Vz_b); */
+  /* :  c = -ma(3,1) + K(3,1) * K2; */
+  /* f = ma(3,1) - K(3,1) *(K1*f^2 + K2) + Cdz * (V_L(3,1)+Vz_b) *f + Cdz * (V_R(3,1)+Vz_b)*f; */
+  /* :  result = (-b + sqrt(b^2 -4*a*c))/(2*a); */
+  rtb_Sum_d_idx_2 = model_U.aZ_E_desired * 27.0f;
   for (i = 0; i < 3; i++) {
     /* Product: '<S1>/Product3' incorporates:
      *  Math: '<S8>/Transpose'
@@ -280,10 +285,10 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
      *  Math: '<S8>/Transpose1'
      */
     rtb_Transpose1_f = rtb_Transpose1[i];
-    rtb_Transpose1_1 = rtb_Transpose1_f * 0.0f;
+    rtb_Transpose1_1 = 0.0f;
 
     /* Product: '<S1>/Product3' */
-    rtb_Transpose_2 = rtb_Transpose_o * 0.0f;
+    rtb_Transpose_2 = 0.0f;
 
     /* Product: '<S6>/Product1' incorporates:
      *  Sum: '<S6>/Subtract'
@@ -304,10 +309,10 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
      *  Math: '<S8>/Transpose1'
      */
     rtb_Transpose1_f = rtb_Transpose1[i + 3];
-    rtb_Transpose1_1 += rtb_Transpose1_f * 0.0f;
+    rtb_Transpose1_1 += 0.0f;
 
     /* Product: '<S1>/Product3' */
-    rtb_Transpose_2 += rtb_Transpose_o * 0.0f;
+    rtb_Transpose_2 += 0.0f;
 
     /* Product: '<S6>/Product1' incorporates:
      *  Sum: '<S6>/Subtract'
@@ -385,10 +390,9 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
      *  Product: '<S1>/Product4'
      *  Product: '<S1>/Product5'
      */
-    tmp[i] = ((rtb_vel_B_vector_tmp * 0.0f + DCMbe[i] * 0.0f) +
-              rtb_vel_B_vector_tmp_0 * rtb_Sum_d_idx_2) -
-      (rtb_vel_B_vector_tmp_0 * model_ConstB.Product[2] + (rtb_vel_B_vector_tmp *
-        model_ConstB.Product[1] + DCMbe[i] * model_ConstB.Product[0]));
+    tmp[i] = (rtb_vel_B_vector_tmp_0 * rtb_Sum_d_idx_2) -
+      (rtb_vel_B_vector_tmp_0 * model_ConstB.mg_E[2] + (rtb_vel_B_vector_tmp *
+        model_ConstB.mg_E[1] + DCMbe[i] * model_ConstB.mg_E[0]));
 
     /* Product: '<S6>/Product1' */
     rtb_Cop_R_b_g[i] = a;
@@ -408,8 +412,7 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
    *  Product: '<S27>/i x j'
    *  Product: '<S28>/j x i'
    */
-  rtb_Sum_d_idx_2 = rtb_Sum_p[0] * rtb_Cop_L_b_i[1] - rtb_Cop_L_b_i[0] *
-    rtb_Sum_p[1];
+  rtb_Sum_d_idx_2 = rtb_Sum_p[0] * rtb_Cop_L_b_i[1] - rtb_Cop_L_b_i[0] * rtb_Sum_p[1];
 
   /* Sum: '<S23>/Sum' incorporates:
    *  Product: '<S25>/i x j'
@@ -453,15 +456,14 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
    *
    *  Store in Global RAM
    */
-  a = rtb_Thrust_coeff_B_vector[2] * 0.0003543f;
-  rtb_Sum_d_idx_2 = (((0.0f * rtb_Cop_L_b[1] - (rtb_Gain1_idx_1 -
+  a = rtb_Thrust_coeff_B_vector[2] * 35.43f;
+  rtb_Sum_d_idx_2 = ((( - (rtb_Gain1_idx_1 -
     model_DW.UD_DSTATE) * rtb_Cop_L_b[0]) + (rtb_vel_B_vector[2] +
-    rtb_Sum_d_idx_2)) + rtb_vel_B_vector[2]) * -0.00198f - ((((0.0f *
-    rtb_Cop_R_b_g[1] - (rtb_Gain1_idx_0 - model_DW.UD_DSTATE_f) * rtb_Cop_R_b_g
-    [0]) + rtb_vel_B_vector[2]) + (rtb_Transpose_o - rtb_Transpose1_f)) +
+    rtb_Sum_d_idx_2)) + rtb_vel_B_vector[2]) * -0.00198f - ((((- (rtb_Gain1_idx_0 - model_DW.UD_DSTATE_f) * rtb_Cop_R_b_g[0]) + 
+    rtb_vel_B_vector[2]) + (rtb_Transpose_o - rtb_Transpose1_f)) +
     rtb_vel_B_vector[2]) * 0.00198f;
   rtb_Sum_d_idx_2 = (sqrt(rtb_Sum_d_idx_2 * rtb_Sum_d_idx_2 -
-    (rtb_Thrust_coeff_B_vector[2] * -0.002027f + -tmp[2]) * (4.0f * a)) +
+    (rtb_Thrust_coeff_B_vector[2] * -202.7f + -tmp[2]) * (4.0f * a)) +
                      -rtb_Sum_d_idx_2) / (2.0f * a);
 
   /* SampleTimeMath: '<S4>/TSamp' incorporates:
@@ -470,6 +472,10 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
    * About '<S4>/TSamp':
    *  y = u * K where K = 1 / ( w * Ts )
    */
+  /* :  Fd_L = -Cdz * (V_L(3,1)+Vz_b) *result; */
+  /* :  Fd_R = -Cdz * (V_R(3,1)+Vz_b)*result; */
+  /* :  F = K(3,1) *(K1*result^2 + K2); */
+  /* :  y = result; */
   a = rtb_Sum_d_idx_2 * 250.0f;
 
   /* Sum: '<S1>/Add4' incorporates:
@@ -498,20 +504,25 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
   /* End of Saturate: '<S1>/Saturation5' */
 
   /* MATLAB Function: '<S1>/flappingHz2PWM' */
+  /* :  if f < 1.5 */
   if (rtb_Sum_d_idx_2 < 1.5f) {
     /* Outport: '<Root>/PWM_compensation' */
+    /* :  PWM = 0; */
     model_Y.PWM_compensation = 0.0f;
   } else {
     /* Outport: '<Root>/PWM_compensation' incorporates:
      *  Constant: '<S1>/ModelParam_motorCb'
      *  Constant: '<S1>/ModelParam_motorCr'
      */
+    /* :  else */
+    /* :  PWM = (f - Cb) / Cr; */
     model_Y.PWM_compensation = (rtb_Sum_d_idx_2 - 1.43f) / 0.0003685f;
   }
 
   /* End of MATLAB Function: '<S1>/flappingHz2PWM' */
 
   /* Update for DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn' */
+  /* :  y = PWM; */
   model_DW.DiscreteTransferFcn_states[1] = model_DW.DiscreteTransferFcn_states[0];
   model_DW.DiscreteTransferFcn_states[0] = denAccum;
 
