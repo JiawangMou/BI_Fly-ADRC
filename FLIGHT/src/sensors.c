@@ -686,8 +686,8 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 	// applyAxis3fLpf(gyroLpf, &sensors.gyro);
 	// To use butterworth lpf in roll & yaw, use smooth in pitch
 	gyro_LPF.x = lpf2pApply(&gyroLpf[0], gyro_UnLPF.x);
-	gyro_SF.x = smoothFilterApply(&gyroRollSF, gyro_UnLPF.x);
-	gyro_LPF.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
+	// gyro_SF.x = smoothFilterApply(&gyroRollSF, gyro_UnLPF.x);
+	gyro_SF.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
 	gyro_LPF.z = lpf2pApply(&gyroLpf[2], gyro_UnLPF.z);
 
 #ifdef USE_DYN_NOTCH_FILTER
@@ -700,7 +700,7 @@ void processAccGyroMeasurements(const uint8_t *buffer)
 #endif // USE_DYN_NOTCH_FILTER
 //TODO
 
-	sensors.gyro.y = gyro_LPF.y;
+	sensors.gyro.y = gyro_SF.y;
 	sensors.gyro.z = gyro_LPF.z;
 	
 	sensors.acc.x = smoothFilterApply(&accSF[0], accRaw.x);
