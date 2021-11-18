@@ -212,13 +212,13 @@ static void sendSenser(float a_x, float a_y, float a_z, s16 g_x, s16 g_y, s16 g_
 
     p.msgID = UP_SENSER;
 
-    _temp          = (s16)(a_x * 2000);
+    _temp          = (s16)(a_x );
     p.data[_cnt++] = BYTE1(_temp);
     p.data[_cnt++] = BYTE0(_temp);
-    _temp          = (s16)(a_y * 2000);
+    _temp          = (s16)(a_y );
     p.data[_cnt++] = BYTE1(_temp);
     p.data[_cnt++] = BYTE0(_temp);
-    _temp          = (s16)(a_z * 2000);
+    _temp          = (s16)(a_z );
     p.data[_cnt++] = BYTE1(_temp);
     p.data[_cnt++] = BYTE0(_temp);
 
@@ -535,10 +535,11 @@ static void atkpSendPeriod(void)
         Axis3i16 gyro;
         Axis3i16 mag;
         Acc_Send acc_send;
+        sensorData_t sensor;
+        getSensorData(&sensor);
         getSensorRawData(&acc, &gyro, &mag);
         getAcc_SendData(&acc_send);
-        sendSenser(acc_send.acc_beforefusion.x, acc_send.acc_beforefusion.y, acc_send.acc_beforefusion.z, gyro.x,
-            gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
+        sendSenser(acc.x, acc.y, acc.z,sensor.gyro.x,sensor.gyro.y, sensor.gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
     }
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
@@ -579,9 +580,9 @@ static void atkpSendPeriod(void)
         //     sensor.gyro.z, control.pitch, control.yaw, control.roll);
 
 		// sensorData_t sensordata;
-		// attitude_t rateDesired;
+		attitude_t rateDesired;
 		// attitude_t attitude;
-		// attitude_t attitudeDesired;
+		attitude_t attitudeDesired;
         control_t control = getControlData();
 
     //   Axis3f gyro_LPF;
@@ -610,7 +611,7 @@ static void atkpSendPeriod(void)
         // sendUserData(2, peaks[0].bin ,peaks[0].value,peaks[1].bin,peaks[1].value, peaks[2].bin,peaks[2].value, 
         //                 (s16)(Notchcenterfreq[X][0]*10),(s16)(Notchcenterfreq[X][1]*10),(s16)(Notchcenterfreq[X][2]*10));
         sendUserData(1, 10*state.position.z,10* setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,10*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,0,0,0,0,0,0);
+        sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,rateDesired.roll ,rateDesired.pitch,rateDesired.yaw,attitudeDesired.roll,attitudeDesired.pitch,attitudeDesired.yaw);
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
         sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,0,0);
