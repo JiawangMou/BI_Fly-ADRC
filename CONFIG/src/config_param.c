@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 33 /*13 表示V1.3*/
+#define VERSION 13 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -135,8 +135,8 @@ static configParam_t configParamDefault =
 		},
 		.accBias = 
 		{
-			.accZero = {0, 0, 0},
-			.accGain = {2049, 2045, 2068},
+			.accZero = {39, 29, 23},
+			.accGain = {2062, 2047, 2042},
 			.bias_isfound = true,
 		},
 		.adrcRate=
