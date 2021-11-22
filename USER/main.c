@@ -71,9 +71,9 @@ void startTask(void *arg)
     //    xTaskCreate(expModuleMgtTask, "EXP_MODULE", 150, NULL, 1, NULL);	/*创建扩展模块管理任务*/
     //以下为测试代码
     xTaskCreate(ledTask, "LEDTASK", 150, NULL, 2, NULL);                    /*创建LED管理任务*/
-// #ifdef USE_DYN_NOTCH_FILTER
+// #ifdef USE_DYN_NOTCH_FILTER_GYRO
 //     xTaskCreate(fftTask, "FFTTASK", 450, NULL, 3, NULL);                    /*创建FFT任务*/
-// #endif // USE_DYN_NOTCH_FILTER
+// #endif // USE_DYN_NOTCH_FILTER_GYRO
 	
 #ifndef ENABLE_GET_TASK_STATUS
 

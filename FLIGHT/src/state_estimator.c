@@ -264,9 +264,9 @@ void estRstHeight(void) { isRstHeight = true; }
 /*¸´Î»ËùÓÐ¹À²â*/
 void estRstAll(void) { isRstAll = true; }
 
-float getestimator_acc(void)
+void getestimator(estimator_t *temp)
 {
-    return estimator.acc[Z];
+    *temp = estimator;
 }
 
 
