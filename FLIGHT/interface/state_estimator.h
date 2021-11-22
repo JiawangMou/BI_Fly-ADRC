@@ -27,7 +27,7 @@ void  positionEstimate(sensorData_t* sensorData, state_t* state, float dt);
 float getFusedHeight(void); /*读取融合高度*/
 void  estRstHeight(void);   /*复位估测高度*/
 void  estRstAll(void);      /*复位所有估测*/
-float getestimator_acc(void);
+void  getestimator(estimator_t *temp); /*得到估计量的值*/
 
 
 // //TEST：加速度偏移问题

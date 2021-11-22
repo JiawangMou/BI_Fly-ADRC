@@ -155,9 +155,9 @@ typedef struct
 //	magBias_t magBias;		/*磁力计校准值*/
 	adrcParam_t adrcAngle;	/*角度ADRC*/
 	adrcParam_t adrcRate;	/*角速度ADRC*/
-#ifdef USE_DYN_NOTCH_FILTER
+#if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
 	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
-#endif // USE_DYN_NOTCH_FILTER
+#endif // USE_DYN_NOTCH_FILTER_GYRO
 #ifdef USE_MBD
 	tdParam_t Z_TDconfig;
 #endif

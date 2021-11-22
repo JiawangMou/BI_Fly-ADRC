@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 13 /*13 表示V1.3*/
+#define VERSION 23 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -259,15 +259,15 @@ static configParam_t configParamDefault =
 				},
 			},
 		},		
-#ifdef USE_DYN_NOTCH_FILTER
+#if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
 		.dynNotchConfig = 
 		{
-			.dyn_notch_min_hz = 10,
+			.dyn_notch_min_hz = 14,
     		.dyn_notch_max_hz = 125,
     		.dyn_notch_q = 300,
     		.dyn_notch_count = 3,
 		},
-#endif // USE_DYN_NOTCH_FILTER
+#endif // USE_DYN_NOTCH_FILTER_GYRO
 
 #ifdef USE_MBD
 		.Z_TDconfig = 
@@ -506,7 +506,7 @@ static configParam_t configParamDefault =
 				},
 			},
 		},	
-#ifdef USE_DYN_NOTCH_FILTER
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
 		.dynNotchConfig = 
 		{
 			.dyn_notch_min_hz = 0,
@@ -514,7 +514,7 @@ static configParam_t configParamDefault =
     		.dyn_notch_q = 900,
     		.dyn_notch_count = 1,
 		},
-#endif // USE_DYN_NOTCH_FILTER
+#endif // USE_DYN_NOTCH_FILTER_GYRO
 #ifdef USE_MBD
 		.Z_TDconfig = 
 		{

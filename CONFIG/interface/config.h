@@ -71,13 +71,18 @@
 #define PID_CONTROL
 
 //是否使用动态陷波滤波器
-// #define USE_DYN_NOTCH_FILTER
+// #define USE_DYN_NOTCH_FILTER_GYRO
+// #define USE_DYN_NOTCH_FILTER_ACC
+
 
 //是否使用模型对定高进行补偿控制
 #define USE_MBD
 
 // ATI力测试代码
 // #define TEST   
+
+//代码调试阶段用宏
+#define DEBUG
 
 
 #endif /* __CONFIG_H */

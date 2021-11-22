@@ -25,7 +25,8 @@
 			"position_pid.h": "c",
 			"cmath": "c",
 			"maths.h": "c",
-			"arm_math.h": "c"
+			"arm_math.h": "c",
+			"sensors.h": "c"
 		}
 	}
 }

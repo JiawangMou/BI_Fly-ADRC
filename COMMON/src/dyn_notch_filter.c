@@ -33,7 +33,7 @@
 
 
 
-#ifdef USE_DYN_NOTCH_FILTER
+#if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
 
 
 #include "axis.h"
@@ -170,8 +170,8 @@ void dynNotchInit(const dynNotchConfig_t *config, const timeUs_t targetLooptimeU
     
     for (int p = 0; p < dynNotch.count; p++) {
          // any init value is fine, but evenly spreading centerFreqs across frequency range makes notch filters stick to peaks quicker
-        dynNotch.centerFreq[0][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
-        biquadFilterInit(&dynNotch.notch[0][p], dynNotch.centerFreq[0][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
+        dynNotch.centerFreq[Z][p] = (p + 0.5f) * (dynNotch.maxHz - dynNotch.minHz) / (float)dynNotch.count + dynNotch.minHz;
+        biquadFilterInit(&dynNotch.notch[Z][p], dynNotch.centerFreq[Z][p], dynNotch.looptimeUs, dynNotch.q, FILTER_NOTCH, 1.0f);
     }
 }
 

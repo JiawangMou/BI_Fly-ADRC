@@ -49,13 +49,19 @@ bool sensorsReadMag(Axis3f *mag);
 bool sensorsReadBaro(baro_t *baro);
 
 void getgyro_UnLPFData( Axis3f *temp );
-#ifdef USE_DYN_NOTCH_FILTER
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
 void getgyro_NotchedData( Axis3f *temp );
 float getgyro_unNotchData( void);
-#endif // USE_DYN_NOTCH_FILTER
+#endif // USE_DYN_NOTCH_FILTER_GYRO
+
+#ifdef USE_DYN_NOTCH_FILTER_ACC
+#ifdef DEBUG
+void getacc_NotchedData( Axis3f *temp );
+void getacc_SFData(Axis3f *temp );
+#endif
+#endif
+
 float getgyro_smoothfilterData( void);
-
-
 void getgyro_LPFData( Axis3f *temp );
 
 /*磁力计标定数据获取*/
