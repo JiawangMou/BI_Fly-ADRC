@@ -56,8 +56,18 @@ typedef struct
 	float h;
 	float w0;
 	lpf2pData uLpf;//ESO中考虑执行器的延迟
-}lesoObject_t;
-
+}lesoObject_2rd_t;
+typedef struct 
+{
+	float z1;
+	float z2;
+	float z3;
+	float e;//系统状态误差
+	float b0;
+	float h;
+	float w0;
+	lpf2pData uLpf;//ESO中考虑执行器的延迟
+}lesoObject_3rd_t;
 typedef struct 
 {
     float z1;
@@ -79,21 +89,23 @@ typedef struct
 	tdObject_t td;
 //	nlsef_TOCObject_t nlsef_TOC;
 	nlsefObject_t nlsef;
-	lesoObject_t leso;
+	lesoObject_2rd_t leso;
     float u;
 
 }adrcObject_t;
 
-void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt);
-void td_init(tdObject_t *tdobject, tdParam_t *tdparam, float ldtDt);
-void td_states_update(tdObject_t *tdobject,const float x1,const float x2);
-void nlsef_toc_init(nlsef_TOCObject_t *nlsef_tocobject, nlsef_TOCParam_t *nlsef_tocparam, float nlsefDt);
-void nlsef_init(nlsefObject_t *nlsef_object, nlsefParam_t *nlsef_param, float nlsefDt);
-void adrc_leso(lesoObject_t *adrcobject, float expect_val, float u);
-float adrc_TOCnlsef(nlsef_TOCObject_t *nlsef_t);
-float adrc_nlsef(nlsefObject_t *nlsef_t);
-void adrc_eso(nlesoObject_t *nlesoObject, float expect_val, float u);
-void adrc_td(tdObject_t *td, float v);
+void  leso_init(lesoObject_2rd_t* lesoobject, lesoParam_t* lesoparam, float lesoDt);
+void  leso_3rd_init(lesoObject_3rd_t* lesoobject, lesoParam_t* lesoparam, float lesoDt);
+void  td_init(tdObject_t* tdobject, tdParam_t* tdparam, float ldtDt);
+void  td_states_update(tdObject_t* tdobject, const float x1, const float x2);
+void  nlsef_toc_init(nlsef_TOCObject_t* nlsef_tocobject, nlsef_TOCParam_t* nlsef_tocparam, float nlsefDt);
+void  nlsef_init(nlsefObject_t* nlsef_object, nlsefParam_t* nlsef_param, float nlsefDt);
+void  adrc_leso(lesoObject_2rd_t* adrcobject, const float expect_val, const float u);
+void  adrc_leso_3rd(lesoObject_3rd_t* lesoobject, const float expect_val, const float u);
+float adrc_TOCnlsef(nlsef_TOCObject_t* nlsef_t);
+float adrc_nlsef(nlsefObject_t* nlsef_t);
+void  adrc_eso(nlesoObject_t* nlesoObject, float expect_val, float u);
+void  adrc_td(tdObject_t* td, float v);
 float Constrain_Float(float amt, float low, float high);
 
 // void ADRCGet(Fhan_Data *fhan_Input,Fhan_Data *fhan_Ouput);

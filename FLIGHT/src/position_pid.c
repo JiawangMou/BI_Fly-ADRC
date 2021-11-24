@@ -4,6 +4,7 @@
 #include "maths.h"
 #include "pid.h"
 #include "remoter_ctrl.h"
+#include "position_adrc.h"
 #include <math.h>
 
 /********************************************************************************
@@ -100,6 +101,8 @@ void positionControlInit(float velocityPidDt, float posPidDt)
     // pidSetOutputLimit(&pidX, configParam.pidPos.x.outputLimit); /* 输出限幅 */
     // pidSetOutputLimit(&pidY, configParam.pidPos.y.outputLimit); /* 输出限幅 */
     // pidSetOutputLimit(&pidZ, configParam.pidPos.z.outputLimit); /* 输出限幅 */
+
+    pos_adrc_init(&configParam.adrcPosZ);
 }
 
 
@@ -126,7 +129,7 @@ static void velocityController(float* thrust, control_t *control,attitude_t* att
     // }
 
 	// Thrust
-	control->thrust_part.vel = constrainf(pidUpdate(&pidVZ, setpoint->velocity.z - state->velocity.z),-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
+	control->thrust_part.vel = constrainf(adrc_VelControl(&pidVZ,setpoint),-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
     float thrustRaw = control->thrust_part.vel + control->thrust_part.pos + control->thrust_part.MBD;
     *thrust = constrainf(thrustRaw, 1000, 65500); /*油门限幅*/
 
@@ -166,7 +169,7 @@ void positionController(float* thrust, control_t *control,attitude_t* attitude, 
     }
 
     if (setpoint->mode.z == modeAbs) {
-        control->thrust_part.pos = constrainf(pidUpdate(&pidZ, setpoint->position.z - state->position.z),-PIDZ_OUTPUT_LIMIT,PIDZ_OUTPUT_LIMIT);
+        control->thrust_part.pos = constrainf(adrc_PosControl(&pidZ,setpoint),-PIDZ_OUTPUT_LIMIT,PIDZ_OUTPUT_LIMIT);
     }
     velocityController(thrust,control, attitude, setpoint, state);
 }

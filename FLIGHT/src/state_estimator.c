@@ -190,9 +190,6 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     /* 位置预估: Z-axis */
     inavFilterPredict(Z, dt, state->acc.z);
 
-    // // TEST:发送加速度估计的数据
-    // posZPredict = estimator.pos[Z];
-
     /* 位置校正: Z-axis */
     inavFilterCorrectPos(Z, dt, errPosZ, weight);
 
@@ -268,6 +265,3 @@ void getestimator(estimator_t *temp)
 {
     *temp = estimator;
 }
-
-
-// float getPosZPredictData() { return posZPredict; }

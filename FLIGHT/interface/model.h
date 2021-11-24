@@ -101,7 +101,7 @@ extern const ConstB_model_T model_ConstB;/* constant block i/o */
 extern const ConstP_model_T model_ConstP;
 
 /* Model entry point functions */
-extern void model_initialize(float dt);
+extern void model_initialize(void);
 extern u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro);
 extern void model_terminate(void);
 
@@ -114,7 +114,6 @@ extern RT_MODEL_model_T *const model_M;
 extern real_T DCMbe[9];                /* '<Root>/DCMbe' */
 extern real_T velE[3];                 /* '<Root>/velE' */
 
-extern tdObject_t Z_TD;
 /*-
  * These blocks were eliminated from the model due to optimizations:
  *

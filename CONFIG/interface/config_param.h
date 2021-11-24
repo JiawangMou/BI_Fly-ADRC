@@ -158,9 +158,7 @@ typedef struct
 #if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
 	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
 #endif // USE_DYN_NOTCH_FILTER_GYRO
-#ifdef USE_MBD
-	tdParam_t Z_TDconfig;
-#endif
+	adrcInit_t adrcPosZ;	/*posZ adrc*/
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
 	u16 thrustBase;			/*油门基础值*/

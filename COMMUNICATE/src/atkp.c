@@ -28,6 +28,7 @@
 #include "config_param.h"
 #include "attitude_adrc.h"
 #include "dyn_notch_filter.h"
+#include "position_adrc.h"
 
 /*FeeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -68,7 +69,7 @@
 #define PERIOD_MOTOR 40
 #define PERIOD_SENSOR2 40
 #define PERIOD_SPEED 50
-#define PERIOD_USERDATA 2
+#define PERIOD_USERDATA 20
 #define PERIOD_PIDOUT 20
 
 #define ATKP_RX_QUEUE_SIZE 10 /*ATKP包接收队列消息个数*/
@@ -523,24 +524,24 @@ static void atkpSendPeriod(void)
     //     u32 timestamp = getSysTickCnt();
     //     sendTestData(attitude.roll, attitude.pitch, attitude.yaw, pos.z, acc, accRawData, zPredict, timestamp);
     // }
-    // if (!(count_ms % PERIOD_STATUS)) {
-    //     attitude_t attitude;
-    //     Axis3f     acc, vel, pos;
-    //     getAttitudeData(&attitude);
-    //     getStateData(&acc, &vel, &pos);
-    //     sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
-    // }
-    // if (!(count_ms % PERIOD_SENSOR)) {
-    //     Axis3i16 acc;
-    //     Axis3i16 gyro;
-    //     Axis3i16 mag;
-    //     Acc_Send acc_send;
-    //     sensorData_t sensor;
-    //     getSensorData(&sensor);
-    //     getSensorRawData(&acc, &gyro, &mag);
-    //     getAcc_SendData(&acc_send);
-    //     sendSenser(acc.x, acc.y, acc.z,sensor.gyro.x,sensor.gyro.y, sensor.gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
-    // }
+    if (!(count_ms % PERIOD_STATUS)) {
+        attitude_t attitude;
+        Axis3f     acc, vel, pos;
+        getAttitudeData(&attitude);
+        getStateData(&acc, &vel, &pos);
+        sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
+    }
+    if (!(count_ms % PERIOD_SENSOR)) {
+        Axis3i16 acc;
+        Axis3i16 gyro;
+        Axis3i16 mag;
+        Acc_Send acc_send;
+        sensorData_t sensor;
+        getSensorData(&sensor);
+        getSensorRawData(&acc, &gyro, &mag);
+        getAcc_SendData(&acc_send);
+        sendSenser(acc.x, acc.y, acc.z,sensor.gyro.x,sensor.gyro.y, sensor.gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
+    }
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
 #ifdef ADRC_CONTROL
@@ -620,8 +621,8 @@ static void atkpSendPeriod(void)
         // sendUserData(1, 10*state.position.z,10* setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,10*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,rateDesired.roll ,rateDesired.pitch,rateDesired.yaw,attitudeDesired.roll,attitudeDesired.pitch,attitudeDesired.yaw);
         //定高加速度计滤波测试用协议
-        sendUserData(1, 10*state.position.z,10* setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,100*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, acc.z ,0,0,gyro.x ,gyro.y,gyro.z,100*estimator.accBias[Z],attitudeDesired.pitch,attitudeDesired.yaw);
+        sendUserData(1, 10*state.position.z,10* posZ_LESO.z1, 10*state.velocity.z,10*posZ_LESO.z2,10*setpoint.acc.z,100*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp & 0x00ffff));
+        sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,setpoint.position.z,setpoint.velocity.z,gyro.x,100*estimator.accBias[Z],attitudeDesired.pitch,attitudeDesired.yaw);
         
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));

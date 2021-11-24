@@ -8,6 +8,7 @@
 #include <math.h>
 #include "ADRC.h"
 #include "attitude_adrc.h"
+#include "position_adrc.h"
 #include "stm32f4xx_gpio.h"
 
 /********************************************************************************

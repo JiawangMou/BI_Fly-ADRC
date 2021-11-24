@@ -13,6 +13,7 @@
 #include "system.h"
 #include "vl53lxx.h"
 #include "model.h"
+#include "position_adrc.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -54,7 +55,7 @@ void stabilizerInit(void)
     stateControlInit(); /*姿态PID初始化*/
     powerControlInit(); /*电机初始化*/
 
-    model_initialize(MBD_TD_DT);
+    model_initialize();
 
     isInit = true;
 }
@@ -116,6 +117,7 @@ void stabilizerTask(void* param)
 {
     u32 tick = 0;
     u32 lastWakeTime = getSysTickCnt();
+    float flap_Hz = 0.0f;
 
     //	ledseqRun(SYS_LED, seq_alive);
 
@@ -171,16 +173,17 @@ void stabilizerTask(void* param)
         /*MBD compensation*/
         if ((getCommanderCtrlMode() & 0x01) && (getCommanderKeyland() || getCommanderKeyFlight())) /*定高模式,且不处于着落状态时*/
         {
-            if (RATE_DO_EXECUTE(MBD_TD_RATE, tick)) /*TD_update*/
+            if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) /*TD_update*/
             {
-                adrc_td(&Z_TD,setpoint.pos_desired.z);
-                setpoint.position.z = Z_TD.x1;
-                setpoint.velocity.z = Z_TD.x2;
-                setpoint.acc.z = Z_TD.fh;
+                posZ_transient_process_update(&setpoint);
             }
-
             if (RATE_DO_EXECUTE(MBD_RATE, tick)) /*MBD_update*/
                 control.thrust_part.MBD = MBD_update(setpoint.acc.z,state.velocity,sensorData.gyro);
+        }
+        if(RATE_DO_EXECUTE(POSZ_LESO_RATE, tick)) 
+        {
+            flap_Hz = constrainf(0.0003685f*control.thrust +1.43f,0.0f,25.0f);
+            posZ_state_estimate(&sensorData, &state, 2.0f*constrainf((0.03543f*sq(flap_Hz)-0.2027f),0.0f,22.0f) -27.0f); //输入为Ff - mg的大小，单位为：g(克),所以b0对应的值为 37
         }
         #endif
 

@@ -26,7 +26,9 @@
 			"cmath": "c",
 			"maths.h": "c",
 			"arm_math.h": "c",
-			"sensors.h": "c"
+			"sensors.h": "c",
+			"position_adrc.h": "c",
+			"stabilizer_types.h": "c"
 		}
 	}
 }

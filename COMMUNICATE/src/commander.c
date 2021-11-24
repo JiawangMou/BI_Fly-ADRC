@@ -11,6 +11,7 @@
 #include "state_estimator.h"
 #include "ADRC.h"
 #include "model.h"
+#include "position_adrc.h"
 #include <math.h>
 
 /*FreeRTOS相关头文件*/
@@ -284,7 +285,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             if (initLand == false) {
                 pidReset(&pidZ);
                 setpoint->pos_desired.z = 0;    /*设定高度为0 单位cm/s*/
-                td_states_update(&Z_TD,state->position.z,state->velocity.z);
+                posZ_td_states_set(state->position.z,state->velocity.z);
                 commander.keyFlight = false;
                 initLand = true;
             }
@@ -300,7 +301,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
                 errorPosY        = 0.f;
                 errorPosZ        = 0.f;
 #ifdef USE_MBD
-                td_states_update(&Z_TD,state->position.z,state->velocity.z);
+                posZ_td_states_set(state->position.z,state->velocity.z);
 #endif
                 setFastAdjustPosParam(0, 1, 80.0f); /*一键起飞高度80cm*/
             }
@@ -336,7 +337,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
                 setpoint->mode.z     = modeAbs;
 #ifdef USE_MBD                
                 setpoint->pos_desired.z = state->position.z + errorPosZ; /*调整新位置*/
-                td_states_update(&Z_TD,state->position.z,state->velocity.z); /*更新TD状态*/
+                posZ_td_states_set(state->position.z,state->velocity.z); /*更新TD状态*/
 #else
                 setpoint->position.z = state->position.z + errorPosZ; /*调整新位置*/
 #endif
@@ -346,7 +347,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             {
 #ifdef USE_MBD   
                 errorPosZ = setpoint->pos_desired.z - state->position.z;
-#else
+#else1233
                 errorPosZ = setpoint->position.z - state->position.z;
 #endif
                 errorPosZ = constrainf(errorPosZ, -10.f, 10.f); /*误差限幅 单位cm*/

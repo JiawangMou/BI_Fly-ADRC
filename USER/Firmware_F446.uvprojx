@@ -914,6 +914,11 @@
               <FileType>1</FileType>
               <FilePath>..\FLIGHT\src\model.c</FilePath>
             </File>
+            <File>
+              <FileName>position_adrc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FLIGHT\src\position_adrc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -17,15 +17,6 @@
  * All rights reserved
 ********************************************************************************/
 
-#define RATE_5_HZ		5
-#define RATE_10_HZ		10
-#define RATE_25_HZ		25
-#define RATE_50_HZ		50
-#define RATE_100_HZ		100
-#define RATE_200_HZ 	200
-#define RATE_250_HZ 	250
-#define RATE_500_HZ 	500
-#define RATE_1000_HZ 	1000
 
 #define RATE_DO_EXECUTE(RATE_HZ, TICK) ((TICK % (MAIN_LOOP_RATE / RATE_HZ)) == 0)
 
@@ -52,11 +43,11 @@
 #define POSITION_PID_RATE		POSITION_ESTIMAT_RATE //位置环（外环）PID速率
 #define POSITION_PID_DT			(1.0/POSITION_PID_RATE)
 
-#define MBD_RATE		        RATE_250_HZ //高度模型补偿的速率
-#define MBD_DT			        (1.0/MBD_RATE)
+#define MBD_RATE                RATE_250_HZ
+#define MBD_DT                  (1.0/MBD_RATE)
 
-#define MBD_TD_RATE             RATE_500_HZ
-#define MBD_TD_DT               (1.0/MBD_TD_RATE)
+
+
 
 #ifdef TEST
 #define WAIT_RATE 

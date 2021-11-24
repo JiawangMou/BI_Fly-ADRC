@@ -66,7 +66,6 @@ RT_MODEL_model_T *const model_M = &model_M_;
 real_T DCMbe[9];                       /* '<Root>/DCMbe' */
 real_T velE[3];                        /* '<Root>/velE' */
 
-tdObject_t Z_TD;
 arm_matrix_instance_f32  DCMbe_arm;
 arm_matrix_instance_f32  DCMeb_arm;
 float DCMeb[9];
@@ -558,10 +557,8 @@ u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
 }
 
 /* Model initialize function */
-void model_initialize(float dt)
+void model_initialize(void)
 {
-
-  td_init(&Z_TD,&configParam.Z_TDconfig, dt);
   //init DCMbe_arm  DCMeb_arm
   DCMbe_arm.numCols = 3;
   DCMbe_arm.numRows = 3;

@@ -42,7 +42,7 @@ static configParam_t configParamDefault =
 		.pidAngle = /*角度PID*/
 		{
 			.roll =
-				{
+				{  
 					.kp = 10.0,
 					.ki = 0.0,
 					.kd = 0.0,
@@ -103,7 +103,7 @@ static configParam_t configParamDefault =
 				},
 			.vz =
 				{
-					.kp = 1500.0,
+					.kp = 300.0,
 					.ki = 0.0,
 					.kd = 50.0,
 				},
@@ -258,7 +258,7 @@ static configParam_t configParamDefault =
 					.w0 = 0,
 				},
 			},
-		},		
+		},
 #if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
 		.dynNotchConfig = 
 		{
@@ -268,14 +268,29 @@ static configParam_t configParamDefault =
     		.dyn_notch_count = 3,
 		},
 #endif // USE_DYN_NOTCH_FILTER_GYRO
-
-#ifdef USE_MBD
-		.Z_TDconfig = 
+		.adrcPosZ = 
 		{
-			.r  = 80, // max_a = 80cm/s^2
-			.N0 = 2,
+			.td = 
+			{
+				.r  = 80, // max_a = 80cm/s^2
+				.N0 = 2,
+			},
+			.leso =
+			{
+				.b0 = 37.0,
+				.w0 = 200.0,
+			},
+			.nlsef =
+			{
+				.N1 = 0,//跟踪微分器解决速度超调h1=N1*h
+				.beta_1 = 0,
+				.beta_2 = 0,
+				.zeta   = 0,
+				.alpha1 = 0,
+				.alpha2 = 0,
+            },
 		},
-#endif
+
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 40000.0, /*定高油门基础值*/
@@ -515,13 +530,6 @@ static configParam_t configParamDefault =
     		.dyn_notch_count = 1,
 		},
 #endif // USE_DYN_NOTCH_FILTER_GYRO
-#ifdef USE_MBD
-		.Z_TDconfig = 
-		{
-			.r  = 0.8, // max_a = 0.8m/s^2
-			.N0 = 2,
-		},
-#endif
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
 		.thrustBase = 40000.0, /*定高油门基础值*/

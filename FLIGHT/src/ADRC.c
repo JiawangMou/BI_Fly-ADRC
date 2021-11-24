@@ -83,11 +83,23 @@ void td_states_update(tdObject_t *tdobject,const float x1,const float x2)
     tdobject->x1       = x1; //跟踪微分期状态量
     tdobject->x2       = x2; //跟踪微分期状态量微分项
 }
-void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
+void leso_init(lesoObject_2rd_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
 {
     /*****LESO*******/
     lesoobject->z1      = 0;
     lesoobject->z2      = 0;
+    lesoobject->e       = 0; //系统状态误差
+    lesoobject->b0      = lesoparam->b0;
+    lesoobject->h       = lesoDt;
+    lesoobject->w0      = lesoparam->w0;
+
+}
+void leso_3rd_init(lesoObject_3rd_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
+{
+    /*****LESO*******/
+    lesoobject->z1      = 0;
+    lesoobject->z2      = 0;
+    lesoobject->z3      = 0;    
     lesoobject->e       = 0; //系统状态误差
     lesoobject->b0      = lesoparam->b0;
     lesoobject->h       = lesoDt;
@@ -178,8 +190,8 @@ float Fal_ADRC(float e,float alpha,float zeta)
 		return powf(fabsf(e), alpha) * adrc_sign(e);
 	}
 }
-//LESO
-void adrc_leso(lesoObject_t* adrcobject,float expect_val, float u)
+//LESO_2rd
+void adrc_leso(lesoObject_2rd_t* adrcobject,const float expect_val, const float u)
 {
     float Beta_01 = 2 * adrcobject->w0;
     float Beta_02 = adrcobject->w0 * adrcobject->w0;
@@ -188,6 +200,22 @@ void adrc_leso(lesoObject_t* adrcobject,float expect_val, float u)
     adrcobject->z1 += (adrcobject->z2 - Beta_01 * adrcobject->e + adrcobject->b0 * lpf2pApply(&adrcobject->uLpf, u)) * adrcobject->h;
     // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
     adrcobject->z2 += -Beta_02 * adrcobject->e * adrcobject->h;
+}
+//LESO_3rd
+void adrc_leso_3rd(lesoObject_3rd_t* lesoobject,const float expect_val, const float u)
+{   //beta_01 = 3*w0; beta_02 = 3*w0^2; beta_01 = w0^3; 
+    // float Beta_01 = 3 * lesoobject->w0;
+    // float Beta_02 = 3 * lesoobject->w0 * lesoobject->w0;
+    // float Beta_03 = lesoobject->w0 * lesoobject->w0 * lesoobject->w0;
+    float Beta_01 = 3 * lesoobject->w0;
+    float Beta_02 = 1800.0f;
+    float Beta_03 = 9000.f;
+    
+    lesoobject->e = lesoobject->z1 - expect_val;
+    lesoobject->z1 += (lesoobject->z2 - Beta_01 * lesoobject->e) * lesoobject->h;
+    lesoobject->z2 += (lesoobject->z3 - Beta_02 * lesoobject->e + lesoobject->b0 * lpf2pApply(&lesoobject->uLpf, u)) * lesoobject->h;
+    // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
+    lesoobject->z3 += -Beta_03 * lesoobject->e * lesoobject->h;   
 }
 
 /************扩张状态观测器********************/
