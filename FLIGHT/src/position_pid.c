@@ -63,7 +63,7 @@
 #define PID_POS_X_INTEGRATION_LIMIT 20000.0 //cascade PID, Unit: PWM(0~65535) 
 #define PID_POS_Y_INTEGRATION_LIMIT 20000.0 //cascade PID, Unit: PWM(0~65535) 
 #ifdef USE_MBD
-#define PID_POS_Z_INTEGRATION_LIMIT 10000.0 //parallel PID, MBD, Unit: PWM(0~65535) 
+#define PID_POS_Z_INTEGRATION_LIMIT 20000.0 //parallel PID, MBD, Unit: PWM(0~65535) 
 #else
 #define PID_POS_Z_INTEGRATION_LIMIT 20000.0  //cascade PID, Unit: cm/s
 #endif
@@ -102,7 +102,8 @@ void positionControlInit(float velocityPidDt, float posPidDt)
     // pidSetOutputLimit(&pidY, configParam.pidPos.y.outputLimit); /* 输出限幅 */
     // pidSetOutputLimit(&pidZ, configParam.pidPos.z.outputLimit); /* 输出限幅 */
 
-    pos_adrc_init(&configParam.adrcPosZ);
+    posZ_adrc_init(&configParam.adrcPosZ);
+    velZ_adrc_init(&configParam.adrcVelZ);
 }
 
 
@@ -129,7 +130,7 @@ static void velocityController(float* thrust, control_t *control,attitude_t* att
     // }
 
 	// Thrust
-	control->thrust_part.vel = constrainf(adrc_VelControl(&pidVZ,setpoint),-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
+	control->thrust_part.vel = constrainf(adrc_VelControl(),-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
     float thrustRaw = control->thrust_part.vel + control->thrust_part.pos + control->thrust_part.MBD;
     *thrust = constrainf(thrustRaw, 1000, 65500); /*油门限幅*/
 
@@ -169,7 +170,7 @@ void positionController(float* thrust, control_t *control,attitude_t* attitude, 
     }
 
     if (setpoint->mode.z == modeAbs) {
-        control->thrust_part.pos = constrainf(adrc_PosControl(&pidZ,setpoint),-PIDZ_OUTPUT_LIMIT,PIDZ_OUTPUT_LIMIT);
+        control->thrust_part.pos = constrainf(adrc_PosControl(&pidZ,setpoint->position.z - state->position.z),-PIDZ_OUTPUT_LIMIT,PIDZ_OUTPUT_LIMIT);
     }
     velocityController(thrust,control, attitude, setpoint, state);
 }

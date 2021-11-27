@@ -118,6 +118,8 @@ void stabilizerTask(void* param)
     u32 tick = 0;
     u32 lastWakeTime = getSysTickCnt();
     float flap_Hz = 0.0f;
+    float F_flap = 0.0f;
+    float Fd = 0.0;
 
     //	ledseqRun(SYS_LED, seq_alive);
 
@@ -180,10 +182,12 @@ void stabilizerTask(void* param)
             if (RATE_DO_EXECUTE(MBD_RATE, tick)) /*MBD_update*/
                 control.thrust_part.MBD = MBD_update(setpoint.acc.z,state.velocity,sensorData.gyro);
         }
-        if(RATE_DO_EXECUTE(POSZ_LESO_RATE, tick)) 
+        if(RATE_DO_EXECUTE(VELZ_LESO_RATE, tick)) 
         {
             flap_Hz = constrainf(0.0003685f*control.thrust +1.43f,0.0f,25.0f);
-            posZ_state_estimate(&sensorData, &state, 2.0f*constrainf((0.03543f*sq(flap_Hz)-0.2027f),0.0f,22.0f) -27.0f); //输入为Ff - mg的大小，单位为：g(克),所以b0对应的值为 37
+            F_flap = constrainf((0.03543f*sq(flap_Hz)-0.2027f),0.0f,22.0f);
+            Fd = F_flap * state.velocity.z * 0.00198f;
+            velZ_ESO_estimate(2.0f*(F_flap - Fd)- 27.0f ,state.velocity.z);
         }
         #endif
 

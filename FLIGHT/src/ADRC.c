@@ -248,13 +248,16 @@ float adrc_TOCnlsef(nlsef_TOCObject_t* nlsef_t)
     return -adrc_fhan(nlsef_t->e1, nlsef_t->c * nlsef_t->e2, nlsef_t->r, nlsef_t->h * nlsef_t->N1);
 }
 
-float adrc_nlsef(nlsefObject_t *nlsef_t)
+float adrc_nlsef(nlsefObject_t *nlsef)
 {
-    // nlsef_t->e1_out = 50.0f*nlsef_t->beta_1*Fal_ADRC(nlsef_t->e1/50.0f,nlsef_t->alpha1,nlsef_t->zeta);
-    // nlsef_t->e2_out = nlsef_t->beta_2*Fal_ADRC(nlsef_t->e2,nlsef_t->alpha2,nlsef_t->zeta);
-    nlsef_t->e1_out = nlsef_t->beta_1 * nlsef_t->e1;
-    nlsef_t->e2_out = nlsef_t->beta_2 * nlsef_t->e2;
-    return  nlsef_t->e1_out + nlsef_t->e2_out;
+    nlsef->e1_out = 20.0f * nlsef->beta_1 * Fal_ADRC(nlsef->e1 / 20.0f, nlsef->alpha1, nlsef->zeta);
+    nlsef->e2_out = 100.0f * nlsef->beta_2 * Fal_ADRC(nlsef->e2 / 100.0f, nlsef->alpha2, nlsef->zeta);
+
+    // nlsef_t->e1_out = nlsef_t->beta_1 * nlsef_t->e1;
+    // nlsef_t->e2_out = nlsef_t->beta_2 * nlsef_t->e2;
+
+    nlsef->u0 = nlsef->e1_out + nlsef->e2_out;
+    return  nlsef->u0;
 }
 // void Nolinear_Conbination_ADRC(Fhan_Data *fhan_Input)
 // {

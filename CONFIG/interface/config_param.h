@@ -159,6 +159,7 @@ typedef struct
 	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
 #endif // USE_DYN_NOTCH_FILTER_GYRO
 	adrcInit_t adrcPosZ;	/*posZ adrc*/
+	adrcInit_t adrcVelZ;	/*velZ adrc*/
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
 	u16 thrustBase;			/*油门基础值*/

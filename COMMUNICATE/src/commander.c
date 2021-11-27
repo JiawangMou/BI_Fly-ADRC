@@ -347,7 +347,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             {
 #ifdef USE_MBD   
                 errorPosZ = setpoint->pos_desired.z - state->position.z;
-#else1233
+#else
                 errorPosZ = setpoint->position.z - state->position.z;
 #endif
                 errorPosZ = constrainf(errorPosZ, -10.f, 10.f); /*Îó²îÏÞ·ù µ¥Î»cm*/

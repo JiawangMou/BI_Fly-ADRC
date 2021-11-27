@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 23 /*13 表示V1.3*/
+#define VERSION 33 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -103,9 +103,9 @@ static configParam_t configParamDefault =
 				},
 			.vz =
 				{
-					.kp = 300.0,
+					.kp = 480.0,
 					.ki = 0.0,
-					.kd = 50.0,
+					.kd = 100.0,
 				},
 			.x =
 				{
@@ -121,7 +121,7 @@ static configParam_t configParamDefault =
 				},
 			.z =
 				{
-					.kp = 1600.0,
+					.kp = 2000.0,
 					.ki = 100.0,
 					.kd = 0.0,
 				},
@@ -289,6 +289,23 @@ static configParam_t configParamDefault =
 				.alpha1 = 0,
 				.alpha2 = 0,
             },
+		},
+		.adrcVelZ = 
+		{
+			.nlsef =
+			{
+				.N1 = 2,//跟踪微分器解决速度超调h1=N1*h
+				.beta_1 = 300.0,
+				.beta_2 = 50.0,
+				.zeta   = 0.1,
+				.alpha1 = 0.6,
+				.alpha2 = 1.2,
+            },		
+			.leso =
+			{
+				.b0 = 37.0,
+				.w0 = 200.0,
+			},	
 		},
 
 		.trimP = 0.f,		 /*pitch微调*/
