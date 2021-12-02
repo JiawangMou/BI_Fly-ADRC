@@ -67,7 +67,7 @@ enum PHASE{start = 0, waiting = 1, accelerating = 2, scanning = 3, holdon = 4};
 void stateControlInit(void)
 {
 	attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
-	positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
+	positionControlInit(VEL_PID_DT, POS_PID_DT); /*初始化位置PID*/
 
     //     // Filter the setpoint
     // lpf2pInit(&setpointFilter[0], ANGEL_PID_RATE, 20);
@@ -86,13 +86,19 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     static u16 cnt = 0;
 #ifndef TEST
 
-    if (RATE_DO_EXECUTE(POSITION_PID_RATE, tick)) {
+    if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
             #ifdef USE_MBD
-            positionController(&actualThrust,control, &attitudeDesired, setpoint, state, POSITION_PID_DT);
+            positionController(setpoint, state);
             #else 
             positionController(&actualThrust, &attitudeDesired, setpoint, state, POSITION_PID_DT);
             #endif
+        }
+    }
+
+    if (RATE_DO_EXECUTE(VEL_PID_RATE, tick)) {
+        if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
+            velocityController(&actualThrust,control, &attitudeDesired, setpoint, state, sensors);
         }
     }
 
@@ -147,10 +153,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         {
             rateDesired.pitch = setpoint->attitude.pitch;
             rateDesired.roll  = setpoint->attitude.roll;
-            
         }
         attitudeRatePID(&sensors->gyro, &rateDesired, control);
-
     }
     control->thrust = constrainf(actualThrust, 0.0f, (float)FULLTHROTTLE);
     // control->thrust = actualThrust;

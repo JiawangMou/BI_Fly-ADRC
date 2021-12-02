@@ -96,6 +96,8 @@ typedef struct
 	float N1;//跟踪微分器解决速度超调h1=N1*h
 	float beta_1;
 	float beta_2;
+	float beta_I;
+	float I_limit;
 	float zeta;
 	float alpha1;
 	float alpha2;

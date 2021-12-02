@@ -124,6 +124,7 @@ void nlsef_init(nlsefObject_t *nlsef_object, nlsefParam_t *nlsef_param, float nl
     nlsef_object->N1 = nlsef_param->N1; //跟踪微分器解决速度超调h1=N1*h
     nlsef_object->beta_1 = nlsef_param->beta_1;
     nlsef_object->beta_2 = nlsef_param->beta_2;
+    nlsef_object->beta_I = nlsef_param->beta_I;    
     nlsef_object->zeta = nlsef_param->zeta;
     nlsef_object->alpha1 = nlsef_param->alpha1;
     nlsef_object->alpha2 = nlsef_param->alpha2;
@@ -250,8 +251,8 @@ float adrc_TOCnlsef(nlsef_TOCObject_t* nlsef_t)
 
 float adrc_nlsef(nlsefObject_t *nlsef)
 {
-    nlsef->e1_out = 20.0f * nlsef->beta_1 * Fal_ADRC(nlsef->e1 / 20.0f, nlsef->alpha1, nlsef->zeta);
-    nlsef->e2_out = 100.0f * nlsef->beta_2 * Fal_ADRC(nlsef->e2 / 100.0f, nlsef->alpha2, nlsef->zeta);
+    nlsef->e1_out = nlsef->beta_1 * Fal_ADRC(nlsef->e1, nlsef->alpha1, nlsef->zeta);
+    nlsef->e2_out = nlsef->beta_2 * Fal_ADRC(nlsef->e2, nlsef->alpha2, nlsef->zeta);
 
     // nlsef_t->e1_out = nlsef_t->beta_1 * nlsef_t->e1;
     // nlsef_t->e2_out = nlsef_t->beta_2 * nlsef_t->e2;

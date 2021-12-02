@@ -24,6 +24,8 @@ typedef struct
 	float r1;
 	float beta_1;
 	float beta_2;
+	float beta_I;
+	float I_limit;
 	float zeta;
 	float alpha1;
 	float alpha2;

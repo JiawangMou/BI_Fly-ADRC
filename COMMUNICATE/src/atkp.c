@@ -29,6 +29,7 @@
 #include "attitude_adrc.h"
 #include "dyn_notch_filter.h"
 #include "position_adrc.h"
+#include "config.h"
 
 /*FeeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -583,7 +584,7 @@ static void atkpSendPeriod(void)
 		// sensorData_t sensordata;
 		// attitude_t rateDesired;
 		// attitude_t attitude;
-		attitude_t attitudeDesired;
+//		attitude_t attitudeDesired;
         control_t control = getControlData();
 
     //   Axis3f gyro_LPF;
@@ -608,6 +609,8 @@ static void atkpSendPeriod(void)
         u32 timestamp = getSysTickCnt();
         estimator_t estimator;
         getestimator(&estimator);
+        motorPWM_t motorPWM;
+        getMotorPWM(&motorPWM);
 #ifdef USE_MBD        
         // float(* Notchcenterfreq)[DYN_NOTCH_COUNT_MAX] =  getdynNotchcenterfreq();
         // peak_t *peaks =  getdynNotchpeak();
@@ -621,8 +624,8 @@ static void atkpSendPeriod(void)
         // sendUserData(1, 10*state.position.z,10* setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,10*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,rateDesired.roll ,rateDesired.pitch,rateDesired.yaw,attitudeDesired.roll,attitudeDesired.pitch,attitudeDesired.yaw);
         //定高加速度计滤波测试用协议
-        sendUserData(1, 10*state.position.z,10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,100*state.acc.z,10*velZ_LESO.z1,10*velZ_LESO.z2,10*laser_height);
-        sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,control.thrust/10,0,gyro.x,100*estimator.accBias[Z],attitudeDesired.pitch,(s16)(timestamp & 0x00ffff));
+        sendUserData(1, 10*state.position.z,10*state.velocity.z,10*state.acc.z,10*setpoint.position.z,10*setpoint.velocity.z,10*velZ_TD.x1,10*velZ_TD.x2,10*posZ_TD.x1,10*posZ_TD.x2);
+        sendUserData(2, velZ_nlsef.e1_out/10,velZ_nlsef.e2_out/10,velZ_nlsef.u0/10,control.thrust_part.MBD /10,control.thrust/10,10*laser_height,motorPWM.f1/10,motorPWM.f2/10,(s16)(timestamp & 0x00ffff));
         
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
@@ -773,8 +776,8 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 					   pidAnglePitch.kp, pidAnglePitch.ki, pidAnglePitch.kd,
 					   pidAngleYaw.kp, pidAngleYaw.ki, pidAngleYaw.kd 
 				   );
-			sendPid(3, pidVZ.kp, pidVZ.ki, pidVZ.kd,
-					   pidZ.kp, pidZ.ki, pidZ.kd,
+			sendPid(3, velZ_nlsef.beta_1, velZ_nlsef.beta_I, velZ_nlsef.beta_2,
+					   posZ_nlsef.beta_1, posZ_nlsef.beta_I, posZ_nlsef.beta_2,
 					   pidVX.kp, pidVX.ki, pidVX.kd
 				   );
 #ifdef FOUR_WING
@@ -788,7 +791,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, velZ_nlsef.beta_1,velZ_nlsef.beta_2,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
+            sendPid(4, velZ_TD.r,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -809,12 +812,15 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         {
             resetConfigParamPID();
             attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
-            positionControlInit(VELOCITY_PID_DT, POSITION_PID_DT); /*初始化位置PID*/
+            positionControlInit(VEL_PID_DT, POS_PID_DT); /*初始化位置PID*/
             sendPid(1, pidRateRoll.kp, pidRateRoll.ki, pidRateRoll.kd, pidRatePitch.kp, pidRatePitch.ki,
                 pidRatePitch.kd, pidRateYaw.kp, pidRateYaw.ki, pidRateYaw.kd);
             sendPid(2, pidAngleRoll.kp, pidAngleRoll.ki, pidAngleRoll.kd, pidAnglePitch.kp, pidAnglePitch.ki,
                 pidAnglePitch.kd, pidAngleYaw.kp, pidAngleYaw.ki, pidAngleYaw.kd);
-            sendPid(3, pidVZ.kp, pidVZ.ki, pidVZ.kd, pidZ.kp, pidZ.ki, pidZ.kd, pidVX.kp, pidVX.ki, pidVX.kd);
+            sendPid(3, velZ_nlsef.beta_1, velZ_nlsef.beta_I, velZ_nlsef.beta_2,
+					   posZ_nlsef.beta_1, posZ_nlsef.beta_I, posZ_nlsef.beta_2,
+					   pidVX.kp, pidVX.ki, pidVX.kd
+				   );
 #ifdef FOUR_WING
     #ifdef ADRC_CONTROL 
 			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
@@ -826,7 +832,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4,velZ_nlsef.beta_1,velZ_nlsef.beta_2,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10,  0, 0, 0);
+            sendPid(4, velZ_TD.r,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -905,13 +911,13 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID3) {
-		pidVZ.kp = 0.1*((s16)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
-		pidVZ.ki = 0.1*((s16)(*(anlPacket->data+2)<<8)|*(anlPacket->data+3));
-		pidVZ.kd = 0.01*((s16)(*(anlPacket->data+4)<<8)|*(anlPacket->data+5));
+		velZ_nlsef.beta_1 = 0.1*((s16)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
+		velZ_nlsef.beta_I = 0.1*((s16)(*(anlPacket->data+2)<<8)|*(anlPacket->data+3));
+		velZ_nlsef.beta_2 = 0.01*((s16)(*(anlPacket->data+4)<<8)|*(anlPacket->data+5));
 		
-		pidZ.kp = 0.1*((s16)(*(anlPacket->data+6)<<8)|*(anlPacket->data+7));
-		pidZ.ki = 0.1*((s16)(*(anlPacket->data+8)<<8)|*(anlPacket->data+9));
-		pidZ.kd = 0.01*((s16)(*(anlPacket->data+10)<<8)|*(anlPacket->data+11));
+		posZ_nlsef.beta_1 = 0.1*((s16)(*(anlPacket->data+6)<<8)|*(anlPacket->data+7));
+		posZ_nlsef.beta_I = 0.1*((s16)(*(anlPacket->data+8)<<8)|*(anlPacket->data+9));
+		posZ_nlsef.beta_2 = 0.01*((s16)(*(anlPacket->data+10)<<8)|*(anlPacket->data+11));
 		
 		pidVX.kp = 0.1*((s16)(*(anlPacket->data+12)<<8)|*(anlPacket->data+13));
 		pidVX.ki = 0.1*((s16)(*(anlPacket->data+14)<<8)|*(anlPacket->data+15));
@@ -937,10 +943,10 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID4) {
-        velZ_nlsef.beta_1 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-        velZ_nlsef.beta_2 = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-        velZ_nlsef.zeta   = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
-        pidY              = pidX; //位置保持PID，X\Y方向是一样的
+        velZ_TD.r       = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        posZ_TD.r       = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        velZ_nlsef.zeta = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        // pidY              = pidX; //位置保持PID，X\Y方向是一样的
         u16 s_left_set    = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
         u16 s_right_set   = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
         u16 s_middle_set  = 0.1 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
@@ -950,8 +956,10 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
         ADRCRateRoll.nlsef.alpha1 =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
     #elif defined PID_CONTROL
-
-    #endif
+        posZ_nlsef.I_limit =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        velZ_nlsef.I_limit =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        posZ_nlsef.zeta    =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+#endif
 
 #elif defined DOUBLE_WING
 
@@ -967,7 +975,6 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         servoSetPWM(PWM_RIGHT, s_right_set);
         servoSetPWM(PWM_MIDDLE, s_middle_set);
         posZ_adrc_writeToConfigParam();
-
         /*自己开发的地面站用通讯协议*/
         // pidX.kp = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
         // pidX.ki = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));

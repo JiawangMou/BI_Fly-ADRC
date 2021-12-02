@@ -211,7 +211,6 @@ void flyerAutoLand(setpoint_t* setpoint, const state_t* state)
     if(state->position.z < 2.0f){   // 高度很小，落地
         commander.keyLand   = false;
         commander.keyFlight = false;
-        
         estRstAll();  /*复位估测*/
     }
 }
@@ -284,7 +283,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             flyerAutoLand(setpoint, state);
             if (initLand == false) {
                 pidReset(&pidZ);
-                setpoint->pos_desired.z = 0;    /*设定高度为0 单位cm/s*/
+                setpoint->position.z = 0;    /*设定高度为0 单位cm/s*/
                 posZ_td_states_set(state->position.z,state->velocity.z);
                 commander.keyFlight = false;
                 initLand = true;
@@ -335,21 +334,15 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             } else if (isAdjustingPosZ == true) {
                 isAdjustingPosZ      = false;
                 setpoint->mode.z     = modeAbs;
-#ifdef USE_MBD                
-                setpoint->pos_desired.z = state->position.z + errorPosZ; /*调整新位置*/
-                posZ_td_states_set(state->position.z,state->velocity.z); /*更新TD状态*/
-#else
                 setpoint->position.z = state->position.z + errorPosZ; /*调整新位置*/
+#ifdef USE_MBD                
+                posZ_td_states_set(state->position.z,state->velocity.z); /*更新TD状态*/
 #endif
                 //NOTE:为了下次进入定高的速率模式时使用PID叠加PID，现在只使用了 P 不需要清空PID缓存
                 // pidReset(&pidVZ);
             } else if (isAdjustingPosZ == false) /*Z位移误差*/
             {
-#ifdef USE_MBD   
-                errorPosZ = setpoint->pos_desired.z - state->position.z;
-#else
                 errorPosZ = setpoint->position.z - state->position.z;
-#endif
                 errorPosZ = constrainf(errorPosZ, -10.f, 10.f); /*误差限幅 单位cm*/
             }
         } else /*着陆状态*/
@@ -359,7 +352,6 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             setpoint->velocity.z = 0;
             setpoint->position.z = 0;
 #ifdef  USE_MBD
-            setpoint->pos_desired.z = 0;   
             setpoint->acc.z = 0;
 #endif
             if(initHigh == true){

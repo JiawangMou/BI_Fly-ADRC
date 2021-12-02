@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 33 /*13 表示V1.3*/
+#define VERSION 23 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -129,9 +129,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1500,
+			.s_left = 1450,
 			.s_right = 1500,
-			.s_middle = 1600,
+			.s_middle = 1550,
 		},
 		.accBias = 
 		{
@@ -282,22 +282,30 @@ static configParam_t configParamDefault =
 			},
 			.nlsef =
 			{
-				.N1 = 0,//跟踪微分器解决速度超调h1=N1*h
-				.beta_1 = 0,
-				.beta_2 = 0,
-				.zeta   = 0,
-				.alpha1 = 0,
-				.alpha2 = 0,
+				.beta_1 = 16.0,
+				.beta_2 = 0.2,
+				.beta_I = 6.0f,
+				.I_limit = 8.0f,
+				.zeta   = 0.3,
+				.alpha1 = 0.6,
+				.alpha2 = 1.2,
             },
 		},
 		.adrcVelZ = 
 		{
+			.td = 
+			{
+				.r  = 1200, // 加加速度 max_aa = 1200cm/s^3
+				.N0 = 2,
+			},
 			.nlsef =
 			{
 				.N1 = 2,//跟踪微分器解决速度超调h1=N1*h
-				.beta_1 = 300.0,
-				.beta_2 = 50.0,
-				.zeta   = 0.1,
+				.beta_1 = 1800.0,
+				.beta_2 = 40.0,
+				.beta_I = 150.0f,
+				.I_limit = 120.0f,
+				.zeta   = 0.3,
 				.alpha1 = 0.6,
 				.alpha2 = 1.2,
             },		
@@ -408,9 +416,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1600,
+			.s_left = 1450,
 			.s_right = 1500,
-			.s_middle = 1600,
+			.s_middle = 1550,
 		},
 		.accBias = 
 		{

@@ -13,6 +13,7 @@
 #include "system.h"
 #include "vl53lxx.h"
 #include "model.h"
+
 #include "position_adrc.h"
 
 /*FreeRTOS相关头文件*/
@@ -52,7 +53,7 @@ void stabilizerInit(void)
     if (isInit)
         return;
 
-    stateControlInit(); /*姿态PID初始化*/
+    stateControlInit(); /*姿态和位置PID初始化*/
     powerControlInit(); /*电机初始化*/
 
     model_initialize();
@@ -109,7 +110,7 @@ static void fastAdjustPosZ(void)
         absModeTimes--;
         estRstAll(); /*复位估测*/
         setpoint.mode.z = modeAbs;
-        setpoint.pos_desired.z = setHeight;
+        setpoint.position.z = setHeight;
     }
 }
 
@@ -117,9 +118,9 @@ void stabilizerTask(void* param)
 {
     u32 tick = 0;
     u32 lastWakeTime = getSysTickCnt();
-    float flap_Hz = 0.0f;
-    float F_flap = 0.0f;
-    float Fd = 0.0;
+//    float flap_Hz = 0.0f;
+//    float F_flap = 0.0f;
+//    float Fd = 0.0;
 
     //	ledseqRun(SYS_LED, seq_alive);
 
@@ -171,25 +172,27 @@ void stabilizerTask(void* param)
         /*PID控制*/
         stateControl(&control, &sensorData, &state, &setpoint, tick);
 
-        #ifdef USE_MBD
-        /*MBD compensation*/
-        if ((getCommanderCtrlMode() & 0x01) && (getCommanderKeyland() || getCommanderKeyFlight())) /*定高模式,且不处于着落状态时*/
-        {
-            if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) /*TD_update*/
-            {
-                posZ_transient_process_update(&setpoint);
-            }
-            if (RATE_DO_EXECUTE(MBD_RATE, tick)) /*MBD_update*/
-                control.thrust_part.MBD = MBD_update(setpoint.acc.z,state.velocity,sensorData.gyro);
-        }
-        if(RATE_DO_EXECUTE(VELZ_LESO_RATE, tick)) 
-        {
-            flap_Hz = constrainf(0.0003685f*control.thrust +1.43f,0.0f,25.0f);
-            F_flap = constrainf((0.03543f*sq(flap_Hz)-0.2027f),0.0f,22.0f);
-            Fd = F_flap * state.velocity.z * 0.00198f;
-            velZ_ESO_estimate(2.0f*(F_flap - Fd)- 27.0f ,state.velocity.z);
-        }
-        #endif
+        // #ifdef USE_MBD
+        // /*MBD compensation*/
+        // if ((getCommanderCtrlMode() & 0x01) && (getCommanderKeyland() || getCommanderKeyFlight())) /*定高模式,且不处于着落状态时*/
+        // {
+        //     if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) /*TD_update*/
+        //     {
+        //         posZ_transient_process_update(&setpoint);
+        //     }
+        //     if (RATE_DO_EXECUTE(VELZ_TD_RATE, tick)) /*TD_update*/
+        //     {
+        //         velZ_transient_process_update(&setpoint);
+        //     }
+        // }
+        // if(RATE_DO_EXECUTE(RATE_500_HZ, tick)) 
+        // {
+        //     flap_Hz = constrainf(0.0003685f*control.thrust +1.43f,0.0f,25.0f);
+        //     F_flap = constrainf((0.03543f*sq(flap_Hz)-0.2027f),0.0f,22.0f);
+        //     Fd = F_flap * state.velocity.z * 0.00198f;
+        //     velZ_ESO_estimate(2.0f*(F_flap - Fd)- 27.0f ,state.velocity.z);
+        // }
+        // #endif
 
 
         //控制电机输出（250Hz）

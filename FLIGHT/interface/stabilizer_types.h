@@ -212,7 +212,6 @@ typedef struct
 {
 	attitude_t attitude;		// deg	
 	attitude_t attitudeRate;	// deg/s
-	point_t pos_desired;		// position setpoint,TD input  cm
 	point_t position;         	// transient position setpoint cm
 	velocity_t velocity;      	// transient velocity setpoint cm/s
 	Axis3f acc;

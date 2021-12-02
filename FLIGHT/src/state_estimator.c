@@ -6,6 +6,7 @@
 #include "sensfusion6.h"
 #include "stabilizer.h"
 #include "vl53lxx.h"
+#include "model.h"
 
 /********************************************************************************
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -143,7 +144,9 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
 
         estimator.vel[Z] = 0.f;
         estimator.pos[Z] = fusedHeight;
-
+#ifdef USE_MBD
+        model_reset();
+#endif
         pidReset(&pidZ);
         pidReset(&pidVZ);
     }

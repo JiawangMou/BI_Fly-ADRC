@@ -581,6 +581,11 @@ void model_terminate(void)
   /* (no terminate code required) */
 }
 
+void model_reset(void)
+{
+  model_Y.PWM_compensation = 0;;
+}
+
 /*
  * File trailer for generated code.
  *

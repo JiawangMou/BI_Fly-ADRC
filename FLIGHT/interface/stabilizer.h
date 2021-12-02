@@ -26,27 +26,27 @@
 #define MAIN_LOOP_DTS    		(1.0/MAIN_LOOP_RATE)	    /*单位s*/
 
 #define POSITION_ESTIMAT_RATE	RATE_250_HZ	//位置预估速率
-#define ATTITUDE_ESTIMAT_RATE	RATE_100_HZ	//姿态解算速率
+#define ATTITUDE_ESTIMAT_RATE	RATE_250_HZ	//姿态解算速率
 #define ATTITUDE_ESTIMAT_DT		(1.0/ATTITUDE_ESTIMAT_RATE)
 
 
 #define POSITION_ESTIMAT_DT		(1.0/POSITION_ESTIMAT_RATE)
 
-#define RATE_PID_RATE			RATE_250_HZ //角速度环（内环）PID速率
+#define RATE_PID_RATE			RATE_500_HZ //角速度环（内环）PID速率
 #define RATE_PID_DT				(1.0/RATE_PID_RATE)
 
 #define ANGEL_PID_RATE			ATTITUDE_ESTIMAT_RATE //角度环（外环）PID速率
 #define ANGEL_PID_DT			(1.0/ANGEL_PID_RATE)
 
-#define VELOCITY_PID_RATE		POSITION_ESTIMAT_RATE //速度环（内环）PID速率
-#define VELOCITY_PID_DT			(1.0/VELOCITY_PID_RATE)
 
+#define VEL_PID_RATE		    POSITION_ESTIMAT_RATE //位置环（外环）PID速率
+#define VEL_PID_DT			    (1.0/VEL_PID_RATE)
 
-#define POSITION_PID_RATE		POSITION_ESTIMAT_RATE //位置环（外环）PID速率
-#define POSITION_PID_DT			(1.0/POSITION_PID_RATE)
+#define POS_PID_RATE		    RATE_100_HZ //位置环（外环）PID速率
+#define POS_PID_DT			    (1.0/POS_PID_RATE)
 
-#define MBD_RATE                RATE_250_HZ
-#define MBD_DT                  (1.0/MBD_RATE)
+// #define MBD_RATE                RATE_250_HZ
+// #define MBD_DT                  (1.0/MBD_RATE)
 
 
 

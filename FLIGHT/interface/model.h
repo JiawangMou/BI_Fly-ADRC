@@ -104,6 +104,7 @@ extern const ConstP_model_T model_ConstP;
 extern void model_initialize(void);
 extern u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro);
 extern void model_terminate(void);
+void model_reset(void);
 
 /* Real-time Model object */
 extern RT_MODEL_model_T *const model_M;
