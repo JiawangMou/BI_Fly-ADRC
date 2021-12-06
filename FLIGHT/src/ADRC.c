@@ -192,12 +192,12 @@ float Fal_ADRC(float e,float alpha,float zeta)
 	}
 }
 //LESO_2rd
-void adrc_leso(lesoObject_2rd_t* adrcobject,const float expect_val, const float u)
+void adrc_leso(lesoObject_2rd_t* adrcobject,const float x, const float u)
 {
     float Beta_01 = 2 * adrcobject->w0;
     float Beta_02 = adrcobject->w0 * adrcobject->w0;
 
-    adrcobject->e = adrcobject->z1 - expect_val;
+    adrcobject->e = adrcobject->z1 - x;
     adrcobject->z1 += (adrcobject->z2 - Beta_01 * adrcobject->e + adrcobject->b0 * lpf2pApply(&adrcobject->uLpf, u)) * adrcobject->h;
     // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
     adrcobject->z2 += -Beta_02 * adrcobject->e * adrcobject->h;

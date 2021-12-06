@@ -49,7 +49,7 @@ void vel_adrc_reset(void)
 float adrc_VelControl(const float x1, const float x2,setpoint_t *setpoint)
 {
     adrc_td(&velZ_TD, setpoint->velocity.z);
-    velZ_nlsef.e1 = velZ_TD.x1 - x1;
+    velZ_nlsef.e1 = velZ_TD.x1 - velZ_LESO.z1;
     velZ_nlsef.e2 = velZ_TD.x2 - x2; 
 
     vel_integral += velZ_nlsef.e1 * VELZ_ADRC_DT;
@@ -63,7 +63,7 @@ float adrc_VelControl(const float x1, const float x2,setpoint_t *setpoint)
 	{
 		vel_integral = -velZ_nlsef.I_limit;
 	}  
-    return  adrc_nlsef(&velZ_nlsef) + vel_integral * velZ_nlsef.beta_I;
+    return  adrc_nlsef(&velZ_nlsef) + vel_integral * velZ_nlsef.beta_I - velZ_LESO.z2 / velZ_LESO.b0;
 }
 float adrc_PosControl(float x1,float x2, setpoint_t *setpoint)
 {
@@ -127,9 +127,9 @@ void posZ_state_estimate(sensorData_t* sensorData, state_t* state, float u)
 {
     adrc_leso_3rd(&posZ_LESO,sensorData->zrange.distance, u);    
 }
-void velZ_ESO_estimate(float input,float output)
+void velZ_ESO_estimate(float u,float x)
 {
-    adrc_leso(&velZ_LESO,output, input);
+    adrc_leso(&velZ_LESO,x, u);
     // state->position.z = posZ_LESO.z1;
     // state->velocity.z = posZ_LESO.z2;    
 }

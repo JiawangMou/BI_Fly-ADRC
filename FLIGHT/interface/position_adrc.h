@@ -12,6 +12,9 @@
 #define VELZ_ADRC_RATE           VEL_PID_RATE
 #define VELZ_ADRC_DT             (1.0/VELZ_ADRC_RATE)
 
+#define VEL_ESO_RATE             RATE_500_HZ
+#define VEL_ESO_DT               (1.0/VEL_ESO_RATE)
+
 // #define POSZ_LESO_RATE           RATE_1000_HZ
 // #define POSZ_LESO_DT             (1.0/POSZ_LESO_RATE)
 
@@ -39,5 +42,5 @@ void  posZ_td_states_set(const float x1, const float x2);
 void  posZ_transient_process_update(setpoint_t* setpoint);
 void  velZ_transient_process_update(setpoint_t* setpoint);
 void  posZ_state_estimate(sensorData_t* sensorData, state_t* state, float u);
-void  velZ_ESO_estimate(float input, float output);
+void velZ_ESO_estimate(float u,float x);
 #endif

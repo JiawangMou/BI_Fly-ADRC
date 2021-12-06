@@ -295,8 +295,8 @@ static void i2cdrvInitBus(I2cDrv* i2c)
 	NVIC_InitStructure.NVIC_IRQChannel = i2c->def->i2cERIRQn;
 	NVIC_Init(&NVIC_InitStructure);
 
-	i2cdrvDmaSetupBus(i2c);
 
+	i2cdrvDmaSetupBus(i2c);
 	i2c->isBusFreeSemaphore = xSemaphoreCreateBinary();
 	i2c->isBusFreeMutex = xSemaphoreCreateMutex();
 }

@@ -368,7 +368,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
 
     setpoint->attitude.roll  = ctrlValLpf.roll;
     setpoint->attitude.pitch = ctrlValLpf.pitch;
-    setpoint->attitude.yaw = -ctrlValLpf.yaw; /*摇杆方向和yaw方向相反*/
+    setpoint->attitude.yaw = ctrlValLpf.yaw; /*摇杆方向和yaw方向相反*/
 
 
     if (getOpDataState() && commander.ctrlMode == 0x03) /*光流数据可用，定点模式*/
