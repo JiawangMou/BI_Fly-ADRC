@@ -1,5 +1,5 @@
 #include "system.h"
-#include "vl53lxx_i2c.h"
+#include "vl53lxx_i2c_hw.h"
 #include "vl53lxx.h"
 #include "vl53l1_api.h"
 #include "math.h"
@@ -28,7 +28,7 @@ bool isEnableVl53lxx = true; /*是否使能激光*/
 
 //static bool isInitvl53l0x = false; /*初始化vl53l0x*/
 static bool isInitvl53l1x = false; /*初始化vl53l1x*/
-static bool reInitvl53l0x = false; /*再次初始化vl53l0x*/
+// static bool reInitvl53l0x = false; /*再次初始化vl53l0x*/
 //static bool reInitvl53l1x = false; /*再次初始化vl53l1x*/
 
 static u8 count = 0;
@@ -47,11 +47,11 @@ void vl53l1xTask(void *arg);
 
 void vl53lxxInit(void)
 {
-	vl53IICInit();
+	vl53_HWIIC_Init();
 	delay_ms(10);
 
 	/*vl53l0x 初始化*/
-	vl53lxxId = vl53l0xGetModelID();
+	// vl53lxxId = vl53l0xGetModelID();
 	// if(vl53lxxId == VL53L0X_ID)
 	// {
 	// 	if (isInitvl53l0x)
@@ -90,53 +90,53 @@ void vl53lxxInit(void)
 	// vl53lxxId = 0;
 }
 
-void vl53l0xTask(void *arg)
-{
-	TickType_t xLastWakeTime = xTaskGetTickCount();
+// void vl53l0xTask(void *arg)
+// {
+// 	TickType_t xLastWakeTime = xTaskGetTickCount();
 
-	vl53l0xSetParam(); /*设置vl53l0x 参数*/
+// 	vl53l0xSetParam(); /*设置vl53l0x 参数*/
 
-	while (1)
-	{
-		if (reInitvl53l0x == true)
-		{
-			count = 0;
-			reInitvl53l0x = false;
-			vl53l0xSetParam(); /*设置vl53l0x 参数*/
-			xLastWakeTime = xTaskGetTickCount();
-		}
-		else
-		{
-			range_last = vl53l0xReadRangeContinuousMillimeters() * 0.1f; //单位cm
+// 	while (1)
+// 	{
+// 		if (reInitvl53l0x == true)
+// 		{
+// 			count = 0;
+// 			reInitvl53l0x = false;
+// 			vl53l0xSetParam(); /*设置vl53l0x 参数*/
+// 			xLastWakeTime = xTaskGetTickCount();
+// 		}
+// 		else
+// 		{
+// 			range_last = vl53l0xReadRangeContinuousMillimeters() * 0.1f; //单位cm
 
-			if (range_last < VL53L0X_MAX_RANGE)
-				validCnt++;
-			else
-				inValidCnt++;
+// 			if (range_last < VL53L0X_MAX_RANGE)
+// 				validCnt++;
+// 			else
+// 				inValidCnt++;
 
-			if (inValidCnt + validCnt == 10)
-			{
-				quality += (validCnt / 10.f - quality) * 0.1f; /*低通*/
-				validCnt = 0;
-				inValidCnt = 0;
-			}
+// 			if (inValidCnt + validCnt == 10)
+// 			{
+// 				quality += (validCnt / 10.f - quality) * 0.1f; /*低通*/
+// 				validCnt = 0;
+// 				inValidCnt = 0;
+// 			}
 
-			if (range_last >= 6550) /*vl53 错误*/
-			{
-				if (++count > 30)
-				{
-					count = 0;
-					isVl53l1xOk = false;
-					vTaskSuspend(vl53l0xTaskHandle); /*挂起激光测距任务*/
-				}
-			}
-			else
-				count = 0;
+// 			if (range_last >= 6550) /*vl53 错误*/
+// 			{
+// 				if (++count > 30)
+// 				{
+// 					count = 0;
+// 					isVl53l1xOk = false;
+// 					vTaskSuspend(vl53l0xTaskHandle); /*挂起激光测距任务*/
+// 				}
+// 			}
+// 			else
+// 				count = 0;
 
-			vTaskDelayUntil(&xLastWakeTime, measurement_timing_budget_ms);
-		}
-	}
-}
+// 			vTaskDelayUntil(&xLastWakeTime, measurement_timing_budget_ms);
+// 		}
+// 	}
+// }
 
 static VL53L1_RangingMeasurementData_t rangingData;
 

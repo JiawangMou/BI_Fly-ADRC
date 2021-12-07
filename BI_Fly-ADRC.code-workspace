@@ -29,7 +29,10 @@
 			"sensors.h": "c",
 			"position_adrc.h": "c",
 			"stabilizer_types.h": "c",
-			"freertos.h": "c"
+			"freertos.h": "c",
+			"vl53lxx_i2c_hw.h": "c",
+			"vl53l1_api.h": "c",
+			"i2cdev.h": "c"
 		}
 	}
 }
