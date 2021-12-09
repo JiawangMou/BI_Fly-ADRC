@@ -1,38 +1,61 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"files.associations": {
-			"attitude_adrc.h": "c",
-			"adrc.h": "c",
-			"filter.h": "c",
-			"config.h": "c",
-			"nvic.h": "c",
-			"sys.h": "c",
-			"state_control.h": "c",
-			"system.h": "c",
-			"dyn_notch_filter.h": "c",
-			"stabilizer.h": "c",
-			"queue.h": "c",
-			"myqueue.h": "c",
-			"stdbool.h": "c",
-			"config_param.h": "c",
-			"model.h": "c",
-			"commander.h": "c",
-			"position_pid.h": "c",
-			"cmath": "c",
-			"maths.h": "c",
-			"arm_math.h": "c",
-			"sensors.h": "c",
-			"position_adrc.h": "c",
-			"stabilizer_types.h": "c",
-			"freertos.h": "c",
-			"vl53lxx_i2c_hw.h": "c",
-			"vl53l1_api.h": "c",
-			"i2cdev.h": "c"
-		}
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "attitude_adrc.h": "c",
+            "adrc.h": "c",
+            "filter.h": "c",
+            "config.h": "c",
+            "nvic.h": "c",
+            "sys.h": "c",
+            "state_control.h": "c",
+            "system.h": "c",
+            "dyn_notch_filter.h": "c",
+            "stabilizer.h": "c",
+            "queue.h": "c",
+            "myqueue.h": "c",
+            "stdbool.h": "c",
+            "config_param.h": "c",
+            "model.h": "c",
+            "commander.h": "c",
+            "position_pid.h": "c",
+            "cmath": "c",
+            "maths.h": "c",
+            "arm_math.h": "c",
+            "sensors.h": "c",
+            "position_adrc.h": "c",
+            "stabilizer_types.h": "c",
+            "freertos.h": "c",
+            "vl53lxx_i2c_hw.h": "c",
+            "vl53l1_api.h": "c",
+            "i2cdev.h": "c",
+            ".eideignore": "ignore"
+        },
+        "C_Cpp.default.intelliSenseMode": "gcc-arm",
+        "files.autoGuessEncoding": true,
+        "C_Cpp.default.cppStandard": "c++14",
+        "C_Cpp.default.cStandard": "c99",
+        "[yaml]": {
+            "editor.insertSpaces": true,
+            "editor.tabSize": 4,
+            "editor.autoIndent": "advanced"
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "cl.eide",
+            "keroc.hex-fmt",
+            "xiaoyongdong.srecord",
+            "hars.cppsnippets",
+            "zixuanwang.linkerscript",
+            "redhat.vscode-yaml",
+            "dan-c-underwood.arm",
+            "zixuanwang.linkerscript",
+            "marus25.cortex-debug"
+        ]
+    }
 }
