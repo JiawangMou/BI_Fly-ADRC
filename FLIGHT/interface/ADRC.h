@@ -105,7 +105,7 @@ void  nlsef_init(nlsefObject_t* nlsef_object, nlsefParam_t* nlsef_param, float n
 void  adrc_leso(lesoObject_2rd_t* adrcobject, const float expect_val, const float u);
 void  adrc_leso_3rd(lesoObject_3rd_t* lesoobject, const float expect_val, const float u);
 float adrc_TOCnlsef(nlsef_TOCObject_t* nlsef_t);
-float adrc_nlsef(nlsefObject_t* nlsef_t);
+float adrc_nlsef(nlsefObject_t *nlsef);
 void  adrc_eso(nlesoObject_t* nlesoObject, float expect_val, float u);
 void  adrc_td(tdObject_t* td, float v);
 float Constrain_Float(float amt, float low, float high);

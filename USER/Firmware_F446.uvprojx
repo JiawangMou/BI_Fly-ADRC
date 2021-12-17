@@ -525,16 +525,6 @@
               <FilePath>..\HARDWARE\src\spl06.c</FilePath>
             </File>
             <File>
-              <FileName>vl53lxx_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\src\vl53lxx_i2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>vl53l0x.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\src\vl53l0x.c</FilePath>
-            </File>
-            <File>
               <FileName>vl53l1x.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\src\vl53l1x.c</FilePath>
@@ -558,6 +548,11 @@
               <FileName>bat.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\src\bat.c</FilePath>
+            </File>
+            <File>
+              <FileName>vl53lxx_i2c_hw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\src\vl53lxx_i2c_hw.c</FilePath>
             </File>
           </Files>
         </Group>
