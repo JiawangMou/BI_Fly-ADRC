@@ -82,3 +82,4 @@ JLinkSettings.ini
 /.eide/arm_builder.log
 /.eide/log
 /BI_Fly-FreeRTOS.si4project/
+/build
