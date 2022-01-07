@@ -102,6 +102,10 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
     }
 
+    if (RATE_DO_EXECUTE(VEL_ESO_RATE, tick)) {
+            velZ_ESO_estimate(control->thrust,state->velocity.z);
+    }
+
     //角度环（外环）
     if (RATE_DO_EXECUTE(ANGEL_PID_RATE, tick)) {
         if (setpoint->mode.z == modeDisable) {
