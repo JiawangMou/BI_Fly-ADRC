@@ -91,7 +91,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
             #ifdef USE_MBD
             positionController(setpoint, state);
             #else 
-            positionController(&actualThrust, &attitudeDesired, setpoint, state, POSITION_PID_DT);
+            positionController(&actualThrust, &attitudeDesired, setpoint, state, POS_PID_DT);
             #endif
         }
     }
@@ -102,9 +102,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
     }
 
-    if (RATE_DO_EXECUTE(VEL_ESO_RATE, tick)) {
-            velZ_ESO_estimate(control->thrust,state->velocity.z);
-    }
+    // if (RATE_DO_EXECUTE(VEL_ESO_RATE, tick)) {
+    //         velZ_ESO_estimate(control->thrust,state->velocity.z);
+    // }
 
     //角度环（外环）
     if (RATE_DO_EXECUTE(ANGEL_PID_RATE, tick)) {

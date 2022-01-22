@@ -12,7 +12,7 @@
 #define VELZ_ADRC_RATE           VEL_PID_RATE
 #define VELZ_ADRC_DT             (1.0/VELZ_ADRC_RATE)
 
-#define VEL_ESO_RATE             RATE_1000_HZ
+#define VEL_ESO_RATE             RATE_500_HZ
 #define VEL_ESO_DT               (1.0/VEL_ESO_RATE)
 
 // #define POSZ_LESO_RATE           RATE_1000_HZ

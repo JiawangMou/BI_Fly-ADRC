@@ -42,7 +42,6 @@ static bool isRstHeight = false; /*复位高度*/
 static bool isRstAll    = true;  /*复位估测*/
 
 static float fusedHeight;          /*融合高度，起飞点为0*/
-static float fusedHeightLpf = 0.f; /*融合高度，低通*/
 static float startBaroAsl   = 0.f; /*起飞点海拔*/
 
 // // TEST:加速度漂移问题
@@ -88,11 +87,12 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     static float accLpf[3] = { 0.f }; /*加速度低通*/
     float        weight    = wBaro;
 
+
     float relateHight = sensorData->baro.asl - startBaroAsl; /*气压相对高度*/
 
     if (getVl53l1xstate() == true) /*激光传感器可用*/
     {
-        vl53lxxReadRange(&sensorData->zrange); /*读取激光数据*/
+        vl53lxxReadRange(&sensorData->zrange); /*读取补偿后的激光数据*/
         fusedHeight = sensorData->zrange.distance;
         weight = sensorData->zrange.quality * 3.5f;
         // rangeLpf += (sensorData->zrange.distance - rangeLpf) * 0.1f; /*低通 单位cm*/
@@ -106,13 +106,9 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
         //     startBaroAsl = sensorData->baro.asl - rangeLpf;
         // }
         // fusedHeight = rangeLpf * quality + (1.0f - quality) * relateHight; /*融合高度*/
-    } else /*无激光模块（永远不会进入这一块）*/
-    {
+    } else{ /*无激光模块（永远不会进入这一块）*/
         fusedHeight = relateHight; /*融合高度*/
     }
-    // fHLast = fusedHeightLpf;
-    fusedHeightLpf += (fusedHeight - fusedHeightLpf) * 0.1f; /*融合高度 低通*/
-
     if (isRstHeight) {
         isRstHeight = false;
 
@@ -133,7 +129,7 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
 
         accLpf[Z]      = 0.f;
         fusedHeight    = 0.f;
-        fusedHeightLpf = 0.f;
+        fusedHeight = 0.f;
         startBaroAsl   = sensorData->baro.asl;
         if (getVl53l1xstate()) {
             if (sensorData->zrange.distance < VL53L1X_MAX_RANGE) {
@@ -188,7 +184,7 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
         state->acc.z = constrainf(estimator.acc[Z], -ACC_LIMIT_MAX, ACC_LIMIT_MAX); /*最大加速度限幅*/
     }
 
-    float errPosZ = fusedHeightLpf - estimator.pos[Z];
+    float errPosZ = fusedHeight - estimator.pos[Z];
 
     /* 位置预估: Z-axis */
     inavFilterPredict(Z, dt, state->acc.z);
@@ -256,7 +252,7 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
 }
 
 /*读取融合高度 单位cm*/
-float getFusedHeight(void) { return fusedHeightLpf; }
+float getFusedHeight(void) { return fusedHeight; }
 
 /*复位估测高度*/
 void estRstHeight(void) { isRstHeight = true; }

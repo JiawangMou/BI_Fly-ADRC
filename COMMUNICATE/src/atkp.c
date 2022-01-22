@@ -70,7 +70,7 @@
 #define PERIOD_MOTOR 40
 #define PERIOD_SENSOR2 40
 #define PERIOD_SPEED 50
-#define PERIOD_USERDATA 4
+#define PERIOD_USERDATA 2
 #define PERIOD_PIDOUT 20
 
 #define ATKP_RX_QUEUE_SIZE 10 /*ATKP包接收队列消息个数*/
@@ -585,25 +585,27 @@ static void atkpSendPeriod(void)
 		// attitude_t rateDesired;
 		// attitude_t attitude;
 //		attitude_t attitudeDesired;
-        control_t control = getControlData();
+        // control_t control = getControlData();
 
     //   Axis3f gyro_LPF;
-    //     Axis3f gyro_UnLPF;
+        Axis3f gyro_UnLPF;
         state_t state = getState(); /*四轴姿态*/
-        float laser_height = getFusedHeight();
+        // float laser_height = getFusedHeight();
         Axis3i16 acc;
         Axis3i16 gyro;
         Axis3i16 mag;
-        float      q0;
-        float      q1;
-        float      q2;
-        float      q3;
+        zRange_t vl53lxx;
+        vl53lxxReadRange(&vl53lxx);
+        // float      q0;
+        // float      q1;
+        // float      q2;
+        // float      q3;
         setpoint_t setpoint = getSetpoint();
         getSensorRawData(&acc, &gyro, &mag);
 		// getAttitudeData(&attitude);
 		// getAngleDesired(&attitudeDesired);
         getSensorData(&sensordata);
-        // getgyro_UnLPFData(&gyro_UnLPF);
+        getgyro_UnLPFData(&gyro_UnLPF);
         // getgyro_LPFData( &gyro_LPF);
 		// getRateDesired( &rateDesired );
 //        Axis3f acc_Notched_LPF;
@@ -611,11 +613,13 @@ static void atkpSendPeriod(void)
 //        getacc_NotchedData( &acc_Notched_LPF);
         // getacc_SFData(&acc_SF);
         u32 timestamp = getSysTickCnt();
-        estimator_t estimator;
-        getestimator(&estimator);
-        motorPWM_t motorPWM;
-        getMotorPWM(&motorPWM);
-        getQ(&q0 ,&q1,&q2,&q3);
+        Axis3f r_Vector_B;
+        getr_Vector(&r_Vector_B);
+        // estimator_t estimator;
+        // getestimator(&estimator);
+        // motorPWM_t motorPWM;
+        // getMotorPWM(&motorPWM);
+        // getQ(&q0 ,&q1,&q2,&q3);
 #ifdef USE_MBD        
         // float(* Notchcenterfreq)[DYN_NOTCH_COUNT_MAX] =  getdynNotchcenterfreq();
         // peak_t *peaks =  getdynNotchpeak();
@@ -631,12 +635,16 @@ static void atkpSendPeriod(void)
         //定高加速度计滤波测试用协议
         // sendUserData(1, 10*state.position.z,10*state.velocity.z,10*state.acc.z,10*setpoint.position.z,10*setpoint.velocity.z,10*velZ_TD.x1,10*velZ_TD.x2,10*posZ_TD.x1,10*posZ_TD.x2);
         // sendUserData(2, velZ_nlsef.e1_out/10,velZ_nlsef.e2_out/10,velZ_nlsef.u0/10,control.thrust_part.MBD /10,control.thrust/10,10*laser_height,motorPWM.f1/10,motorPWM.f2/10,(s16)(timestamp & 0x00ffff));
-        sendUserData(1, 10*laser_height,100*sensordata.acc.x,100*sensordata.acc.y,100*sensordata.acc.z,100*state.velocity.x,100*state.velocity.y,100*state.velocity.z,100*state.position.z,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
+        //模型前馈测试
+        // sendUserData(1, 10*laser_height,100*sensordata.acc.x,100*sensordata.acc.y,100*sensordata.acc.z,100*state.velocity.x,100*state.velocity.y,100*state.velocity.z,100*state.position.z,(s16)(timestamp & 0x00ffff));
+        // sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
+        //光流补偿测试
+        sendUserData(1, 10*state.attitude.roll,10*state.attitude.pitch,10*state.attitude.yaw,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.deltaVel[X], opFlow.deltaVel[Y],sensordata.zrange.distance,vl53lxx.distance_uncomp);
+        sendUserData(2, opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y],r_Vector_B.x,r_Vector_B.y,r_Vector_B.z,opFlow.pixdeltaveluncopm[X],opFlow.pixdeltaveluncopm[Y],(s16)(opFlow.timestamp & 0x00ffff),(s16)(timestamp & 0x00ffff));
         
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,0,0);
+        sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,(s16)(opFlow.timestamp & 0x00ffff),0);
 
         // sendUserData(1, gyro.x, gyro_LPF.x, sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, gyro.y, gyro_LPF.y, sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);        

@@ -121,7 +121,7 @@ void velocityController(float* thrust, control_t *control,attitude_t* attitude, 
 
 	// Thrust
     float thrustRaw = constrainf(adrc_VelControl(state->velocity.z,state->acc.z,setpoint),-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
-    control->thrust_part.MBD = MBD_update(setpoint->acc.z,state->velocity,sensorData->gyro);
+    // control->thrust_part.MBD = MBD_update(setpoint->acc.z,state->velocity,sensorData->gyro);
     *thrust = constrainf(thrustRaw + control->thrust_part.MBD, 1000, 55000); /*смцеоч╥Ы*/
 
     thrustLpf += (*thrust - thrustLpf) * 0.003f;
