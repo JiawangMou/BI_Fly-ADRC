@@ -581,28 +581,28 @@ static void atkpSendPeriod(void)
         // sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
         //     sensor.gyro.z, control.pitch, control.yaw, control.roll);
 
-		sensorData_t sensordata;
-		// attitude_t rateDesired;
-		// attitude_t attitude;
-//		attitude_t attitudeDesired;
-        control_t control = getControlData();
+// 		sensorData_t sensordata;
+// 		// attitude_t rateDesired;
+// 		// attitude_t attitude;
+// //		attitude_t attitudeDesired;
+//         control_t control = getControlData();
 
-    //   Axis3f gyro_LPF;
-    //     Axis3f gyro_UnLPF;
-        state_t state = getState(); /*四轴姿态*/
-        float laser_height = getFusedHeight();
-        Axis3i16 acc;
-        Axis3i16 gyro;
-        Axis3i16 mag;
-        float      q0;
-        float      q1;
-        float      q2;
-        float      q3;
-        setpoint_t setpoint = getSetpoint();
-        getSensorRawData(&acc, &gyro, &mag);
-		// getAttitudeData(&attitude);
-		// getAngleDesired(&attitudeDesired);
-        getSensorData(&sensordata);
+//     //   Axis3f gyro_LPF;
+//     //     Axis3f gyro_UnLPF;
+//         state_t state = getState(); /*四轴姿态*/
+//         float laser_height = getFusedHeight();
+//         Axis3i16 acc;
+//         Axis3i16 gyro;
+//         Axis3i16 mag;
+//         float      q0;
+//         float      q1;
+//         float      q2;
+//         float      q3;
+//         setpoint_t setpoint = getSetpoint();
+//         getSensorRawData(&acc, &gyro, &mag);
+// 		// getAttitudeData(&attitude);
+// 		// getAngleDesired(&attitudeDesired);
+//         getSensorData(&sensordata);
         // getgyro_UnLPFData(&gyro_UnLPF);
         // getgyro_LPFData( &gyro_LPF);
 		// getRateDesired( &rateDesired );
@@ -611,11 +611,11 @@ static void atkpSendPeriod(void)
 //        getacc_NotchedData( &acc_Notched_LPF);
         // getacc_SFData(&acc_SF);
         u32 timestamp = getSysTickCnt();
-        estimator_t estimator;
-        getestimator(&estimator);
-        motorPWM_t motorPWM;
-        getMotorPWM(&motorPWM);
-        getQ(&q0 ,&q1,&q2,&q3);
+        // estimator_t estimator;
+        // getestimator(&estimator);
+        // motorPWM_t motorPWM;
+        // getMotorPWM(&motorPWM);
+        // getQ(&q0 ,&q1,&q2,&q3);
 #ifdef USE_MBD        
         // float(* Notchcenterfreq)[DYN_NOTCH_COUNT_MAX] =  getdynNotchcenterfreq();
         // peak_t *peaks =  getdynNotchpeak();
@@ -631,8 +631,9 @@ static void atkpSendPeriod(void)
         //定高加速度计滤波测试用协议
         // sendUserData(1, 10*state.position.z,10*state.velocity.z,10*state.acc.z,10*setpoint.position.z,10*setpoint.velocity.z,10*velZ_TD.x1,10*velZ_TD.x2,10*posZ_TD.x1,10*posZ_TD.x2);
         // sendUserData(2, velZ_nlsef.e1_out/10,velZ_nlsef.e2_out/10,velZ_nlsef.u0/10,control.thrust_part.MBD /10,control.thrust/10,10*laser_height,motorPWM.f1/10,motorPWM.f2/10,(s16)(timestamp & 0x00ffff));
-        sendUserData(1, 10*laser_height,100*sensordata.acc.x,100*sensordata.acc.y,100*sensordata.acc.z,100*state.velocity.x,100*state.velocity.y,100*state.velocity.z,100*state.position.z,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
+        // sendUserData(1, 10*laser_height,100*sensordata.acc.x,100*sensordata.acc.y,100*sensordata.acc.z,100*state.velocity.x,100*state.velocity.y,100*state.velocity.z,100*state.position.z,(s16)(timestamp & 0x00ffff));
+        // sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
+        sendUserData(1, stabi_tick.sensorsAcquire_tick,stabi_tick.imuUpdate_tick,stabi_tick.positionEstimate_tick,stabi_tick.commanderGetSetpoint_tick,stabi_tick.getOpFlowData_tick,stabi_tick.flyerFlipCheck_tick,stabi_tick.stateControl_tick,stabi_tick.motorControl_tick,(s16)(timestamp & 0x00ffff));
         
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));

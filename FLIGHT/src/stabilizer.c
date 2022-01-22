@@ -46,6 +46,9 @@ static float setHeight = 0.f; /*设定目标高度 单位cm*/
 static float baroLast = 0.f;
 static float baroVelLpf = 0.f;
 
+//TODO：debug Check the timing accuracy of program scheduling
+Debug_stabi_tick_t stabi_tick;
+
 void stabilizerTask(void* param);
 
 void stabilizerInit(void)
@@ -134,22 +137,26 @@ void stabilizerTask(void* param)
         //获取6轴和气压数据（500Hz）
         if (RATE_DO_EXECUTE(RATE_500_HZ, tick)) {
             sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
+            stabi_tick.sensorsAcquire_tick = getSysTickCnt();
         }
 
         //四元数和欧拉角计算（250Hz）
         if (RATE_DO_EXECUTE(ATTITUDE_ESTIMAT_RATE, tick)) {
             //sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
             imuUpdate(sensorData.acc, sensorData.gyro, &state, ATTITUDE_ESTIMAT_DT);
+            stabi_tick.imuUpdate_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         //位置预估计算（250Hz）
         if (RATE_DO_EXECUTE(POSITION_ESTIMAT_RATE, tick)) {
             positionEstimate(&sensorData, &state, POSITION_ESTIMAT_DT);
+            stabi_tick.positionEstimate_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         //目标姿态和飞行模式设定（100Hz）
         if (RATE_DO_EXECUTE(RATE_100_HZ, tick) && getIsCalibrated() == true) {
             commanderGetSetpoint(&setpoint, &state); /*目标数据和飞行模式设定*/
+            stabi_tick.commanderGetSetpoint_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         if (RATE_DO_EXECUTE(RATE_250_HZ, tick)) {
@@ -159,11 +166,13 @@ void stabilizerTask(void* param)
         /*读取光流数据(100Hz)*/
         if (RATE_DO_EXECUTE(RATE_100_HZ, tick)) {
             getOpFlowData(&state, 0.01f);
+            stabi_tick.getOpFlowData_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         /*翻滚检测(500Hz) 非定点模式*/
         if (RATE_DO_EXECUTE(RATE_500_HZ, tick) && (getCommanderCtrlMode() != 0x03)) {
             flyerFlipCheck(&setpoint, &control, &state);
+            stabi_tick.flyerFlipCheck_tick= (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         /*异常检测*/
@@ -171,6 +180,7 @@ void stabilizerTask(void* param)
 
         /*PID控制*/
         stateControl(&control, &sensorData, &state, &setpoint, tick);
+        stabi_tick.stateControl_tick = (s16)(getSysTickCnt()& 0x00ffff);
 
         // #ifdef USE_MBD
         // /*MBD compensation*/
@@ -198,6 +208,7 @@ void stabilizerTask(void* param)
         //控制电机输出（250Hz）
         if (RATE_DO_EXECUTE(RATE_250_HZ, tick)) {
             motorControl(&control);
+            stabi_tick.motorControl_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         tick++;

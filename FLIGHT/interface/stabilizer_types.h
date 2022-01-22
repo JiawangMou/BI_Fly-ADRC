@@ -258,7 +258,25 @@ typedef struct
 } control_t;
 }
 #endif
-
+typedef struct
+{
+	
+	union 
+	{
+		struct 
+		{
+			s16 sensorsAcquire_tick;
+			s16 imuUpdate_tick;
+			s16 positionEstimate_tick;
+			s16 commanderGetSetpoint_tick;
+			s16 getOpFlowData_tick;
+			s16 flyerFlipCheck_tick;
+			s16 stateControl_tick;
+			s16 motorControl_tick;
+		};
+		s16 stabilizer_tick[8];
+	};
+} Debug_stabi_tick_t;
 
 
 #define RATE_5_HZ		5

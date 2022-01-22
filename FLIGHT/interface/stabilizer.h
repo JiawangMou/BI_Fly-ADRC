@@ -48,6 +48,8 @@
 // #define MBD_RATE                RATE_250_HZ
 // #define MBD_DT                  (1.0/MBD_RATE)
 
+extern Debug_stabi_tick_t stabi_tick;
+
 
 
 
