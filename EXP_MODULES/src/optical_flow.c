@@ -367,9 +367,9 @@ bool getOpFlowData(state_t* state, float dt)
             opFlow.pixComp[Y] =  0;
         }else{
             //修改后的补偿
-            r_Vector.x = (height + L_Opflow2CoM) * 100.0f * (- DCMeb[2] )/ coeff; //世界坐标系下像素补偿，负方向,unit：像素点个数
-            r_Vector.y = (height + L_Opflow2CoM) * 100.0f * (- DCMeb[5] )/ coeff;
-            r_Vector.z = (L_Opflow2CoM * (height_E / height) + height_E) * 100.0f / coeff;
+            r_Vector.x = height_E * 100.0f * (- DCMeb[2] )/ coeff; //世界坐标系下像素补偿，负方向,unit：像素点个数
+            r_Vector.y = height_E * 100.0f * (- DCMeb[5] )/ coeff;
+            r_Vector.z = height_E * 100.0f / coeff;
             imuTransformVectorEarthToBody(&r_Vector);
             r_Vector_B = r_Vector;
             opFlow.pixComp[X] = r_Vector_B.x;

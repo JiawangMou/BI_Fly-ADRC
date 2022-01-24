@@ -155,7 +155,7 @@ void stabilizerTask(void* param)
         if (RATE_DO_EXECUTE(RATE_250_HZ, tick)) {
             fastAdjustPosZ(); /*快速调整高度*/
         }
-        //
+        
         /*读取光流数据(100Hz)*/
         if (RATE_DO_EXECUTE(RATE_100_HZ, tick)) {
             getOpFlowData(&state, 0.01f);
