@@ -20,6 +20,15 @@ lesoObject_2rd_t velZ_LESO;
 static float pos_integral = 0;
 static float vel_integral = 0;
 
+Tf_t u_tf;
+
+#define  UTF_ORDER 2  // 这里的阶数是系统实际阶数+1
+ 
+float32_t u_tf_x[UTF_ORDER] = {0};
+float32_t u_tf_y[UTF_ORDER-1] = {0};
+float32_t u_tf_num[UTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
+float32_t u_tf_dec[UTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
+
 
 void posZ_adrc_init(adrcInit_t *param)
 {
@@ -35,8 +44,13 @@ void velZ_adrc_init(adrcInit_t *param)
 {
     td_init(&velZ_TD,&param->td,VELZ_ADRC_DT);    
     nlsef_init(&velZ_nlsef,&param->nlsef,VELZ_ADRC_DT);
-    // leso_init(&velZ_LESO, &param->leso,VELZ_LESO_DT);
+    leso_init(&velZ_LESO, &param->leso,VELZ_LESO_DT);
     vel_integral = 0.0f;
+    u_tf.order= UTF_ORDER;
+    u_tf.decp = u_tf_dec;
+    u_tf.nump = u_tf_num;
+    u_tf.x    = u_tf_x;
+    u_tf.y    = u_tf_y;
 }
 void pos_adrc_reset(void)
 {
@@ -51,7 +65,6 @@ float adrc_VelControl(const float x1, const float x2,setpoint_t *setpoint)
     adrc_td(&velZ_TD, setpoint->velocity.z);
     velZ_nlsef.e1 = velZ_TD.x1 - velZ_LESO.z1;
     velZ_nlsef.e2 = velZ_TD.x2 - x2; 
-
     vel_integral += velZ_nlsef.e1 * VELZ_ADRC_DT;
 	
 	//积分限幅
@@ -127,11 +140,17 @@ void posZ_state_estimate(sensorData_t* sensorData, state_t* state, float u)
 {
     adrc_leso_3rd(&posZ_LESO,sensorData->zrange.distance, u);    
 }
-void velZ_ESO_estimate(float u,float x)
+void velZ_ESO_estimate(control_t* control,float x)
 {
-    adrc_leso(&velZ_LESO,x, u);
-    // state->position.z = posZ_LESO.z1;
-    // state->velocity.z = posZ_LESO.z2;    
+    float Beta_01 = 2 * velZ_LESO.w0;
+    float Beta_02 = velZ_LESO.w0 * velZ_LESO.w0;
+    float u = TfApply(&u_tf,control->thrust / 60000.0f);
+    float a = control->a;
+    float b = control->b;   
+    velZ_LESO.e = velZ_LESO.z1 - x;
+    velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e + (a*u*u + b*u - MASS * G)*100.0f/MASS) * velZ_LESO.h;
+    // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
+    velZ_LESO.z2 += -Beta_02 * velZ_LESO.e * velZ_LESO.h;
 }
 
 lesoObject_2rd_t getVelZ_leso(void)

@@ -162,7 +162,7 @@ void stabilizerTask(void* param)
         if (RATE_DO_EXECUTE(RATE_250_HZ, tick)) {
             fastAdjustPosZ(); /*快速调整高度*/
         }
-        //
+        
         /*读取光流数据(100Hz)*/
         if (RATE_DO_EXECUTE(RATE_100_HZ, tick)) {
             getOpFlowData(&state, 0.01f);
@@ -177,6 +177,8 @@ void stabilizerTask(void* param)
 
         /*异常检测*/
         anomalDetec(&sensorData, &state, &control);
+
+        velZ_ESO_estimate(&control,state.velocity.z);
 
         /*PID控制*/
         stateControl(&control, &sensorData, &state, &setpoint, tick);

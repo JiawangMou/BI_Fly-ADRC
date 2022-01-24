@@ -1,4 +1,5 @@
 #include "position_pid.h"
+#include "power_control.h"
 #include "commander.h"
 #include "config_param.h"
 #include "maths.h"
@@ -70,8 +71,8 @@
 #endif
  
 static float thrustLpf        = THRUST_BASE; /*油门低通*/
-static float thrustHover      = 0.f;
-static bool  enterVelModeFlag = false;
+//static float thrustHover      = 0.f;
+//static bool  enterVelModeFlag = false;
 
 PidObject pidVX;
 PidObject pidVY;
@@ -113,17 +114,19 @@ void positionControlInit(float velocityPidDt, float posPidDt)
 void velocityController(float* thrust, control_t *control,attitude_t* attitude, setpoint_t* setpoint, const state_t* state,const sensorData_t *sensorData)
 {
     static u16 altholdCount = 0;
-
+    float u0 = adrc_VelControl(state->velocity.z,state->acc.z,setpoint);
+    control->a = Ffz_coffe_cal(attitude,control->actual_servoangle);
+    control->b = Fdz_coffe_cal(attitude,state->velocity,control->actual_servoangle);
+    *thrust = U_cal(control->a,control->b,velZ_LESO.z2,u0) * 60000.0f;
     // Roll and Pitch 
     // TODO:XY 与 Z轴的位置控制控制器结构不一样，还没有统一
     attitude->pitch = 0.15f * pidUpdate(&pidVX, setpoint->velocity.x - state->velocity.x);
     attitude->roll  = 0.15f * pidUpdate(&pidVY, setpoint->velocity.y - state->velocity.y);
 
-	// Thrust
-    float thrustRaw = constrainf(adrc_VelControl(state->velocity.z,state->acc.z,setpoint),-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
-    control->thrust_part.MBD = MBD_update(setpoint->acc.z,state->velocity,sensorData->gyro);
-    *thrust = constrainf(thrustRaw + control->thrust_part.MBD, 1000, 55000); /*油门限幅*/
-
+	// // Thrust
+    // float thrustRaw = constrainf(u ,-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
+    // *thrust = constrainf(thrustRaw , 1000, 55000); /*油门限幅*/
+    
     thrustLpf += (*thrust - thrustLpf) * 0.003f;
 
     if (getCommanderKeyFlight()) /*定高飞行状态*/

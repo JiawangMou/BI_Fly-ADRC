@@ -70,7 +70,7 @@
 #define PERIOD_MOTOR 40
 #define PERIOD_SENSOR2 40
 #define PERIOD_SPEED 50
-#define PERIOD_USERDATA 4
+#define PERIOD_USERDATA 2
 #define PERIOD_PIDOUT 20
 
 #define ATKP_RX_QUEUE_SIZE 10 /*ATKP包接收队列消息个数*/
@@ -565,7 +565,6 @@ static void atkpSendPeriod(void)
 #endif    
 
 #ifdef PID_CONTROL
-        // Axis3f acc, vel, pos;
         // float  thrustBase = 0.1f * configParam.thrustBase;
         // sensorData_t sensor;
         // control_t control;
@@ -573,23 +572,26 @@ static void atkpSendPeriod(void)
         // getRateDesired(&rateDesired);
         // getAngleDesired(&angleDesired);
         // getAttitudeData(&attitude);
-
-        // getStateData(&acc, &vel, &pos);
+        Axis3i16 acc;
+        Axis3i16 gyro;
+        Axis3i16 mag;
+//        Acc_Send acc_send;
+        getSensorRawData(&acc, &gyro, &mag);
         // control  = getControlData();
         // sendUserData(1, angleDesired.roll, attitude.roll, rateDesired.roll, sensor.gyro.x, pidAngleRoll.outP, pidAngleRoll.outI, pidRateRoll.outP,
         //     pidRateRoll.outI, pidRateRoll.outD);
         // sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
         //     sensor.gyro.z, control.pitch, control.yaw, control.roll);
 
-// 		sensorData_t sensordata;
+		sensorData_t sensordata;
 // 		// attitude_t rateDesired;
 // 		// attitude_t attitude;
-// //		attitude_t attitudeDesired;
+		attitude_t attitudeDesired;
 //         control_t control = getControlData();
 
 //     //   Axis3f gyro_LPF;
 //     //     Axis3f gyro_UnLPF;
-//         state_t state = getState(); /*四轴姿态*/
+        state_t state = getState(); /*四轴姿态*/
 //         float laser_height = getFusedHeight();
 //         Axis3i16 acc;
 //         Axis3i16 gyro;
@@ -601,8 +603,8 @@ static void atkpSendPeriod(void)
 //         setpoint_t setpoint = getSetpoint();
 //         getSensorRawData(&acc, &gyro, &mag);
 // 		// getAttitudeData(&attitude);
-// 		// getAngleDesired(&attitudeDesired);
-//         getSensorData(&sensordata);
+		getAngleDesired(&attitudeDesired);
+        getSensorData(&sensordata);
         // getgyro_UnLPFData(&gyro_UnLPF);
         // getgyro_LPFData( &gyro_LPF);
 		// getRateDesired( &rateDesired );
@@ -633,8 +635,10 @@ static void atkpSendPeriod(void)
         // sendUserData(2, velZ_nlsef.e1_out/10,velZ_nlsef.e2_out/10,velZ_nlsef.u0/10,control.thrust_part.MBD /10,control.thrust/10,10*laser_height,motorPWM.f1/10,motorPWM.f2/10,(s16)(timestamp & 0x00ffff));
         // sendUserData(1, 10*laser_height,100*sensordata.acc.x,100*sensordata.acc.y,100*sensordata.acc.z,100*state.velocity.x,100*state.velocity.y,100*state.velocity.z,100*state.position.z,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
-        sendUserData(1, stabi_tick.sensorsAcquire_tick,stabi_tick.imuUpdate_tick,stabi_tick.positionEstimate_tick,stabi_tick.commanderGetSetpoint_tick,stabi_tick.getOpFlowData_tick,stabi_tick.flyerFlipCheck_tick,stabi_tick.stateControl_tick,stabi_tick.motorControl_tick,(s16)(timestamp & 0x00ffff));
-        
+        //测试stabilizer中的函数运行调度是否正常
+        // sendUserData(1, stabi_tick.sensorsAcquire_tick,stabi_tick.imuUpdate_tick,stabi_tick.positionEstimate_tick,stabi_tick.commanderGetSetpoint_tick,stabi_tick.getOpFlowData_tick,stabi_tick.flyerFlipCheck_tick,stabi_tick.stateControl_tick,stabi_tick.motorControl_tick,(s16)(timestamp & 0x00ffff));
+        sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch, 10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X], opFlow.posSum[Y],sensordata.zrange.distance);
+        sendUserData(2, acc.x,acc.y,acc.z, gyro.x,gyro.y,gyro.z,opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y],(s16)(opFlow.timestamp & 0x00ffff));
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
         sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,0,0);
@@ -1034,15 +1038,6 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 
     } else if (anlPacket->msgID == DOWN_PID6) {
 
-//		s16 temp1  = ((s16)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
-//		s16 temp2  = ((s16)(*(anlPacket->data+2)<<8)|*(anlPacket->data+3));
-//		s16 temp3  = ((s16)(*(anlPacket->data+4)<<8)|*(anlPacket->data+5));
-		// s16 enable = ((s16)(*(anlPacket->data+6)<<8)|*(anlPacket->data+7));
-		// s16 m1_set = ((s16)(*(anlPacket->data+8)<<8)|*(anlPacket->data+9));
-		// s16 m2_set = ((s16)(*(anlPacket->data+10)<<8)|*(anlPacket->data+11));
-		// s16 m3_set = ((s16)(*(anlPacket->data+12)<<8)|*(anlPacket->data+13));
-		// s16 m4_set = ((s16)(*(anlPacket->data+14)<<8)|*(anlPacket->data+15));
-		// setMotorPWM(enable,m1_set,m2_set,m3_set,m4_set);
 #ifdef TEST
         uint16_t temp1  = ((uint16_t)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
         setThrust_cmd(temp1);

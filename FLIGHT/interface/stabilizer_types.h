@@ -167,6 +167,7 @@ typedef struct
 	point_t position;
 	zRange_t zrange;
 	mag_calib mag_calibration;
+	Axis3f velocity;   //水平速度由光流传感器得到，高度速度由激光传感器得到，是在光流传感器坐标系下的速度，不是机体速度
 } sensorData_t;
 
 typedef struct
@@ -245,6 +246,12 @@ typedef struct
 	float thrust;
 	thrust_t thrust_part;
 	enum dir_e flipDir;		/*翻滚方向*/
+	float actual_motorPWM;	//经过motorTf后的PWM值
+	float actual_servoPWM;//经过servoTf后的扑翼机构转角
+	float actual_servoangle;//经过servoTf后的扑翼机构转角
+	float a;
+	float b;
+	float u;
 } control_t;
 #else
 {

@@ -17,21 +17,45 @@
 
 typedef struct 
 {
-	u32 f1;
-	u32 f2;
-	u32 s_left;
-	u32 s_right;
-	u32 s_middle;
-	u32 r1;
-	
+	u32 motorPWM_l;
+	u32 motorPWM_r;
+	u32 servoPWM_l;
+	u32 servoPWM_r;
+	u32 servoPWM_m;
 }motorPWM_t;
+typedef struct 
+{
+	u32 	PWM;
+	float	angle;
+	float	actual_angle;
+}Servostatus_t;
+
+typedef struct 
+{
+	u32 	PWM;
+	float	f_Hz;
+	float	actual_f_Hz;
+}Motorstatus_t;
+typedef struct 
+{
+	Servostatus_t servo_l;
+	Servostatus_t servo_r;
+#ifdef DOUBLE_WING			
+	Servostatus_t servo_m;	
+#endif	
+
+	Motorstatus_t motor_l;
+	Motorstatus_t motor_r;
+}actuatorStatus_t;
+
+
 
 void powerControlInit(void);
 bool powerControlTest(void);
 void motorControl(control_t *control);
 
-void getMotorPWM(motorPWM_t* get);
-void setMotorPWM(bool enable, u16 f1_set, u16 f2_set, u16 s1_set, u16 s2_set, u16 s3_set,u16 r1_set);
+void getMotorPWM(actuatorStatus_t* get);
+void setMotorPWM(bool enable,motorPWM_t set);
 //return 为舵机的位置 单位为us
 u16 Servo_Int16ToPWM(u8 id, float value);
 float ServoPWM2angle(u32 PWM,u8 id);

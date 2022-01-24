@@ -1,6 +1,7 @@
 #include "power_control.h"
 #include "motors.h"
 #include "config_param.h"
+#include "model.h"
 #include "math.h"
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -16,8 +17,8 @@
 ********************************************************************************/
 
 static bool motorSetEnable = false;
-static motorPWM_t motorPWM;
-static motorPWM_t motorPWMSet = {0, 0, 0, 0, 0, 0};
+static actuatorStatus_t actuator;
+static motorPWM_t motorPWMSet = {0, 0, 0, 0, 0};
 
 void powerControlInit(void)
 {
@@ -85,19 +86,30 @@ void motorControl(control_t *control) /*功率输出控制*/
 	s16 r = control->roll;
 	s16 p = control->pitch;
 	//控制分配	改！
-	motorPWM.f2 = limitThrust(control->thrust  + r / 2);
-	motorPWM.f1 = limitThrust(control->thrust  - r / 2);
-	motorPWM.s_left = Servo_Int16ToPWM(PWM_LEFT, p - control->yaw * 1.5f );
-	motorPWM.s_middle = Servo_Int16ToPWM(PWM_MIDDLE, -p - control->yaw * 1.5f );
+	actuator.motor_l.PWM = limitThrust(control->thrust  + r / 2);
+	actuator.motor_r.PWM = limitThrust(control->thrust  - r / 2);
+	actuator.servo_l.PWM = Servo_Int16ToPWM(PWM_LEFT, p - control->yaw * 1.5f );
+	actuator.servo_r.PWM = Servo_Int16ToPWM(PWM_MIDDLE, -p - control->yaw * 1.5f );
 
 	if (motorSetEnable)
 	{
-		motorPWM = motorPWMSet;
+		actuator.motor_l.PWM = motorPWMSet.motorPWM_l;
+		actuator.motor_r.PWM = motorPWMSet.motorPWM_r;
+		actuator.servo_l.PWM = motorPWMSet.servoPWM_l;
+		actuator.servo_r.PWM = motorPWMSet.servoPWM_r;
+		#ifdef DOUBLE_WING 
+		actuator.servo_m.PWM = motorPWMSet.servoPWM_m;
+		#endif
 	}
-	motorsSetRatio(PWMF1, sqrt(motorPWM.f1) * 256); /*控制电机输出百分比*/
-	motorsSetRatio(PWMF2, sqrt(motorPWM.f2) * 256);
-	servoSetPWM(PWM_LEFT, motorPWM.s_left); /*舵机输出占空比设置*/
-	servoSetPWM(PWM_MIDDLE, motorPWM.s_middle);
+	motorsSetRatio(PWMF1, actuator.motor_l.PWM); /*控制电机输出百分比*/
+	motorsSetRatio(PWMF2, actuator.motor_r.PWM);
+	servoSetPWM(PWM_LEFT,  actuator.servo_l.PWM); /*舵机输出占空比设置*/
+	servoSetPWM(PWM_MIDDLE,actuator.servo_r.PWM);
+	//servo Tf apply
+	control->actual_servoPWM = TfApply(&servotf,0.5f*(actuator.servo_l.PWM + actuator.servo_r.PWM));
+	control->actual_servoangle = ServoPWM2Servoangle(control->actual_servoPWM);
+	//motor Tf apply
+	control->actual_motorPWM = TfApply(&motortf,0.5f*(actuator.motor_l.PWM + actuator.motor_r.PWM));
 
 #elif defined DOUBLE_WING
 	s16 r = control->roll;
@@ -121,20 +133,27 @@ void motorControl(control_t *control) /*功率输出控制*/
 #endif
 }
 
-void getMotorPWM(motorPWM_t *get)
+void getMotorPWM(actuatorStatus_t *get)
 {
-	*get = motorPWM;
+	(*get).motor_l.PWM = motorPWMSet.motorPWM_l;
+	(*get).motor_r.PWM = motorPWMSet.motorPWM_r;
+	(*get).servo_l.PWM = motorPWMSet.servoPWM_l;
+	(*get).servo_r.PWM = motorPWMSet.servoPWM_r;
+#ifdef DOUBLE_WING
+    *get.servo_m.PWM = motorPWMSet.servoPWM_m;
+#endif
 }
 
-void setMotorPWM(bool enable, u16 f1_set, u16 f2_set, u16 s1_set, u16 s2_set, u16 s3_set, u16 r1_set)
+void setMotorPWM(bool enable,motorPWM_t set)
 {
 	motorSetEnable = enable;
-	motorPWMSet.f1 = f1_set;
-	motorPWMSet.f2 = f2_set;
-	motorPWMSet.s_left = s1_set;
-	motorPWMSet.s_right = s2_set;
-	motorPWMSet.s_middle = s3_set;
-	motorPWMSet.r1 = r1_set;
+	motorPWMSet.motorPWM_l = set.motorPWM_l;
+	motorPWMSet.motorPWM_r = set.motorPWM_r;
+	motorPWMSet.servoPWM_l = set.servoPWM_l;
+	motorPWMSet.servoPWM_r = set.servoPWM_r;
+#ifdef DOUBLE_WING
+    motorPWMSet.servoPWM_m = set.servoPWM_m;
+#endif
 }
 
 float ServoPWM2angle(u32 PWM,u8 id)

@@ -31,6 +31,7 @@
 #include "stabilizer_types.h"
 #include "sensors_types.h"
 #endif                                 /* model_COMMON_INCLUDES_ */
+#include "arm_math.h"
 
 /* Model Code Variants */
 
@@ -43,6 +44,14 @@
 #define rtmSetErrorStatus(rtm, val)    ((rtm)->errorStatus = (val))
 #endif
 
+#define MOTOR_PWM2F_A 0.0003685f   //PWM to  flappingHZ  cofficient a; f = motor_a * u    unit : Hz
+#define MOTOR_F2T_A 0.3543f    //flappingHZ to  Thrust  cofficient a; Thrust = wing_a*f^2    unit : mN
+
+#define SERVO_PWM2ANGLE_A 16.6666   //PWM to servo angle  cofficient a; servo angle(unit: °) = servo_a * PWM + servo_b 
+#define SERVO_PWM2ANGLE_B 1500    
+
+#define MASS 29.0f
+#define G 9.8f
 /* Forward declaration for rtModel */
 typedef struct tag_RTM_model_T RT_MODEL_model_T;
 
@@ -62,6 +71,21 @@ typedef struct {
   const real_T Subtract1[3];           /* '<S6>/Subtract1' */
 } ConstB_model_T;
 
+typedef struct {
+    float flappingHz;
+    float servoangle;
+    
+    float thrust;
+
+} ModelStatus_t;
+
+typedef struct {
+    u8 order;
+    float32_t *nump;
+    float32_t *decp;
+    float32_t *x;
+    float32_t *y;
+} Tf_t;
 /* Constant parameters (default storage) */
 typedef struct {
   /* Expression: param.ModelParam_Rb_CoR
@@ -114,6 +138,18 @@ extern RT_MODEL_model_T *const model_M;
 /* Declaration for custom storage class: Global */
 extern real_T DCMbe[9];                /* '<Root>/DCMbe' */
 extern real_T velE[3];                 /* '<Root>/velE' */
+
+extern Tf_t motortf;
+extern Tf_t servotf;
+
+float ServoPWM2Servoangle(u32 servoPWM);
+float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle);
+float TfApply(Tf_t *tf,const float input);
+
+float Fdz_coffe_cal(attitude_t *atti,velocity_t vel,float servoangle);
+float Ffz_coffe_cal(attitude_t *atti,float servoangle);
+float U_cal(const float a,const float b,const float disturb,const float u0);
+
 
 /*-
  * These blocks were eliminated from the model due to optimizations:
