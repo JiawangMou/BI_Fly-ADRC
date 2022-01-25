@@ -639,7 +639,7 @@ static void atkpSendPeriod(void)
         // sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch, 10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X], opFlow.posSum[Y],sensordata.zrange.distance);
         // sendUserData(2, acc.x,acc.y,acc.z, gyro.x,gyro.y,gyro.z,opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y],(s16)(opFlow.timestamp & 0x00ffff));
         //带模型控制器和ESO测试
-        sendUserData(1, setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1, velZ_LESO.z2,(s16)(60000.0f*control.u));
+        sendUserData(1, sensordata.zrange.distance,sensordata.zrange.distance_uncomp,state.position.z,sensordata.zrange.quality * 10,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1, velZ_LESO.z2,(s16)(60000.0f*control.u));
         sendUserData(2, velZ_TD.x1,velZ_TD.x2,control.thrust,control.a,control.b,velZ_nlsef.u0,state.velocity.x,opFlow.velLpf[X],opFlow.velLpf[Y]);        
 
 #else

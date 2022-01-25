@@ -33,7 +33,7 @@
 #define INAV_ACC_BIAS_ACCEPTANCE_VALUE                                                                                 \
     (GRAVITY_CMSS * 1.0f) // Max accepted bias correction of 0.25G - unlikely we are going to be that much off anyway
 
-static float wBaro    = 0.35f; /*气压校正权重*/
+static float wBaro    = 0.65f; /*气压校正权重*/
 static float wOpflowP = 1.0f;  /*光流位置校正权重*/
 static float wOpflowV = 2.0f;  /*光流速度校正权重*/
 static float wAccBias = 0.15f;  /*加速度校正权重*/
@@ -75,7 +75,7 @@ static void inavFilterPredict(int axis, float dt, float acc)
 static void inavFilterCorrectPos(int axis, float dt, float e, float w)
 {
     float ewdt = e * w * dt;
-    estimator.pos[axis] += ewdt;
+    estimator.pos[axis] += 2 * ewdt;
     estimator.vel[axis] += w * ewdt;
 }
 /*速度校正*/
@@ -85,8 +85,8 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
 {
     static float rangeLpf  = 0.f;
     static float accLpf[3] = { 0.f }; /*加速度低通*/
-    float        weight    = wBaro;
-
+    float        weight    = 8.0f;  //以这个比例就不是融合加速度计的数据了，只是一个观测器
+    u32 est_tick = 0;
 
     float relateHight = sensorData->baro.asl - startBaroAsl; /*气压相对高度*/
 
@@ -94,7 +94,7 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     {
         vl53lxxReadRange(&sensorData->zrange); /*读取补偿后的激光数据*/
         fusedHeight = sensorData->zrange.distance;
-        weight = sensorData->zrange.quality ;
+        // weight = sensorData->zrange.quality *8.0f;
         // rangeLpf += (sensorData->zrange.distance - rangeLpf) * 0.1f; /*低通 单位cm*/
 
         // float quality = sensorData->zrange.quality;
@@ -106,9 +106,10 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
         //     startBaroAsl = sensorData->baro.asl - rangeLpf;
         // }
         // fusedHeight = rangeLpf * quality + (1.0f - quality) * relateHight; /*融合高度*/
-    } else{ /*无激光模块（永远不会进入这一块）*/
-        fusedHeight = relateHight; /*融合高度*/
-    }
+    } 
+    // else{ /*无激光模块（永远不会进入这一块）*/
+    //     fusedHeight = relateHight; /*融合高度*/
+    // }
     if (isRstHeight) {
         isRstHeight = false;
 
@@ -129,7 +130,7 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
 
         accLpf[Z]      = 0.f;
         fusedHeight    = 0.f;
-        fusedHeight = 0.f;
+        fusedHeight    = 0.f;
         startBaroAsl   = sensorData->baro.asl;
         if (getVl53l1xstate()) {
             if (sensorData->zrange.distance < VL53L1X_MAX_RANGE) {
@@ -152,9 +153,12 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     // accelBF.x = sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
     // accelBF.y = sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
     // accelBF.z = sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
-    accelBF.x = sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
-    accelBF.y = sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
-    accelBF.z = sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
+    // accelBF.x = sensorData->acc.x * GRAVITY_CMSS - estimator.accBias[X];
+    // accelBF.y = sensorData->acc.y * GRAVITY_CMSS - estimator.accBias[Y];
+    // accelBF.z = sensorData->acc.z * GRAVITY_CMSS - estimator.accBias[Z];
+    accelBF.x = sensorData->acc.x * GRAVITY_CMSS;
+    accelBF.y = sensorData->acc.y * GRAVITY_CMSS;
+    accelBF.z = sensorData->acc.z * GRAVITY_CMSS;
 
     // accelBF.x = sensorData->acc.x * GRAVITY_CMSS;
     // accelBF.y = sensorData->acc.y * GRAVITY_CMSS;
@@ -216,21 +220,25 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
         inavFilterCorrectVel(X, opflowDt, opResidualXVel, wXYVel);
         inavFilterCorrectVel(Y, opflowDt, opResidualYVel, wXYVel);
     }
+   // /*加速度偏置校正*/
+    // if (RATE_DO_EXECUTE(RATE_50_HZ, tick))
+    // {
+        // Axis3f accelBiasCorr = { { 0.0, 0.0, 0.0 } };
 
-    /*加速度偏置校正*/
-    Axis3f accelBiasCorr = { { 0.0, 0.0, 0.0 } };
+        // accelBiasCorr.z                = -errPosZ * sq(wBaro);
+        // float accelBiasCorrMagnitudeSq = sq(accelBiasCorr.x) + sq(accelBiasCorr.y) + sq(accelBiasCorr.z);
+        // if (accelBiasCorrMagnitudeSq < sq(INAV_ACC_BIAS_ACCEPTANCE_VALUE)) {
+        //     /* transform error vector from NEU frame to body frame */
+        //     imuTransformVectorEarthToBody(&accelBiasCorr);
 
-    accelBiasCorr.z                = -errPosZ * sq(wBaro);
-    float accelBiasCorrMagnitudeSq = sq(accelBiasCorr.x) + sq(accelBiasCorr.y) + sq(accelBiasCorr.z);
-    if (accelBiasCorrMagnitudeSq < sq(INAV_ACC_BIAS_ACCEPTANCE_VALUE)) {
-        /* transform error vector from NEU frame to body frame */
-        imuTransformVectorEarthToBody(&accelBiasCorr);
+        //     /* Correct accel bias */
+        //     estimator.accBias[X] += accelBiasCorr.x * wAccBias * dt;
+        //     estimator.accBias[Y] += accelBiasCorr.y * wAccBias * dt;
+        //     estimator.accBias[Z] += accelBiasCorr.z * wAccBias * dt;
+        // }
+    // }
+ 
 
-        /* Correct accel bias */
-        estimator.accBias[X] += accelBiasCorr.x * wAccBias * dt;
-        estimator.accBias[Y] += accelBiasCorr.y * wAccBias * dt;
-        estimator.accBias[Z] += accelBiasCorr.z * wAccBias * dt;
-    }
 
     if (isKeyFlightLand == true) /*定高飞或者降落状态*/
     {
@@ -249,8 +257,8 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
     state->position.x = opFlow.posSum[X];
     state->position.y = opFlow.posSum[Y];
     state->position.z = estimator.pos[Z];
-	if(state->position.z > 2.5f)
-		rangeLpf = 0;
+
+    est_tick++;
 }
 
 /*读取融合高度 单位cm*/
