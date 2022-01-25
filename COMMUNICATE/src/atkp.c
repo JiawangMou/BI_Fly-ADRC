@@ -70,7 +70,7 @@
 #define PERIOD_MOTOR 40
 #define PERIOD_SENSOR2 40
 #define PERIOD_SPEED 50
-#define PERIOD_USERDATA 2
+#define PERIOD_USERDATA 10
 #define PERIOD_PIDOUT 20
 
 #define ATKP_RX_QUEUE_SIZE 10 /*ATKP包接收队列消息个数*/
@@ -525,24 +525,22 @@ static void atkpSendPeriod(void)
     //     u32 timestamp = getSysTickCnt();
     //     sendTestData(attitude.roll, attitude.pitch, attitude.yaw, pos.z, acc, accRawData, zPredict, timestamp);
     // }
-    // if (!(count_ms % PERIOD_STATUS)) {
-    //     attitude_t attitude;
-    //     Axis3f     acc, vel, pos;
-    //     getAttitudeData(&attitude);
-    //     getStateData(&acc, &vel, &pos);
-    //     sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
-    // }
-    // if (!(count_ms % PERIOD_SENSOR)) {
-    //     Axis3i16 acc;
-    //     Axis3i16 gyro;
-    //     Axis3i16 mag;
-    //     Acc_Send acc_send;
-    //     sensorData_t sensor;
-    //     getSensorData(&sensor);
-    //     getSensorRawData(&acc, &gyro, &mag);
-    //     getAcc_SendData(&acc_send);
-    //     sendSenser(acc.x, acc.y, acc.z,sensor.gyro.x,sensor.gyro.y, sensor.gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
-    // }
+    if (!(count_ms % PERIOD_STATUS)) {
+        attitude_t attitude;
+        Axis3f     acc, vel, pos;
+        getAttitudeData(&attitude);
+        getStateData(&acc, &vel, &pos);
+        sendStatus(attitude.roll, attitude.pitch, attitude.yaw, pos.z, 0, flyable, attitude.timestamp);
+    }
+    if (!(count_ms % PERIOD_SENSOR)) {
+        Axis3i16 acc;
+        Axis3i16 gyro;
+        Axis3i16 mag;
+        Acc_Send acc_send;
+        getSensorRawData(&acc, &gyro, &mag);
+        getAcc_SendData(&acc_send);
+        sendSenser(acc.x, acc.y, acc.z,gyro.x,gyro.y, gyro.z, mag.x, mag.y, mag.z, acc_send.useAcc);
+    }
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
 #ifdef ADRC_CONTROL
@@ -572,11 +570,11 @@ static void atkpSendPeriod(void)
         // getRateDesired(&rateDesired);
         // getAngleDesired(&angleDesired);
         // getAttitudeData(&attitude);
-        Axis3i16 acc;
-        Axis3i16 gyro;
-        Axis3i16 mag;
+//         Axis3i16 acc;
+//         Axis3i16 gyro;
+//         Axis3i16 mag;
 //        Acc_Send acc_send;
-        getSensorRawData(&acc, &gyro, &mag);
+//         getSensorRawData(&acc, &gyro, &mag);
         // control  = getControlData();
         // sendUserData(1, angleDesired.roll, attitude.roll, rateDesired.roll, sensor.gyro.x, pidAngleRoll.outP, pidAngleRoll.outI, pidRateRoll.outP,
         //     pidRateRoll.outI, pidRateRoll.outD);
@@ -587,7 +585,7 @@ static void atkpSendPeriod(void)
 // 		// attitude_t rateDesired;
 // 		// attitude_t attitude;
 		attitude_t attitudeDesired;
-//         control_t control = getControlData();
+        control_t control = getControlData();
 
 //     //   Axis3f gyro_LPF;
 //     //     Axis3f gyro_UnLPF;
@@ -600,12 +598,12 @@ static void atkpSendPeriod(void)
 //         float      q1;
 //         float      q2;
 //         float      q3;
-//         setpoint_t setpoint = getSetpoint();
+        setpoint_t setpoint = getSetpoint();
 //         getSensorRawData(&acc, &gyro, &mag);
 // 		// getAttitudeData(&attitude);
 		getAngleDesired(&attitudeDesired);
         getSensorData(&sensordata);
-        // getgyro_UnLPFData(&gyro_UnLPF);
+//        getgyro_UnLPFData(&gyro_UnLPF);
         // getgyro_LPFData( &gyro_LPF);
 		// getRateDesired( &rateDesired );
 //        Axis3f acc_Notched_LPF;
@@ -637,11 +635,16 @@ static void atkpSendPeriod(void)
         // sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
         //测试stabilizer中的函数运行调度是否正常
         // sendUserData(1, stabi_tick.sensorsAcquire_tick,stabi_tick.imuUpdate_tick,stabi_tick.positionEstimate_tick,stabi_tick.commanderGetSetpoint_tick,stabi_tick.getOpFlowData_tick,stabi_tick.flyerFlipCheck_tick,stabi_tick.stateControl_tick,stabi_tick.motorControl_tick,(s16)(timestamp & 0x00ffff));
-        sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch, 10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X], opFlow.posSum[Y],sensordata.zrange.distance);
-        sendUserData(2, acc.x,acc.y,acc.z, gyro.x,gyro.y,gyro.z,opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y],(s16)(opFlow.timestamp & 0x00ffff));
+        //光流数据测试
+        // sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch, 10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X], opFlow.posSum[Y],sensordata.zrange.distance);
+        // sendUserData(2, acc.x,acc.y,acc.z, gyro.x,gyro.y,gyro.z,opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y],(s16)(opFlow.timestamp & 0x00ffff));
+        //带模型控制器和ESO测试
+        sendUserData(1, setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1, velZ_LESO.z2,(s16)(60000.0f*control.u));
+        sendUserData(2, velZ_TD.x1,velZ_TD.x2,control.thrust,control.a,control.b,velZ_nlsef.u0,state.velocity.x,opFlow.velLpf[X],opFlow.velLpf[Y]);        
+
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
-        sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,0,0);
+        sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,(s16)(opFlow.timestamp & 0x00ffff),0);
 
         // sendUserData(1, gyro.x, gyro_LPF.x, sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp & 0x00ffff));
         // sendUserData(2, gyro.y, gyro_LPF.y, sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);        

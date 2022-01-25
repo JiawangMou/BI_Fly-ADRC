@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 23 /*13 表示V1.3*/
+#define VERSION 43 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -74,9 +74,9 @@ static configParam_t configParamDefault =
 				},
 			.pitch =
 				{
-					.kp = 60.0,
+					.kp = 65.0,
 					.ki = 0.0,
-					.kd = 2,
+					.kd = 0.2,
 					.outputLimit = 0,
 				},
 			.yaw =
@@ -103,9 +103,9 @@ static configParam_t configParamDefault =
 				},
 			.vz =
 				{
-					.kp = 480.0,
-					.ki = 0.0,
-					.kd = 100.0,
+					.kp = 240.0,
+					.ki = 100.0,
+					.kd = 15.0,
 				},
 			.x =
 				{
@@ -121,22 +121,22 @@ static configParam_t configParamDefault =
 				},
 			.z =
 				{
-					.kp = 2000.0,
-					.ki = 100.0,
-					.kd = 0.0,
+					.kp = 60.0,
+					.ki = 10.0,
+					.kd = 10.0,
 				},
 		},
 
 		.servo_initpos =
 		{
-			.s_left = 1450,
+			.s_left = 1420,
 			.s_right = 1500,
-			.s_middle = 1550,
+			.s_middle = 1420,
 		},
 		.accBias = 
 		{
-			.accZero = {39, 29, 23},
-			.accGain = {2062, 2047, 2042},
+			.accZero = {65, 35, -4},
+			.accGain = {2069, 2046, 2049},
 			.bias_isfound = true,
 		},
 		.adrcRate=
@@ -284,7 +284,7 @@ static configParam_t configParamDefault =
 			{
 				.beta_1 = 16.0,
 				.beta_2 = 0.2,
-				.beta_I = 6.0f,
+				.beta_I = 0.0f,
 				.I_limit = 8.0f,
 				.zeta   = 0.3,
 				.alpha1 = 0.6,

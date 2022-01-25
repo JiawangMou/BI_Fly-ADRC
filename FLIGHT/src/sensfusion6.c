@@ -210,20 +210,22 @@ void imuTransformVectorBodyToEarth(Axis3f * v)
     const float y = rMat[1][0] * v->x + rMat[1][1] * v->y + rMat[1][2] * v->z;
     const float z = rMat[2][0] * v->x + rMat[2][1] * v->y + rMat[2][2] * v->z;
 
-	// float yawRad = atan2f(rMat[1][0], rMat[0][0]);
-	// float cosy = cosf(yawRad);
-	// float siny = sinf(yawRad);
-	// float vx = x * cosy + y * siny;
-	// float vy = y * cosy - x * siny;	
+	float yawRad = atan2f(rMat[1][0], rMat[0][0]);
+	float cosy = cosf(yawRad);
+	float siny = sinf(yawRad);
+	float vx = x * cosy + y * siny;
+	float vy = y * cosy - x * siny;	
 	
-    v->x = x;
-    v->y = y;
+    v->x = vx;
+    v->y = vy;
     v->z = z - baseAcc[2] *  980.f;	/*去除重力加速度*/
 }
 
 /*地球到机体*/
 void imuTransformVectorEarthToBody(Axis3f * v)
 {
+    // v->y = -v->y;
+
     /* From earth frame to body frame */
     const float x = rMat[0][0] * v->x + rMat[1][0] * v->y + rMat[2][0] * v->z;
     const float y = rMat[0][1] * v->x + rMat[1][1] * v->y + rMat[2][1] * v->z;

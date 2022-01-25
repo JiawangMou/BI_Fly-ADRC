@@ -4,12 +4,11 @@
 #include "delay.h"
 #include "maths.h"
 #include "state_estimator.h"
+#include "sensfusion6.h"
 #include "stdbool.h"
 #include "string.h"
-
-#include "arm_math.h"
 #include "filter.h"
-
+#include "arm_math.h"
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
 #include "task.h"
@@ -43,11 +42,19 @@
 
 #define VEL_LPF_FILTER /*低通滤波*/
 // #define AVERAGE_FILTER		/*均值滤波*/
+#define OPFLOW_LPF_CUTOFF_FREQ 3 
+
+#define OPFLOW_TASK_MS 10
+#define OPFLOW_TASK_HZ (1000/OPFLOW_TASK_MS)
+#define L_Opflow2CoM  0.05f  //unit:m  光流沿机体坐标系Z轴到质心的距离
 
 static bool isInit       = false;
 static u8   outlierCount = 0; /*数据不可用计数*/
-
+static lpf2pData opflowLpf[2];
+static lpf2pData opflowLpf[2];
+ 
 opFlow_t opFlow; /*光流*/
+static Axis3f r_Vector_B;
 
 TaskHandle_t opFlowTaskHandle = NULL;
 
@@ -270,9 +277,11 @@ void opticalFlowTask(void* param)
 
     opticalFlowInit();
     // opFlow.isOpFlowOk = true;
-
+    for (u8 i = 0; i < 2; i++) {// 初始化光流数据的低通滤波器
+	    lpf2pInit(&opflowLpf[i], RATE_100_HZ, OPFLOW_LPF_CUTOFF_FREQ);
+	}
     while (1) {
-        vTaskDelayUntil(&lastWakeTime, 10); /*100Hz 10ms周期延时*/
+        vTaskDelayUntil(&lastWakeTime, OPFLOW_TASK_MS); /*100Hz 10ms周期延时*/
         // if的判断,去掉了isOpFlowOk==1的判断，防止进入死循环；
         if (isInit) {
             readMotion(&currentMotion);
@@ -281,7 +290,7 @@ void opticalFlowTask(void* param)
                 if (count++ > 100) {
                     count             = 0;
                     opFlow.isOpFlowOk = false; /*光流出错*/
-                                               // vTaskSuspend(opFlowTaskHandle); /*挂起光流任务*/
+                    // vTaskSuspend(opFlowTaskHandle); /*挂起光流任务*/
                 }
             } else {
                 count             = 0;
@@ -292,6 +301,8 @@ void opticalFlowTask(void* param)
             int16_t pixelDy = -currentMotion.deltaY;
 
             if (ABS(pixelDx) < OULIER_LIMIT && ABS(pixelDy) < OULIER_LIMIT) {
+                opFlow.pixDelta[X] = pixelDx;
+                opFlow.pixDelta[Y] = pixelDy;
                 opFlow.pixSum[X] += pixelDx;
                 opFlow.pixSum[Y] += pixelDy;
                 opFlow.timestamp = getSysTickCnt();
@@ -336,50 +347,42 @@ void velFilter(float* in, float* out)
 bool getOpFlowData(state_t* state, float dt)
 {
     static u8 cnt    = 0;
-    float  height = 0.01f * getFusedHeight(); /*读取高度信息 单位m*/
-    
+    zRange_t vl53lxx;
+    vl53lxxReadRange(&vl53lxx);
+    float height = 0.01f * vl53lxx.distance_uncomp; /*读取未补偿过的高度信息 单位m*/
+    float height_E = 0.01f * vl53lxx.distance; /*读取补偿过的高度信息 单位m*/
+    float DCMeb[9];
+    Axis3f r_Vector;
+
+    getDCMeb(DCMeb);/*旋转矩阵*/
     if (opFlow.isOpFlowOk && height < 4.0f) /*4m范围内，光流可用*/
     {
         cnt                = 0;
         opFlow.isDataValid = true;
 
-        float coeff = RESOLUTION * height;
+        float coeff = RESOLUTION * height;//物理意义当前高度下，一个像素点对应的移动距离，单位：cm
 
-        if (height < 0.05f) /*光流测量范围大于5cm*/
-        {
+        if (height < 0.05f) {/*光流测量范围大于5cm*/
             coeff = 0.0f;
             opFlow.pixComp[X] =  0; /*像素补偿，负方向*/
             opFlow.pixComp[Y] =  0;
-        }else
-        {
-            float tanRoll  = arm_sin_f32(state->attitude.roll * DEG2RAD)/arm_cos_f32(state->attitude.roll * DEG2RAD);
-            float tanPitch = arm_sin_f32(state->attitude.pitch * DEG2RAD)/arm_cos_f32(state->attitude.pitch * DEG2RAD);
-            //修改后的补偿***********************************
-            opFlow.pixComp[X] =  height *100 * tanPitch / coeff; /*像素补偿，负方向*/
-            opFlow.pixComp[Y] =  height *100 * tanRoll  / coeff;
+        }else{
+            //修改后的补偿
+            r_Vector.x = height_E * 100.0f * (- DCMeb[2] )/ coeff; //世界坐标系下像素补偿，负方向,unit：像素点个数
+            r_Vector.y = height_E * 100.0f * (- DCMeb[5] )/ coeff;
+            r_Vector.z = height_E * 100.0f / coeff;
+            imuTransformVectorEarthToBody(&r_Vector);
+            r_Vector_B = r_Vector;
+            opFlow.pixComp[X] = r_Vector_B.x;
+            opFlow.pixComp[Y] = r_Vector_B.y;
         }
 
-
-        //源程序
-        // opFlow.pixComp[X]  = 480.f * tanPitch; /*像素补偿，负方向*/
-        // opFlow.pixComp[Y]  = 480.f * tanRoll;
-        opFlow.pixValid[X] = (opFlow.pixSum[X] + opFlow.pixComp[X]); /*实际输出像素*/
-        opFlow.pixValid[Y] = (opFlow.pixSum[Y] - opFlow.pixComp[Y]);
+        opFlow.pixValid[X] = (opFlow.pixSum[X] - opFlow.pixComp[X]); /*实际输出像素*/
+        opFlow.pixValid[Y] = (opFlow.pixSum[Y] + opFlow.pixComp[Y]);
         opFlow.deltaVelComp[X]= coeff * (opFlow.pixComp[X] - opFlow.pixCompLast[X])/ dt;    /*补偿的速度 cm/s*/
         opFlow.deltaVelComp[Y]= coeff * (opFlow.pixComp[Y] - opFlow.pixCompLast[Y])/ dt;
         opFlow.pixCompLast[X] = opFlow.pixComp[X];
         opFlow.pixCompLast[Y] = opFlow.pixComp[Y];
-
-        // opFlow.pixSum[X] -= dtCompX;
-        // opFlow.pixSum[Y] -= dtCompY;
-
-        // opFlow.pixValid[X] = (opFlow.pixSum[X] + opFlow.pixComp[X] - dtCompX); /*实际输出像素*/
-        // opFlow.pixValid[Y] = (opFlow.pixSum[Y] - opFlow.pixComp[Y] + dtCompY);
-        // //TEST：
-        // opFlow.pixComp[X] = dtCompX; /*像素补偿，负方向*/
-        // opFlow.pixComp[Y] = dtCompY;
-
-
 
         /*2帧之间位移变化量，单位cm*/
         opFlow.deltaPos[X] = (opFlow.pixValid[X] - opFlow.pixValidLast[X]) * coeff;
@@ -390,11 +393,16 @@ bool getOpFlowData(state_t* state, float dt)
         opFlow.deltaVel[X]     = opFlow.deltaPos[X] / dt; /*速度 cm/s*/
         opFlow.deltaVel[Y]     = opFlow.deltaPos[Y] / dt;
 
+        opFlow.pixdeltaveluncopm[X] = opFlow.pixDelta[X] * coeff / dt;
+        opFlow.pixdeltaveluncopm[Y] = opFlow.pixDelta[Y] * coeff / dt;
+        opFlow.timestamp = getSysTickCnt();
 #ifdef AVERAGE_FILTER
         velFilter(opFlow.deltaVel, opFlow.velLpf); /*限幅均值滤波法*/
 #else
-        opFlow.velLpf[X] += (opFlow.deltaVel[X] - opFlow.velLpf[X]) * 0.15f; /*速度低通 cm/s*/
-        opFlow.velLpf[Y] += (opFlow.deltaVel[Y] - opFlow.velLpf[Y]) * 0.15f; /*速度低通 cm/s*/
+//      opFlow.velLpf[X] += (opFlow.deltaVel[X] - opFlow.velLpf[X]) * 0.15f; /*速度低通 cm/s*/
+//      opFlow.velLpf[Y] += (opFlow.deltaVel[Y] - opFlow.velLpf[Y]) * 0.15f; /*速度低通 cm/s*/
+        opFlow.velLpf[X] = lpf2pApply(&opflowLpf[X], opFlow.deltaVel[X]);
+        opFlow.velLpf[Y] = lpf2pApply(&opflowLpf[Y], opFlow.deltaVel[Y]);
 #endif
         opFlow.velLpf[X] = constrainf(opFlow.velLpf[X], -VEL_LIMIT, VEL_LIMIT); /*速度限幅 cm/s*/
         opFlow.velLpf[Y] = constrainf(opFlow.velLpf[Y], -VEL_LIMIT, VEL_LIMIT); /*速度限幅 cm/s*/
@@ -480,4 +488,9 @@ bool getopFlowState(void) { return opFlow.isOpFlowOk; }
 void getopFlowRawData(int16_t *deltaX, int16_t *deltaY) {
     *deltaX = currentMotion.deltaX;
     *deltaY = currentMotion.deltaY;
+}
+
+void getr_Vector(Axis3f * v)
+{
+    *v =  r_Vector_B;
 }

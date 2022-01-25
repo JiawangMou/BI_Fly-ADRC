@@ -30,7 +30,7 @@ void positionResetAllPID(void);
 void velocityController(float* thrust, control_t *control,attitude_t* attitude, setpoint_t* setpoint, const state_t* state,const sensorData_t *sensorData);
 void positionController(setpoint_t* setpoint, const state_t* state);
 #else
-void positionController(float* thrust, control_t *control,attitude_t *attitude, setpoint_t *setpoint, const state_t *state, float dt);
+void positionController(float* thrust, attitude_t* attitude, setpoint_t* setpoint, const state_t* state, float dt);
 #endif
 void positionPIDwriteToConfigParam(void);
 float getAltholdThrust(void);

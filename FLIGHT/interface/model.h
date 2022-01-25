@@ -47,8 +47,8 @@
 #define MOTOR_PWM2F_A 0.0003685f   //PWM to  flappingHZ  cofficient a; f = motor_a * u    unit : Hz
 #define MOTOR_F2T_A 0.3543f    //flappingHZ to  Thrust  cofficient a; Thrust = wing_a*f^2    unit : mN
 
-#define SERVO_PWM2ANGLE_A 16.6666   //PWM to servo angle  cofficient a; servo angle(unit: °) = servo_a * PWM + servo_b 
-#define SERVO_PWM2ANGLE_B 1500    
+#define SERVO_PWM2ANGLE_A 0.06   //PWM to servo angle  cofficient a; servo angle(unit: °) = servo_a * PWM + servo_b 
+#define SERVO_PWM2ANGLE_B -90    
 
 #define MASS 29.0f
 #define G 9.8f

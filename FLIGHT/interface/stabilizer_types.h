@@ -116,6 +116,8 @@ typedef struct zRange_s
 {
 	uint32_t timestamp;	//时间戳
 	float distance;		//测量距离
+	float distance_uncomp;
+	float rawdata;
 	float quality;		//可信度
 } zRange_t;
 
@@ -254,7 +256,7 @@ typedef struct
 	float u;
 } control_t;
 #else
-{
+
 typedef struct
 {
 	s16 roll;
@@ -263,7 +265,7 @@ typedef struct
 	float thrust;
 	enum dir_e flipDir;		/*翻滚方向*/
 } control_t;
-}
+
 #endif
 typedef struct
 {

@@ -114,10 +114,10 @@ void positionControlInit(float velocityPidDt, float posPidDt)
 void velocityController(float* thrust, control_t *control,attitude_t* attitude, setpoint_t* setpoint, const state_t* state,const sensorData_t *sensorData)
 {
     static u16 altholdCount = 0;
-    float u0 = adrc_VelControl(state->velocity.z,state->acc.z,setpoint);
+    velZ_nlsef.u0= adrc_VelControl(state->velocity.z,state->acc.z,setpoint);
     control->a = Ffz_coffe_cal(attitude,control->actual_servoangle);
     control->b = Fdz_coffe_cal(attitude,state->velocity,control->actual_servoangle);
-    *thrust = U_cal(control->a,control->b,velZ_LESO.z2,u0) * 60000.0f;
+    *thrust = U_cal(control->a,control->b,velZ_LESO.z2,velZ_nlsef.u0) * 60000.0f;
     // Roll and Pitch 
     // TODO:XY 与 Z轴的位置控制控制器结构不一样，还没有统一
     attitude->pitch = 0.15f * pidUpdate(&pidVX, setpoint->velocity.x - state->velocity.x);

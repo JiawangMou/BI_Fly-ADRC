@@ -91,7 +91,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
             #ifdef USE_MBD
             positionController(setpoint, state);
             #else 
-            positionController(&actualThrust, &attitudeDesired, setpoint, state, POSITION_PID_DT);
+            positionController(&actualThrust, &attitudeDesired, setpoint, state, POS_PID_DT);
             #endif
         }
     }
