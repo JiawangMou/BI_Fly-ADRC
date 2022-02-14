@@ -690,6 +690,10 @@ float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle)
 */
 float ServoPWM2Servoangle(u32 servoPWM)
 {
+    if(servoPWM < 900)
+        servoPWM = 900;
+    else if(servoPWM > 2100)
+        servoPWM = 2100;
     return servoPWM * SERVO_PWM2ANGLE_A + SERVO_PWM2ANGLE_B;
 }
 
@@ -741,18 +745,45 @@ float TfApply(Tf_t *tf,const float input)
 * Others: 
 
 */
-float Fdz_coffe_cal(attitude_t *atti,velocity_t vel,float servoangle)
+float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle)
 {
-    float theta = atti->pitch * DEG2RAD;
-    float beta = servoangle * DEG2RAD;
-    float Sbt = arm_sin_f32(beta + theta);
-    float Cbt = arm_cos_f32(beta + theta);
+//当不假定Roll角为0时
+// -u*(22.11*(cos(beta)*sin(theta) + cos(phi)*sin(beta)*cos(theta))*(0.0489*V_laserZ*cos(beta)*sin(theta) - 0.0489*V_flowX*cos(beta)*cos(theta) - 0.0489*V_flowY*sin(beta)*sin(phi) + 0.0489*V_laserZ*cos(phi)*sin(beta)*cos(theta) + 0.0489*V_flowX*cos(phi)*sin(beta)*sin(theta)) 
+//...- 22.11*(sin(beta)*sin(theta) - 1.0*cos(beta)*cos(phi)*cos(theta))*(0.0198*V_flowX*sin(beta)*cos(theta) - 0.0198*V_flowY*cos(beta)*sin(phi) - 0.0198*V_laserZ*sin(beta)*sin(theta) + 0.0198*V_laserZ*cos(beta)*cos(phi)*cos(theta) + 0.0198*V_flowX*cos(beta)*cos(phi)*sin(theta)) + 1.081179*cos(theta)*sin(phi)*(V_flowY*cos(phi) + V_laserZ*cos(theta)*sin(phi) + V_flowX*sin(phi)*sin(theta)))
 
-    return 22.11f*Sbt*(0.0489f*vel.y + 0.0489f*vel.x*Cbt + 0.0198f*vel.z*Cbt + 0.0198f*vel.x*Sbt - 0.0489f*vel.z*Sbt);
+    // float psi   = atti->yaw * DEG2RAD;
+    // float theta = atti->pitch * DEG2RAD;
+    // float phi   = atti->roll * DEG2RAD;
+    // float beta  = servoangle * DEG2RAD;
+    // float Cb = arm_cos_f32(beta);
+    // float Sphi = arm_sin_f32(phi);
+    // float Spsi = arm_sin_f32(psi);
+    // float Cphi = arm_cos_f32(phi);
+    // float Cpsi = arm_cos_f32(psi);
+    // float Ct = arm_cos_f32(theta);
+    // float Sb = arm_sin_f32(beta);
+    // float St = arm_sin_f32(theta);
+    // float CbSt = Cb*St;
+    // float SbSt = Sb*St;
+    // float SbCt = Sb*Ct;
+    // float CbCt = Cb*Ct;
+    // float CtSt = Ct*St;
+    // float CbCtCphi = Cphi*CbCt;
+    // float CtSphi = Ct*Sphi;
+    // float CtStCphi = Cphi*CtSt;
+
+    // return -22.11f*(CbSt + SbCt * Cphi)*(0.0489f*vel.z*CbSt- 0.0489f*vel.x*CbCt - 0.0489f*vel.y*Sb*Sphi + 0.0489f*vel.z*Cphi*SbCt + 0.0489f*vel.x*Cphi*SbSt) -22.11f*(SbSt - CbCtCphi)*(0.0198f*vel.x*SbCt - 0.0198f*vel.y*Cb*Sphi - 0.0198f*vel.z*SbSt + 0.0198f*vel.z*CbCtCphi + 0.0198f*vel.x*CtStCphi) + 1.081179f*CtSphi*(vel.y*Cphi + vel.z*CtSphi + vel.x*Sphi*St);
+
+//当假定Roll角为0时
+//Fd_Z = u*(0.3217005*V_laserZ*cos(2.0*beta + 2.0*theta) - 0.7594785*V_laserZ + 0.3217005*V_flowX*sin(2.0*beta + 2.0*theta))
+    float psi   = atti->yaw * DEG2RAD;
+    float theta = atti->pitch * DEG2RAD;
+    float phi   = atti->roll * DEG2RAD;
+    float beta  = servoangle * DEG2RAD;
+
+    return 0.3217f*vel.z*arm_cos_f32(2*beta + 2*theta) - 0.7595f*vel.z + 0.3217f*vel.x*arm_sin_f32(2*beta + 2*theta);
 }
 
-//当不假定Roll角为0时
-// -0.0003685*u*(cos(beta)*sin(theta) + cos(phi)*sin(beta)*cos(theta))*(Cdy*V_flowY*cos(phi) + Cdx*V_flowX*cos(beta)*cos(theta) - 1.0*Cdz*V_flowY*cos(beta)*sin(phi) + Cdz*V_flowX*sin(beta)*cos(theta) - 1.0*Cdx*V_laserZ*cos(beta)*sin(theta) + Cdx*V_flowY*sin(beta)*sin(phi) + Cdy*V_laserZ*cos(theta)*sin(phi) - 1.0*Cdz*V_laserZ*sin(beta)*sin(theta) + Cdy*V_flowX*sin(phi)*sin(theta) + Cdz*V_laserZ*cos(beta)*cos(phi)*cos(theta) + Cdz*V_flowX*cos(beta)*cos(phi)*sin(theta) - 1.0*Cdx*V_laserZ*cos(phi)*sin(beta)*cos(theta) - 1.0*Cdx*V_flowX*cos(phi)*sin(beta)*sin(theta))
 /*
 
 * Function: Ffz_coffe_cal
@@ -770,7 +801,7 @@ float Fdz_coffe_cal(attitude_t *atti,velocity_t vel,float servoangle)
 * Others: 
 
 */
-float Ffz_coffe_cal(attitude_t *atti,float servoangle)
+float Ffz_coffe_cal(const attitude_t *atti,float servoangle)
 {
     float theta = atti->pitch * DEG2RAD;
     float phi = atti->roll * DEG2RAD;
@@ -780,7 +811,7 @@ float Ffz_coffe_cal(attitude_t *atti,float servoangle)
     float Ct = arm_cos_f32(theta);
     float Sb = arm_sin_f32(beta);
     float St = arm_sin_f32(theta);
-    return 173.2003f*(Cb*Cp*Ct - Sb*St); 
+    return 346.4f*(Cb*Cp*Ct - Sb*St); 
 }
 /*
 * Function: U_cal
@@ -801,12 +832,18 @@ float Ffz_coffe_cal(attitude_t *atti,float servoangle)
 float U_cal(const float a,const float b,const float disturb,const float u0)
 {
     float result = 0;
+    float temp = 0;
     if (a != 0.0f) {
-        arm_sqrt_f32((u0  + 25.0f * b * b / (MASS * a) + 100.0f * G - disturb) * MASS /(100.0f * a), &result);
+        // temp = (u0  + 25.0f * b * b / (MASS * a) + G - disturb) * MASS /(100.0f * a);
+        temp = (u0  + 25.0f * b * b / (MASS * a) + G) * MASS /(100.0f * a);
+        if (temp <= 0)
+            result = 0;
+        else
+            arm_sqrt_f32(temp, &result);
         return result - b / (2.0f * a);
     } else {
         if (b != 0.0f)
-            return (u0 - disturb + 100.0f*G) * MASS / (100.0f *b);
+            return (u0 - disturb + G) * MASS / (100.0f *b);
         else
             return 0;
     }

@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 43 /*13 表示V1.3*/
+#define VERSION 13 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -282,8 +282,8 @@ static configParam_t configParamDefault =
 			},
 			.nlsef =
 			{
-				.beta_1 = 16.0,
-				.beta_2 = 0.2,
+				.beta_1 = 30.0,
+				.beta_2 = 0.8,
 				.beta_I = 0.0f,
 				.I_limit = 8.0f,
 				.zeta   = 0.3,
@@ -295,24 +295,24 @@ static configParam_t configParamDefault =
 		{
 			.td = 
 			{
-				.r  = 1200, // 加加速度 max_aa = 1200cm/s^3
+				.r  = 25000, // 加加速度 max_aa = 1200cm/s^3
 				.N0 = 2,
 			},
 			.nlsef =
 			{
 				.N1 = 2,//跟踪微分器解决速度超调h1=N1*h
-				.beta_1 = 1800.0,
-				.beta_2 = 40.0,
-				.beta_I = 150.0f,
-				.I_limit = 120.0f,
+				.beta_1 = 28.0,
+				.beta_2 = 2.3,
+				.beta_I = 0.0,
+				.I_limit = 100.0,
 				.zeta   = 0.3,
-				.alpha1 = 0.6,
-				.alpha2 = 1.2,
+				.alpha1 = 1.0,
+				.alpha2 = 1.0,
             },		
 			.leso =
 			{
 				.b0 = 37.0,
-				.w0 = 200.0,
+				.w0 = 100.0,
 			},	
 		},
 

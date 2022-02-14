@@ -42,11 +42,12 @@
 
 #define VEL_LPF_FILTER /*低通滤波*/
 // #define AVERAGE_FILTER		/*均值滤波*/
-#define OPFLOW_LPF_CUTOFF_FREQ 3 
+#define OPFLOW_LPF_CUTOFF_FREQ 1 
 
 #define OPFLOW_TASK_MS 10
 #define OPFLOW_TASK_HZ (1000/OPFLOW_TASK_MS)
 #define L_Opflow2CoM  0.05f  //unit:m  光流沿机体坐标系Z轴到质心的距离
+#define VELXY_COMPENSATION_COEFFICIENT 0.54f
 
 static bool isInit       = false;
 static u8   outlierCount = 0; /*数据不可用计数*/
@@ -368,13 +369,13 @@ bool getOpFlowData(state_t* state, float dt)
             opFlow.pixComp[Y] =  0;
         }else{
             //修改后的补偿
-            r_Vector.x = height_E * 100.0f * (- DCMeb[2] )/ coeff; //世界坐标系下像素补偿，负方向,unit：像素点个数
-            r_Vector.y = height_E * 100.0f * (- DCMeb[5] )/ coeff;
-            r_Vector.z = height_E * 100.0f / coeff;
+            r_Vector.x = height * 100.0f * (- DCMeb[2] )/ coeff; //世界坐标系下像素补偿，负方向,unit：像素点个数
+            r_Vector.y = height * 100.0f * (- DCMeb[5] )/ coeff;
+            r_Vector.z = height * 100.0f / coeff;
             imuTransformVectorEarthToBody(&r_Vector);
             r_Vector_B = r_Vector;
-            opFlow.pixComp[X] = r_Vector_B.x;
-            opFlow.pixComp[Y] = r_Vector_B.y;
+            opFlow.pixComp[X] = VELXY_COMPENSATION_COEFFICIENT * r_Vector_B.x;
+            opFlow.pixComp[Y] = VELXY_COMPENSATION_COEFFICIENT * r_Vector_B.y;
         }
 
         opFlow.pixValid[X] = (opFlow.pixSum[X] - opFlow.pixComp[X]); /*实际输出像素*/

@@ -177,8 +177,16 @@ void stabilizerTask(void* param)
 
         /*“Ï≥£ºÏ≤‚*/
         anomalDetec(&sensorData, &state, &control);
+        if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) {
+            adrc_td(&posZ_TD, setpoint.position.z);
+        }
+        velZ_ESO_estimate(&control, &state);
+        if (RATE_DO_EXECUTE(VELZ_TD_RATE, tick)) { 
+            adrc_td(&velZ_TD, setpoint.velocity.z);
+        }
+            
 
-        velZ_ESO_estimate(&control,state.velocity.z);
+
 
         /*PIDøÿ÷∆*/
         stateControl(&control, &sensorData, &state, &setpoint, tick);
@@ -199,7 +207,7 @@ void stabilizerTask(void* param)
         // }
         // if(RATE_DO_EXECUTE(RATE_500_HZ, tick)) 
         // {
-        //     flap_Hz = constrainf(0.0003685f*control.thrust +1.43f,0.0f,25.0f);
+        //     flap_Hz = constrainf(0.00036 85f*control.thrust +1.43f,0.0f,25.0f);
         //     F_flap = constrainf((0.03543f*sq(flap_Hz)-0.2027f),0.0f,22.0f);
         //     Fd = F_flap * state.velocity.z * 0.00198f;
         //     velZ_ESO_estimate(2.0f*(F_flap - Fd)- 27.0f ,state.velocity.z);

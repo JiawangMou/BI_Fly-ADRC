@@ -98,7 +98,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
     if (RATE_DO_EXECUTE(VEL_PID_RATE, tick)) {
         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
-            velocityController(&actualThrust,control, &attitudeDesired, setpoint, state, sensors);
+            velocityController(&actualThrust,control, &attitudeDesired,setpoint, state, sensors);
         }
     }
 
@@ -174,6 +174,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // attitudeResetAllPID();	/*复位姿态PID*/
         // /*这里取消复位的原因是，让飞行器翅膀不拍动的时候，还能看到舵机的反应，从而确认PID计算结果是否正常，或者是接线是否有问题*/
         positionResetAllPID();                     /*复位位置PID*/
+        // velZ_LESO.z2 = 0;
+        control->thrust = 0;
         // adrc_reset(&ADRCRatePitch);
 #ifdef ADRC_CONTROL
 		adrc_reset(&ADRCRateRoll);

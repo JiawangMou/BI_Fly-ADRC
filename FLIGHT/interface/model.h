@@ -50,8 +50,8 @@
 #define SERVO_PWM2ANGLE_A 0.06   //PWM to servo angle  cofficient a; servo angle(unit: °) = servo_a * PWM + servo_b 
 #define SERVO_PWM2ANGLE_B -90    
 
-#define MASS 29.0f
-#define G 9.8f
+#define MASS 27.5f
+#define G 980.0f
 /* Forward declaration for rtModel */
 typedef struct tag_RTM_model_T RT_MODEL_model_T;
 
@@ -146,8 +146,8 @@ float ServoPWM2Servoangle(u32 servoPWM);
 float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle);
 float TfApply(Tf_t *tf,const float input);
 
-float Fdz_coffe_cal(attitude_t *atti,velocity_t vel,float servoangle);
-float Ffz_coffe_cal(attitude_t *atti,float servoangle);
+float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle);
+float Ffz_coffe_cal(const attitude_t *atti,float servoangle);
 float U_cal(const float a,const float b,const float disturb,const float u0);
 
 

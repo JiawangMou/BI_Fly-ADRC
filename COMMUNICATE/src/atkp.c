@@ -583,7 +583,7 @@ static void atkpSendPeriod(void)
 
 		sensorData_t sensordata;
 // 		// attitude_t rateDesired;
-// 		// attitude_t attitude;
+		attitude_t attitude;
 		attitude_t attitudeDesired;
         control_t control = getControlData();
 
@@ -591,16 +591,16 @@ static void atkpSendPeriod(void)
 //     //     Axis3f gyro_UnLPF;
         state_t state = getState(); /*四轴姿态*/
 //         float laser_height = getFusedHeight();
-//         Axis3i16 acc;
-//         Axis3i16 gyro;
-//         Axis3i16 mag;
+        // Axis3i16 acc;
+        // Axis3i16 gyro;
+        // Axis3i16 mag;
 //         float      q0;
 //         float      q1;
 //         float      q2;
 //         float      q3;
         setpoint_t setpoint = getSetpoint();
-//         getSensorRawData(&acc, &gyro, &mag);
-// 		// getAttitudeData(&attitude);
+        // getSensorRawData(&acc, &gyro, &mag);
+		getAttitudeData(&attitude);
 		getAngleDesired(&attitudeDesired);
         getSensorData(&sensordata);
 //        getgyro_UnLPFData(&gyro_UnLPF);
@@ -635,12 +635,12 @@ static void atkpSendPeriod(void)
         // sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
         //测试stabilizer中的函数运行调度是否正常
         // sendUserData(1, stabi_tick.sensorsAcquire_tick,stabi_tick.imuUpdate_tick,stabi_tick.positionEstimate_tick,stabi_tick.commanderGetSetpoint_tick,stabi_tick.getOpFlowData_tick,stabi_tick.flyerFlipCheck_tick,stabi_tick.stateControl_tick,stabi_tick.motorControl_tick,(s16)(timestamp & 0x00ffff));
-        //光流数据测试
+        // 光流数据测试
         // sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch, 10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X], opFlow.posSum[Y],sensordata.zrange.distance);
-        // sendUserData(2, acc.x,acc.y,acc.z, gyro.x,gyro.y,gyro.z,opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y],(s16)(opFlow.timestamp & 0x00ffff));
-        //带模型控制器和ESO测试
-        sendUserData(1, setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1, velZ_LESO.z2,(s16)(60000.0f*control.u));
-        sendUserData(2, velZ_TD.x1,velZ_TD.x2,control.thrust,control.a,control.b,velZ_nlsef.u0,state.velocity.x,opFlow.velLpf[X],opFlow.velLpf[Y]);        
+        // sendUserData(2, sensordata.zrange.distance_uncomp,opFlow.pixDelta[X],opFlow.pixDelta[Y], opFlow.deltaVel[X], opFlow.deltaVel[Y],opFlow.pixdeltaveluncopm[X],opFlow.pixdeltaveluncopm[Y],opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y]);
+        // //带模型控制器和ESO测试
+        sendUserData(1, setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1,velZ_LESO.z2,control.u);
+        sendUserData(2, velZ_TD.x1,velZ_TD.x2,velZ_nlsef.e1_out,control.a,control.b,velZ_nlsef.u0,state.velocity.x,opFlow.velLpf[X],opFlow.velLpf[Y]);        
 
 #else
         sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
@@ -806,7 +806,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, velZ_TD.r,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
+            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -847,7 +847,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, velZ_TD.r,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
+            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -926,20 +926,20 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID3) {
-		velZ_nlsef.beta_1 = 0.1*((s16)(*(anlPacket->data+0)<<8)|*(anlPacket->data+1));
-		velZ_nlsef.beta_I = 0.1*((s16)(*(anlPacket->data+2)<<8)|*(anlPacket->data+3));
-		velZ_nlsef.beta_2 = 0.01*((s16)(*(anlPacket->data+4)<<8)|*(anlPacket->data+5));
-		
-		posZ_nlsef.beta_1 = 0.1*((s16)(*(anlPacket->data+6)<<8)|*(anlPacket->data+7));
-		posZ_nlsef.beta_I = 0.1*((s16)(*(anlPacket->data+8)<<8)|*(anlPacket->data+9));
-		posZ_nlsef.beta_2 = 0.01*((s16)(*(anlPacket->data+10)<<8)|*(anlPacket->data+11));
-		
-		pidVX.kp = 0.1*((s16)(*(anlPacket->data+12)<<8)|*(anlPacket->data+13));
-		pidVX.ki = 0.1*((s16)(*(anlPacket->data+14)<<8)|*(anlPacket->data+15));
-		pidVX.kd = 0.01*((s16)(*(anlPacket->data+16)<<8)|*(anlPacket->data+17));
-		
-		pidVY = pidVX;	//位置速率PID，X\Y方向是一样的
-/*自己开发的地面站用通讯协议*/
+        velZ_nlsef.beta_1 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        velZ_nlsef.beta_I = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        velZ_nlsef.beta_2 = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+
+        posZ_nlsef.beta_1 = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
+        posZ_nlsef.beta_I = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
+        posZ_nlsef.beta_2 = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
+
+        pidVX.kp = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        pidVX.ki = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        pidVX.kd = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+
+        pidVY = pidVX; //位置速率PID，X\Y方向是一样的
+                       /*自己开发的地面站用通讯协议*/
         // pidVX.kp = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
         // pidVX.ki = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
         // pidVX.kd = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
@@ -958,8 +958,8 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID4) {
-        velZ_TD.r       = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-        posZ_TD.r       = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        velZ_TD.r       = 10.0f*((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        posZ_TD.r       = 10.0f*((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
         velZ_nlsef.zeta = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
         // pidY              = pidX; //位置保持PID，X\Y方向是一样的
         u16 s_left_set    = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));

@@ -146,6 +146,7 @@ void vl53l1xTask(void *arg)
 	attitude_t attitude_now; /*存放四轴姿态的变量*/
 	u8 isDataReady = 0;
 	TickType_t xLastWakeTime = xTaskGetTickCount();
+	float DCMeb[9];
 	vl53lxxInit();
 	vl53l1xSetParam(); /*设置vl53l1x 参数*/
 	for (u8 i = 0; i < 2; i++) {// 初始化光流数据的低通滤波器
@@ -164,9 +165,10 @@ void vl53l1xTask(void *arg)
 				
 				if (vl53lxx.rawdata < VL53L1X_MAX_RANGE)
 				{
+					getDCMeb(DCMeb);/*旋转矩阵*/
 					validCnt++;
 					getAttitudeData(&attitude_now);
-					rangeComp = vl53lxx.rawdata * arm_cos_f32(attitude_now.pitch*DEG2RAD) * arm_cos_f32(attitude_now.roll*DEG2RAD);
+					rangeComp = vl53lxx.rawdata * DCMeb[8];
 					vl53lxx.timestamp = getSysTickCnt();
 					vl53lxx.distance_uncomp = lpf2pApply(&vl53lxxLpf[0], vl53lxx.rawdata);
 					vl53lxx.distance = lpf2pApply(&vl53lxxLpf[1], rangeComp);

@@ -284,7 +284,8 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             if (initLand == false) {
                 pidReset(&pidZ);
                 setpoint->position.z = 0;    /*设定高度为0 单位cm/s*/
-                posZ_td_states_set(state->position.z,state->velocity.z);
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
                 commander.keyFlight = false;
                 initLand = true;
             }
@@ -300,7 +301,8 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
                 errorPosY        = 0.f;
                 errorPosZ        = 0.f;
 #ifdef USE_MBD
-                posZ_td_states_set(state->position.z,state->velocity.z);
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
 #endif
                 setFastAdjustPosParam(0, 1, 80.0f); /*一键起飞高度80cm*/
             }
@@ -336,8 +338,9 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
                 setpoint->mode.z     = modeAbs;
                 setpoint->position.z = state->position.z + errorPosZ; /*调整新位置*/
 #ifdef USE_MBD                
-                posZ_td_states_set(state->position.z,state->velocity.z); /*更新TD状态*/
-#endif
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
+#endif          
                 //NOTE:为了下次进入定高的速率模式时使用PID叠加PID，现在只使用了 P 不需要清空PID缓存
                 // pidReset(&pidVZ);
             } else if (isAdjustingPosZ == false) /*Z位移误差*/

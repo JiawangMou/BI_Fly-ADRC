@@ -86,8 +86,8 @@ void motorControl(control_t *control) /*功率输出控制*/
 	s16 r = control->roll;
 	s16 p = control->pitch;
 	//控制分配	改！
-	actuator.motor_l.PWM = limitThrust(control->thrust  + r / 2);
-	actuator.motor_r.PWM = limitThrust(control->thrust  - r / 2);
+	actuator.motor_r.PWM = limitThrust(control->thrust  + r / 2);
+	actuator.motor_l.PWM = limitThrust(control->thrust  - r / 2);
 	actuator.servo_l.PWM = Servo_Int16ToPWM(PWM_LEFT, p - control->yaw * 1.5f );
 	actuator.servo_r.PWM = Servo_Int16ToPWM(PWM_MIDDLE, -p - control->yaw * 1.5f );
 
@@ -106,7 +106,7 @@ void motorControl(control_t *control) /*功率输出控制*/
 	servoSetPWM(PWM_LEFT,  actuator.servo_l.PWM); /*舵机输出占空比设置*/
 	servoSetPWM(PWM_MIDDLE,actuator.servo_r.PWM);
 	//servo Tf apply
-	control->actual_servoPWM = TfApply(&servotf,0.5f*(actuator.servo_l.PWM + actuator.servo_r.PWM));
+	control->actual_servoPWM = TfApply(&servotf, p * 600.0f/ 32768 +1500.0f);
 	control->actual_servoangle = ServoPWM2Servoangle(control->actual_servoPWM);
 	//motor Tf apply
 	control->actual_motorPWM = TfApply(&motortf,0.5f*(actuator.motor_l.PWM + actuator.motor_r.PWM));

@@ -111,17 +111,18 @@ void positionControlInit(float velocityPidDt, float posPidDt)
 
 
 #ifdef USE_MBD
-void velocityController(float* thrust, control_t *control,attitude_t* attitude, setpoint_t* setpoint, const state_t* state,const sensorData_t *sensorData)
+void velocityController(float* thrust, control_t *control, attitude_t *atti_desired,setpoint_t* setpoint, const state_t* state,const sensorData_t *sensorData)
 {
     static u16 altholdCount = 0;
     velZ_nlsef.u0= adrc_VelControl(state->velocity.z,state->acc.z,setpoint);
-    control->a = Ffz_coffe_cal(attitude,control->actual_servoangle);
-    control->b = Fdz_coffe_cal(attitude,state->velocity,control->actual_servoangle);
-    *thrust = U_cal(control->a,control->b,velZ_LESO.z2,velZ_nlsef.u0) * 60000.0f;
+    control->a = Ffz_coffe_cal(&(state->attitude),control->actual_servoangle);
+    control->b = Fdz_coffe_cal(&(state->attitude),state->velocity,control->actual_servoangle);
+    control->u = 60000.0f * constrainf(U_cal(control->a,control->b,velZ_LESO.z2,velZ_nlsef.u0),0.0f,1.0f);
+    *thrust =  control->u;
     // Roll and Pitch 
     // TODO:XY 与 Z轴的位置控制控制器结构不一样，还没有统一
-    attitude->pitch = 0.15f * pidUpdate(&pidVX, setpoint->velocity.x - state->velocity.x);
-    attitude->roll  = 0.15f * pidUpdate(&pidVY, setpoint->velocity.y - state->velocity.y);
+    atti_desired->pitch = 0.15f * pidUpdate(&pidVX, setpoint->velocity.x - state->velocity.x);
+    atti_desired->roll  = 0.15f * pidUpdate(&pidVY, setpoint->velocity.y - state->velocity.y);
 
 	// // Thrust
     // float thrustRaw = constrainf(u ,-PIDVZ_OUTPUT_LIMIT,PIDVZ_OUTPUT_LIMIT);
