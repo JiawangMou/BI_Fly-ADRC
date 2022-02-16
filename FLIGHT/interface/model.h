@@ -50,7 +50,7 @@
 #define SERVO_PWM2ANGLE_A 0.06   //PWM to servo angle  cofficient a; servo angle(unit: °) = servo_a * PWM + servo_b 
 #define SERVO_PWM2ANGLE_B -90    
 
-#define MASS 27.5f
+#define MASS 32.8f
 #define G 980.0f
 /* Forward declaration for rtModel */
 typedef struct tag_RTM_model_T RT_MODEL_model_T;

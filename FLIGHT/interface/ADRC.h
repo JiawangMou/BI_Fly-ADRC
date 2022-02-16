@@ -57,6 +57,7 @@ typedef struct
 	float b0;
 	float h;
 	float w0;
+	float disturb;
 	lpf2pData uLpf;//ESO中考虑执行器的延迟
 }lesoObject_2rd_t;
 typedef struct 

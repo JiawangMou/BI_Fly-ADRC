@@ -639,7 +639,7 @@ static void atkpSendPeriod(void)
         // sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch, 10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X], opFlow.posSum[Y],sensordata.zrange.distance);
         // sendUserData(2, sensordata.zrange.distance_uncomp,opFlow.pixDelta[X],opFlow.pixDelta[Y], opFlow.deltaVel[X], opFlow.deltaVel[Y],opFlow.pixdeltaveluncopm[X],opFlow.pixdeltaveluncopm[Y],opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y]);
         // //带模型控制器和ESO测试
-        sendUserData(1, setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1,velZ_LESO.z2,control.u);
+        sendUserData(1, setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1,velZ_LESO.disturb,control.u);
         sendUserData(2, velZ_TD.x1,velZ_TD.x2,velZ_nlsef.e1_out,control.a,control.b,velZ_nlsef.u0,state.velocity.x,opFlow.velLpf[X],opFlow.velLpf[Y]);        
 
 #else
@@ -806,7 +806,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
+            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -847,7 +847,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_nlsef.I_limit, posZ_nlsef.zeta);
+            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -971,9 +971,9 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         ADRCRateRoll.nlsef.beta_2 =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
         ADRCRateRoll.nlsef.alpha1 =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
     #elif defined PID_CONTROL
-        posZ_nlsef.I_limit =  0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-        velZ_nlsef.I_limit =  0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-        posZ_nlsef.zeta    =  0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+        posZ_nlsef.I_limit = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        velZ_LESO.w0       = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        posZ_nlsef.zeta    = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
 #endif
 
 #elif defined DOUBLE_WING

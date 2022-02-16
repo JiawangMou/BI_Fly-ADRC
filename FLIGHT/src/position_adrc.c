@@ -3,6 +3,7 @@
 #include "config_param.h"
 #include "position_adrc.h"
 #include "model.h"
+#include "maths.h"
 
 
 #define POSZ_INTEGRAL 8.0f
@@ -119,6 +120,8 @@ void posZ_adrc_writeToConfigParam(void)
     configParam.adrcVelZ.nlsef.zeta    = velZ_nlsef.zeta;
     configParam.adrcVelZ.nlsef.N1      = velZ_nlsef.N1;
     configParam.adrcVelZ.nlsef.I_limit = velZ_nlsef.I_limit;
+
+    configParam.adrcVelZ.leso.w0 = velZ_LESO.w0;
 }
 
 void td_states_set(tdObject_t *td,const float x1,const float x2)
@@ -153,6 +156,7 @@ void velZ_ESO_estimate(control_t* control,state_t* state)
         velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e + (a*u*u + b*u )*100.0f/MASS) * velZ_LESO.h;
     // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
     velZ_LESO.z2 += -Beta_02 * velZ_LESO.e * velZ_LESO.h;
+    velZ_LESO.disturb = constrainf(velZ_LESO.z2,-400.0f,400.0f);
 }
 
 lesoObject_2rd_t getVelZ_leso(void)

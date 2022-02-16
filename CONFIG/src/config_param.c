@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 13 /*13 表示V1.3*/
+#define VERSION 23 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -312,7 +312,7 @@ static configParam_t configParamDefault =
 			.leso =
 			{
 				.b0 = 37.0,
-				.w0 = 100.0,
+				.w0 = 50.0,
 			},	
 		},
 

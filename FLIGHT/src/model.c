@@ -811,7 +811,7 @@ float Ffz_coffe_cal(const attitude_t *atti,float servoangle)
     float Ct = arm_cos_f32(theta);
     float Sb = arm_sin_f32(beta);
     float St = arm_sin_f32(theta);
-    return 346.4f*(Cb*Cp*Ct - Sb*St); 
+    return 440.0f*(Cb*Cp*Ct - Sb*St); 
 }
 /*
 * Function: U_cal
@@ -835,7 +835,7 @@ float U_cal(const float a,const float b,const float disturb,const float u0)
     float temp = 0;
     if (a != 0.0f) {
         // temp = (u0  + 25.0f * b * b / (MASS * a) + G - disturb) * MASS /(100.0f * a);
-        temp = (u0  + 25.0f * b * b / (MASS * a) + G) * MASS /(100.0f * a);
+        temp = (u0  + 25.0f * b * b / (MASS * a) + G - 0.5f * disturb) * MASS /(100.0f * a);
         if (temp <= 0)
             result = 0;
         else
@@ -843,7 +843,7 @@ float U_cal(const float a,const float b,const float disturb,const float u0)
         return result - b / (2.0f * a);
     } else {
         if (b != 0.0f)
-            return (u0 - disturb + G) * MASS / (100.0f *b);
+            return (u0 - 0.5f * disturb + G) * MASS / (100.0f *b);
         else
             return 0;
     }
