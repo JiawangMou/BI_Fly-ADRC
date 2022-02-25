@@ -811,7 +811,7 @@ float Ffz_coffe_cal(const attitude_t *atti,float servoangle)
     float Ct = arm_cos_f32(theta);
     float Sb = arm_sin_f32(beta);
     float St = arm_sin_f32(theta);
-    return 440.0f*(Cb*Cp*Ct - Sb*St); 
+    return 420.0f*(Cb*Cp*Ct - Sb*St); 
 }
 /*
 * Function: U_cal

@@ -150,10 +150,10 @@ void velZ_ESO_estimate(control_t* control,state_t* state)
     float a = control->a;
     float b = control->b;   
     velZ_LESO.e = velZ_LESO.z1 - state->velocity.z;
-    if(state->position.z > 3)   
+    if(control->thrust > 5.0f)   
         velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e + (a*u*u + b*u )*100.0f/MASS - G ) * velZ_LESO.h;
     else
-        velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e + (a*u*u + b*u )*100.0f/MASS) * velZ_LESO.h;
+        velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e ) * velZ_LESO.h;
     // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
     velZ_LESO.z2 += -Beta_02 * velZ_LESO.e * velZ_LESO.h;
     velZ_LESO.disturb = constrainf(velZ_LESO.z2,-400.0f,400.0f);
