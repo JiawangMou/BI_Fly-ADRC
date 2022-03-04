@@ -42,6 +42,7 @@ void  velZ_adrc_init(adrcInit_t* param);
 void  pos_adrc_reset(void);
 void  vel_adrc_reset(void);
 float adrc_VelControl(const float x1, const float x2, setpoint_t* setpoint);
+float U0_Cal(const float x1,const float x2,setpoint_t *setpoint);
 float adrc_PosControl(float x1, float x2, setpoint_t* setpoint);
 void  posZ_adrc_writeToConfigParam(void);
 void  td_states_set(tdObject_t *td,const float x1,const float x2);

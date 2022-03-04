@@ -114,7 +114,7 @@ void positionControlInit(float velocityPidDt, float posPidDt)
 void velocityController(float* thrust, control_t *control, attitude_t *atti_desired,setpoint_t* setpoint, const state_t* state,const sensorData_t *sensorData)
 {
     static u16 altholdCount = 0;
-    velZ_nlsef.u0= constrainf(adrc_VelControl(state->velocity.z,state->acc.z,setpoint),-600.0f,600.0f);
+    velZ_nlsef.u0= constrainf(U0_Cal(state->velocity.z,state->acc.z,setpoint),-600.0f,600.0f);
     control->a = Ffz_coffe_cal(&(state->attitude),control->actual_servoangle);
     control->b = Fdz_coffe_cal(&(state->attitude),state->velocity,control->actual_servoangle);
     control->u = 60000.0f * constrainf(U_cal(control->a,control->b,velZ_LESO.disturb,velZ_nlsef.u0),0.0f,1.0f);

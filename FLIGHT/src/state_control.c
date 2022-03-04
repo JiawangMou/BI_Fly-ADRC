@@ -176,6 +176,10 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         positionResetAllPID();                     /*¸´Î»Î»ÖÃPID*/
         // velZ_LESO.z2 = 0;
         control->thrust = 0;
+        control->a = 0;
+        control->b = 0;
+        control->u = 0;
+
         // adrc_reset(&ADRCRatePitch);
 #ifdef ADRC_CONTROL
 		adrc_reset(&ADRCRateRoll);

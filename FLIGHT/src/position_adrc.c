@@ -77,6 +77,26 @@ float adrc_VelControl(const float x1, const float x2,setpoint_t *setpoint)
 	}  
     return  adrc_nlsef(&velZ_nlsef) + vel_integral * velZ_nlsef.beta_I;
 }
+float U0_Cal(const float x1,const float x2,setpoint_t *setpoint)
+{
+    velZ_nlsef.e1 = velZ_TD.x1 - velZ_LESO.z1;
+    velZ_nlsef.e2 = velZ_TD.x2 - x2; 
+    vel_integral += velZ_nlsef.e1 * VELZ_ADRC_DT;
+	
+	//积分限幅
+	if (vel_integral > velZ_nlsef.I_limit)
+	{
+		vel_integral = velZ_nlsef.I_limit;
+	}
+	else if (vel_integral < -velZ_nlsef.I_limit)
+	{
+		vel_integral = -velZ_nlsef.I_limit;
+	}  
+
+    velZ_nlsef.e1_out = velZ_nlsef.beta_1 * velZ_nlsef.e1;
+    velZ_nlsef.e2_out = velZ_nlsef.beta_2 * velZ_nlsef.e2;
+    return  velZ_nlsef.e1_out + velZ_nlsef.beta_2 * velZ_TD.x2 + vel_integral * velZ_nlsef.beta_I;
+}
 float adrc_PosControl(float x1,float x2, setpoint_t *setpoint)
 {
     posZ_nlsef.e1 = posZ_TD.x1 - x1;
@@ -150,10 +170,10 @@ void velZ_ESO_estimate(control_t* control,state_t* state)
     float a = control->a;
     float b = control->b;   
     velZ_LESO.e = velZ_LESO.z1 - state->velocity.z;
-    if(state->position.z > 3)   
+    if(control->thrust > 5.0f)   
         velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e + (a*u*u + b*u )*100.0f/MASS - G ) * velZ_LESO.h;
     else
-        velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e + (a*u*u + b*u )*100.0f/MASS) * velZ_LESO.h;
+        velZ_LESO.z1 += (velZ_LESO.z2 - Beta_01 * velZ_LESO.e ) * velZ_LESO.h;
     // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
     velZ_LESO.z2 += -Beta_02 * velZ_LESO.e * velZ_LESO.h;
     velZ_LESO.disturb = constrainf(velZ_LESO.z2,-400.0f,400.0f);
