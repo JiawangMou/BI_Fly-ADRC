@@ -806,7 +806,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
+            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -847,7 +847,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                        ADRCRateRoll.nlsef.N1, 0, 0
 				   );
     #elif defined PID_CONTROL
-            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r*0.01f,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
+            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
     #endif
 #elif defined DOUBLE_WING
     #ifdef ADRC_CONTROL
@@ -958,8 +958,8 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID4) {
-        velZ_TD.r       = 10.0f*((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-        posZ_TD.r       = 10.0f*((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        velZ_TD.r       = 10.0f * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        posZ_TD.r       = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
         velZ_nlsef.zeta = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
         // pidY              = pidX; //位置保持PID，X\Y方向是一样的
         u16 s_left_set    = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));

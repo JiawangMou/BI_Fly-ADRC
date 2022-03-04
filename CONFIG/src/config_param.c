@@ -228,7 +228,6 @@ static configParam_t configParamDefault =
 					.b0 = 0,
 					.w0 = 0,
 				},
-
 			},
 			.pitch=
 			{
