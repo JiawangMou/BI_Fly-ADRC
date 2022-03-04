@@ -77,6 +77,26 @@ float adrc_VelControl(const float x1, const float x2,setpoint_t *setpoint)
 	}  
     return  adrc_nlsef(&velZ_nlsef) + vel_integral * velZ_nlsef.beta_I;
 }
+float U0_Cal(const float x1,const float x2,setpoint_t *setpoint)
+{
+    velZ_nlsef.e1 = velZ_TD.x1 - velZ_LESO.z1;
+    velZ_nlsef.e2 = velZ_TD.x2 - x2; 
+    vel_integral += velZ_nlsef.e1 * VELZ_ADRC_DT;
+	
+	//积分限幅
+	if (vel_integral > velZ_nlsef.I_limit)
+	{
+		vel_integral = velZ_nlsef.I_limit;
+	}
+	else if (vel_integral < -velZ_nlsef.I_limit)
+	{
+		vel_integral = -velZ_nlsef.I_limit;
+	}  
+
+    velZ_nlsef.e1_out = velZ_nlsef.beta_1 * velZ_nlsef.e1;
+    velZ_nlsef.e2_out = velZ_nlsef.beta_2 * velZ_nlsef.e2;
+    return  velZ_nlsef.e1_out + velZ_nlsef.beta_2 * velZ_TD.x2 + vel_integral * velZ_nlsef.beta_I;
+}
 float adrc_PosControl(float x1,float x2, setpoint_t *setpoint)
 {
     posZ_nlsef.e1 = posZ_TD.x1 - x1;
