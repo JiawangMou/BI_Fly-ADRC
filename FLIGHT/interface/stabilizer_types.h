@@ -1,6 +1,7 @@
 #ifndef __STABILIZER_TYPES_H
 #define __STABILIZER_TYPES_H
 #include "sys.h"
+#include "config.h"
 #include <stdbool.h>
 #include "sensors_types.h"
 
@@ -115,6 +116,8 @@ typedef struct zRange_s
 {
 	uint32_t timestamp;	//时间戳
 	float distance;		//测量距离
+	float distance_uncomp;
+	float rawdata;
 	float quality;		//可信度
 } zRange_t;
 
@@ -166,6 +169,7 @@ typedef struct
 	point_t position;
 	zRange_t zrange;
 	mag_calib mag_calibration;
+	Axis3f velocity;   //水平速度由光流传感器得到，高度速度由激光传感器得到，是在光流传感器坐标系下的速度，不是机体速度
 } sensorData_t;
 
 typedef struct
@@ -187,14 +191,7 @@ enum dir_e
 	RIGHT,
 };
 
-typedef struct
-{
-	s16 roll;
-	s16 pitch;
-	s16 yaw;
-	float thrust;
-	enum dir_e flipDir;		/*翻滚方向*/
-} control_t;
+
 
 typedef enum
 {
@@ -213,6 +210,18 @@ typedef struct
 	mode_e yaw;
 }mode_t;
 
+#ifdef USE_MBD
+typedef struct
+{
+	attitude_t attitude;		// deg	
+	attitude_t attitudeRate;	// deg/s
+	point_t position;         	// transient position setpoint cm
+	velocity_t velocity;      	// transient velocity setpoint cm/s
+	Axis3f acc;
+	mode_t mode;
+	float thrust;
+} setpoint_t;
+#else
 typedef struct
 {
 	attitude_t attitude;		// deg	
@@ -222,6 +231,61 @@ typedef struct
 	mode_t mode;
 	float thrust;
 } setpoint_t;
+#endif
+#ifdef USE_MBD
+typedef struct 
+{
+	float vel;
+	float pos;
+	float MBD;
+}thrust_t;
+
+typedef struct
+{
+	s16 roll;
+	s16 pitch;
+	s16 yaw;
+	float thrust;
+	thrust_t thrust_part;
+	enum dir_e flipDir;		/*翻滚方向*/
+	float actual_motorPWM;	//经过motorTf后的PWM值
+	float actual_servoPWM;//经过servoTf后的扑翼机构转角
+	float actual_servoangle;//经过servoTf后的扑翼机构转角
+	float a;
+	float b;
+	float u;
+} control_t;
+#else
+
+typedef struct
+{
+	s16 roll;
+	s16 pitch;
+	s16 yaw;
+	float thrust;
+	enum dir_e flipDir;		/*翻滚方向*/
+} control_t;
+
+#endif
+typedef struct
+{
+	
+	union 
+	{
+		struct 
+		{
+			s16 sensorsAcquire_tick;
+			s16 imuUpdate_tick;
+			s16 positionEstimate_tick;
+			s16 commanderGetSetpoint_tick;
+			s16 getOpFlowData_tick;
+			s16 flyerFlipCheck_tick;
+			s16 stateControl_tick;
+			s16 motorControl_tick;
+		};
+		s16 stabilizer_tick[8];
+	};
+} Debug_stabi_tick_t;
 
 
 #define RATE_5_HZ		5

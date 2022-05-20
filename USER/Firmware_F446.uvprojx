@@ -15,8 +15,8 @@
         <TargetCommonOption>
           <Device>STM32F446MEYx</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32F4xx_DFP.2.9.0</PackID>
-          <PackURL>http://www.keil.com/pack</PackURL>
+          <PackID>Keil.STM32F4xx_DFP.2.15.0</PackID>
+          <PackURL>http://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x20000) IROM(0x08000000,0x80000) CPUTYPE("Cortex-M4") FPU2 CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -88,7 +88,7 @@
             <nStopA1X>0</nStopA1X>
             <nStopA2X>0</nStopA2X>
           </AfterMake>
-          <SelectedForBatchBuild>0</SelectedForBatchBuild>
+          <SelectedForBatchBuild>1</SelectedForBatchBuild>
           <SVCSIdString></SVCSIdString>
         </TargetCommonOption>
         <CommonProperty>
@@ -324,7 +324,7 @@
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
             <useXO>0</useXO>
-            <v6Lang>3</v6Lang>
+            <v6Lang>5</v6Lang>
             <v6LangP>3</v6LangP>
             <vShortEn>0</vShortEn>
             <vShortWch>0</vShortWch>
@@ -335,7 +335,7 @@
               <MiscControls>--preinclude stm32f4xx_conf.h --diag_suppress=767</MiscControls>
               <Define>STM32F446xx,ARM_MATH_CM4,USE_STDPERIPH_DRIVER,USE_USB_OTG_FS</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\SYSTEM\delay;..\SYSTEM\sys;..\SYSTEM\usart;..\USER;..\FWLIB\inc;..\CONFIG\interface;..\HARDWARE\interface;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\FLIGHT\interface;..\COMMON\interface;..\COMMUNICATE\interface;..\EXP_MODULES\interface;..\VL53L1X;..\VL53L1X\vl53l1_platform</IncludePath>
+              <IncludePath>..\CORE;..\SYSTEM\delay;..\SYSTEM\sys;..\SYSTEM\usart;..\USER;..\FWLIB\inc;..\CONFIG\interface;..\HARDWARE\interface;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\FLIGHT\interface;..\COMMON\interface;..\COMMUNICATE\interface;..\EXP_MODULES\interface;..\VL53L1X;..\VL53L1X\vl53l1_platform;..\DSP_Lib\include;..\FT\interface</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -350,7 +350,7 @@
             <useXO>0</useXO>
             <uClangAs>0</uClangAs>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--cpreproc</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
@@ -433,11 +433,6 @@
               <FileName>FreeRTOSConfig.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\CONFIG\interface\FreeRTOSConfig.h</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_conf.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\CONFIG\interface\stm32f4xx_conf.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -530,16 +525,6 @@
               <FilePath>..\HARDWARE\src\spl06.c</FilePath>
             </File>
             <File>
-              <FileName>vl53lxx_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\src\vl53lxx_i2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>vl53l0x.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\src\vl53l0x.c</FilePath>
-            </File>
-            <File>
               <FileName>vl53l1x.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\src\vl53l1x.c</FilePath>
@@ -558,6 +543,16 @@
               <FileName>gettaskstatus.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\src\gettaskstatus.c</FilePath>
+            </File>
+            <File>
+              <FileName>bat.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\src\bat.c</FilePath>
+            </File>
+            <File>
+              <FileName>vl53lxx_i2c_hw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\src\vl53lxx_i2c_hw.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -745,39 +740,9 @@
           <GroupName>DSP_LIB</GroupName>
           <Files>
             <File>
-              <FileName>arm_common_tables.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DSP_Lib\arm_common_tables.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_const_structs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DSP_Lib\arm_const_structs.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_cos_f32.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DSP_Lib\arm_cos_f32.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_mat_mult_f32.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DSP_Lib\arm_mat_mult_f32.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_mat_trans_f32.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DSP_Lib\arm_mat_trans_f32.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_mean_f32.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DSP_Lib\arm_mean_f32.c</FilePath>
-            </File>
-            <File>
-              <FileName>arm_sin_f32.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DSP_Lib\arm_sin_f32.c</FilePath>
+              <FileName>arm_cortexM4lf_math.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\DSP_Lib\arm_cortexM4lf_math.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -939,6 +904,16 @@
               <FileType>1</FileType>
               <FilePath>..\FLIGHT\src\attitude_adrc.c</FilePath>
             </File>
+            <File>
+              <FileName>model.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FLIGHT\src\model.c</FilePath>
+            </File>
+            <File>
+              <FileName>position_adrc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FLIGHT\src\position_adrc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -960,14 +935,19 @@
               <FilePath>..\COMMON\src\filter.c</FilePath>
             </File>
             <File>
-              <FileName>filter2.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\COMMON\src\filter2.c</FilePath>
-            </File>
-            <File>
               <FileName>maths.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\COMMON\src\maths.c</FilePath>
+            </File>
+            <File>
+              <FileName>dyn_notch_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\COMMON\src\dyn_notch_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>myqueue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\COMMON\src\myqueue.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -978,6 +958,16 @@
               <FileName>readme.txt</FileName>
               <FileType>5</FileType>
               <FilePath>..\readme.txt</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>FT</GroupName>
+          <Files>
+            <File>
+              <FileName>sdft.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FT\src\sdft.c</FilePath>
             </File>
           </Files>
         </Group>

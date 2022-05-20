@@ -13,10 +13,15 @@
 #include "axis.h"
 #include "spl06.h"
 #include "atkp.h"
+#include "axis.h"
+#include "config.h"
+#include "dyn_notch_filter.h"
+#include "arm_math.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "bat.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -81,16 +86,54 @@ static Axis3i16 gyroRaw;
 static Axis3i16 accRaw;
 static Axis3i16 magRaw;
 
-static Axis3i16 gyro_UnLPF;
+static Axis3f gyro_UnLPF;
+static Axis3f gyro_LPF;
+static Axis3f gyro_SF;
+
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
+	#define GYRO_LPF_CUTOFF_FREQ_1 80
+	static lpf2pData GyroLpf_1;	//动态陷波后再经过的LPF
+	static float gyro_UnNotch;
+	static Axis3f gyro_Notched;
+#endif
+#ifdef USE_DYN_NOTCH_FILTER_ACC
+	#define ACC_LPF_CUTOFF_FREQ_1 80
+	static lpf2pData AccLpf_1;//动态陷波后再经过的LPF
+	static Axis3f acc_Notched;
+	static Axis3f acc_Notched_LPF;
+#ifdef DEBUG
+	static Axis3f acc_SF;
+#endif
+#endif
+
+
 // static Axis3f gyroBff;
 
 /*低通滤波参数*/
 #define GYRO_LPF_CUTOFF_FREQ 30
 #define ACCEL_LPF_CUTOFF_FREQ 10
 #define BARO_LPF_CUTOFF_FREQ 20
+
 static lpf2pData accLpf[3];
 static lpf2pData gyroLpf[3];
 static lpf2pData BaroLpf;
+
+static smoothFilter_t accSF[3];
+static smoothFilter_t gyroPitchSF;
+static smoothFilter_t gyroRollSF;
+
+//动态陷波滤波器
+#define DYNNOTCH_LOOP_HZ 1000 //单位：Hz
+#define DYNNOTCH_LOOP_DT_US (u32)(1e6f / DYNNOTCH_LOOP_HZ) //单位 ：us
+#define DYNNOTCH_LOOP_DT_mS (u32)(1e3f / DYNNOTCH_LOOP_HZ) //单位 ：ms
+
+#ifdef PCBV4_5
+#define BAT_LPF_CUTOFF_FREQ 20
+static lpf2pData BatLpf;
+static float VoltageSeparateCoeff = 0.001651375f;
+static float VoltageBiasCoeff = -0.0721875f;
+static float BatteryVoltage = 0.0f;
+#endif
 
 static bool isMPUPresent = false;
 static bool isMagPresent = false;
@@ -122,53 +165,12 @@ static void sensorsAddBiasValue(BiasObj *bias, int16_t x, int16_t y, int16_t z);
 /*从队列读取陀螺数据*/
 bool sensorsReadGyro(Axis3f *gyro)
 {
-	Axis3f gyrobff;
-	gyro->x = 0.0;
-	gyro->y = 0.0;
-	gyro->z = 0.0;
-	int i = 0;
-	while (xQueueReceive(gyroDataQueue, &gyrobff, 0))
-	{
-		gyro->x += gyrobff.x;
-		gyro->y += gyrobff.y;
-		gyro->z += gyrobff.z;
-		i++;
-	}
-	if (i == 0)
-	{
-		return false;
-	}
-
-	gyro->x = gyro->x / i;
-	gyro->y = gyro->y / i;
-	gyro->z = gyro->z / i;
-	return true;
+	return (pdTRUE == xQueueReceive(gyroDataQueue, gyro, 0));
 }
 /*从队列读取加速计数据*/
 bool sensorsReadAcc(Axis3f *acc)
 {
-	Axis3f accbff;
-	acc->x = 0.0;
-	acc->y = 0.0;
-	acc->z = 0.0;
-
-	int i = 0;
-	while (xQueueReceive(accelerometerDataQueue, &accbff, 0))
-	{
-		acc->x += accbff.x;
-		acc->y += accbff.y;
-		acc->z += accbff.z;
-		i++;
-	}
-	if (i == 0)
-	{
-		return false;
-	}
-
-	acc->x = acc->x / i;
-	acc->y = acc->y / i;
-	acc->z = acc->z / i;
-	return true;
+	return (pdTRUE == xQueueReceive(accelerometerDataQueue, acc, 0));
 }
 /*从队列读取磁力计数据*/
 bool sensorsReadMag(Axis3f *mag)
@@ -237,14 +239,31 @@ void sensorsDeviceInit(void)
 	mpu6500SetAccelDLPF(MPU9250_ACCEL_DLPF_BW_21);		 // 设置加速计数字低通滤波,同时ACCEL_FCHOICE_B没有设置，默认为0，与A_DLPF_CFG共同决定输出频率，截止频率为21.2Hz，输出频率为1KHz
 
 	mpu6500SetRate(0);						// 设置采样速率: 1000 / (1 + 0) = 1000Hz
-	mpu6500SetDLPFMode(MPU6500_DLPF_BW_41); // 设置陀螺数字低通滤波
+	mpu6500SetDLPFMode(MPU6500_DLPF_BW_92); // 设置陀螺数字低通滤波
 
 	for (u8 i = 0; i < 3; i++) // 初始化加速计和陀螺二阶低通滤波
 	{
 		lpf2pInit(&gyroLpf[i], 1000, GYRO_LPF_CUTOFF_FREQ);
-		lpf2pInit(&accLpf[i], 1000, ACCEL_LPF_CUTOFF_FREQ);
+		// lpf2pInit(&accLpf[i], 1000, ACCEL_LPF_CUTOFF_FREQ);
+		smoothFilterInit(&accSF[i], 53);		
 	}
 	lpf2pInit(&BaroLpf, 1000, BARO_LPF_CUTOFF_FREQ);
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
+	lpf2pInit(&GyroLpf_1, 1000, GYRO_LPF_CUTOFF_FREQ_1);
+#endif
+#ifdef USE_DYN_NOTCH_FILTER_ACC
+	lpf2pInit(&AccLpf_1, 1000, ACC_LPF_CUTOFF_FREQ_1);
+#endif
+	// Add Smooth Filter for Pitch & Roll
+	// (You may choose either smooth or butterworth after)
+	smoothFilterInit(&gyroPitchSF, 50);
+	smoothFilterInit(&gyroRollSF, 50);
+#if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
+	dynNotchInit(&configParam.dynNotchConfig ,DYNNOTCH_LOOP_DT_US);
+#endif // USE_DYN_NOTCH_FILTER_GYRO
+#ifdef PCBV4_5
+	lpf2pInit(&BatLpf, 1000, BAT_LPF_CUTOFF_FREQ);
+#endif
 
 #ifdef SENSORS_ENABLE_MAG_AK8963
 	ak8963Init(I2C3_DEV); //ak8963磁力计初始化
@@ -281,8 +300,8 @@ void sensorsDeviceInit(void)
 	}
 
 	/*创建传感器数据队列*/
-	accelerometerDataQueue = xQueueCreate(10, sizeof(Axis3f));
-	gyroDataQueue = xQueueCreate(10, sizeof(Axis3f));
+	accelerometerDataQueue = xQueueCreate(1, sizeof(Axis3f));
+	gyroDataQueue = xQueueCreate(1, sizeof(Axis3f));
 	magnetometerDataQueue = xQueueCreate(1, sizeof(Axis3f));
 	barometerDataQueue = xQueueCreate(1, sizeof(baro_t));
 }
@@ -632,66 +651,117 @@ void processMagnetometerMeasurements(const uint8_t *buffer)
 /*处理加速计和陀螺仪数据*/
 void processAccGyroMeasurements(const uint8_t *buffer)
 {
-	/*注意传感器读取方向(旋转270°x和y交换)*/
-	int16_t ay = (((int16_t)buffer[0]) << 8) | buffer[1];
-	int16_t az = -((((int16_t)buffer[2]) << 8) | buffer[3]);
-	int16_t ax = (((int16_t)buffer[4]) << 8) | buffer[5];
-	int16_t gy = (((int16_t)buffer[8]) << 8) | buffer[9];
-	int16_t gz = -((((int16_t)buffer[10]) << 8) | buffer[11]);
-	int16_t gx = (((int16_t)buffer[12]) << 8) | buffer[13];
 
-	accRaw.x = ax - accBias.x; /*用于上传到上位机*/
-	accRaw.y = ay - accBias.y;
-	accRaw.z = az - accBias.z;
-	gyroRaw.x = gx - gyroBias.x;
-	gyroRaw.y = gy - gyroBias.y;
-	gyroRaw.z = gz - gyroBias.z;
+	// static u16 N_count = 0;
+	// static u8 freqHz= 10;
+#ifdef BOARD_VERTICAL
+    int16_t ay =  ((((int16_t)buffer[0]) << 8)  | buffer[1]);
+    int16_t az = -((((int16_t)buffer[2]) << 8)  | buffer[3]);
+    int16_t ax = -((((int16_t)buffer[4]) << 8)  | buffer[5]);
+    int16_t gy =  ((((int16_t)buffer[8]) << 8)  | buffer[9]);
+    int16_t gz = -((((int16_t)buffer[10]) << 8) | buffer[11]);
+    int16_t gx = -((((int16_t)buffer[12]) << 8) | buffer[13]);
+#elif defined BOARD_HORIZONTAL
+//板子横着放置时需要重新根据板子的放置方向确定一下符号，下面的为未确认的结果
+	int16_t ax = ((((int16_t)buffer[0]) << 8) | buffer[1]);
+	int16_t ay = -((((int16_t)buffer[2]) << 8) | buffer[3]);
+	int16_t az = -((((int16_t)buffer[4]) << 8) | buffer[5]);
+	int16_t gx = ((((int16_t)buffer[8]) << 8) | buffer[9]);
+	int16_t gy = -((((int16_t)buffer[10]) << 8) | buffer[11]);
+	int16_t gz = -((((int16_t)buffer[12]) << 8) | buffer[13]);
+#elif defined BOARD_VERTICAL2
+	int16_t ay = - ((((int16_t)buffer[0]) << 8) | buffer[1]);
+	int16_t az =   ((((int16_t)buffer[2]) << 8) | buffer[3]);
+	int16_t ax = - ((((int16_t)buffer[4]) << 8) | buffer[5]);
+	int16_t gy = - ((((int16_t)buffer[8]) << 8) | buffer[9]);
+	int16_t gz =   ((((int16_t)buffer[10]) << 8) | buffer[11]);
+	int16_t gx = - ((((int16_t)buffer[12]) << 8) | buffer[13]);
+#else
+	#error "Board alignment is not defined. Define BOARD_VERTICAL or BOARD_HORIZONTAL in config.h."
+#endif
 
-	gyroBiasFound = processGyroBias(gx, gy, gz, &gyroBias);
 
-	if (gyroBiasFound)
-	{
-		if(!accBiasFound && isreadytoprocessAccBias)
-			processAccBias_Scale(ax, ay, az,&accBias);
-		
-		//processAccScale(ax, ay, az); /*计算accScale*/
+    accRaw.x  =  (ax - accBias.x); /*用于上传到上位机*/
+    accRaw.y  =  (ay - accBias.y);
+    accRaw.z  =  (az - accBias.z);
+    gyroRaw.x =  (gx - gyroBias.x);
+    gyroRaw.y =  (gy - gyroBias.y);
+    gyroRaw.z =  (gz - gyroBias.z);
+
+    gyroBiasFound = processGyroBias(gx, gy, gz, &gyroBias);
+
+    if (gyroBiasFound) {
+        if (!accBiasFound && isreadytoprocessAccBias)
+            processAccBias_Scale(ax, ay, az, &accBias);
+
+        // processAccScale(ax, ay, az); /*计算accScale*/
 	}
 
-	sensors.gyro.x = -(gx - gyroBias.x) * SENSORS_DEG_PER_LSB_CFG; /*单位 °/s */
-	sensors.gyro.y =  (gy - gyroBias.y) * SENSORS_DEG_PER_LSB_CFG;
-	sensors.gyro.z =  (gz - gyroBias.z) * SENSORS_DEG_PER_LSB_CFG;
-	applyAxis3fLpf(gyroLpf, &sensors.gyro);
+	gyro_UnLPF.x =  (gx - gyroBias.x) * SENSORS_DEG_PER_LSB_CFG; /*单位 °/s */
+	gyro_UnLPF.y =  (gy - gyroBias.y) * SENSORS_DEG_PER_LSB_CFG;
+	gyro_UnLPF.z =  (gz - gyroBias.z) * SENSORS_DEG_PER_LSB_CFG;
 
-	// sensors.acc.x = -(ax)*SENSORS_G_PER_LSB_CFG / accScale.x; /*单位 g(9.8m/s^2)*/
-	// sensors.acc.y =  (ay)*SENSORS_G_PER_LSB_CFG / accScale.y;	/*重力加速度缩放因子accScale 根据样本计算得出*/
-	// sensors.acc.z =  (az)*SENSORS_G_PER_LSB_CFG / accScale.z;
-	sensors.acc.x = -(accRaw.x) / accScale.x;		/*单位 g(9.8m/s^2)*/
-	sensors.acc.y =   accRaw.y	/ accScale.y;		/*单位 g(9.8m/s^2)*/
-	sensors.acc.z =   accRaw.z	/ accScale.z;		/*单位 g(9.8m/s^2)*/
+	// applyAxis3fLpf(gyroLpf, &sensors.gyro);
+	// To use butterworth lpf in roll & yaw, use smooth in pitch
+	gyro_LPF.x = lpf2pApply(&gyroLpf[0], gyro_UnLPF.x);
+	// gyro_SF.x = smoothFilterApply(&gyroRollSF, gyro_UnLPF.x);
+	gyro_SF.y = smoothFilterApply(&gyroPitchSF, gyro_UnLPF.y);
+	gyro_LPF.z = lpf2pApply(&gyroLpf[2], gyro_UnLPF.z);
 
-	gyro_UnLPF.x   = sensors.gyro.x;
-    gyro_UnLPF.y   = sensors.gyro.y;
-    gyro_UnLPF.z   = sensors.gyro.z;
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
+	dynNotchPush(0, gyro_UnLPF.x);
+	gyro_Notched.x = dynNotchFilter(0, gyro_UnLPF.x);
+	gyro_Notched.x = lpf2pApply(&GyroLpf_1, gyro_Notched.x);
+	sensors.gyro.x = gyro_Notched.x;
+#else
+	sensors.gyro.x = gyro_LPF.x;
+#endif // USE_DYN_NOTCH_FILTER_GYRO
+//TODO
 
-	applyAxis3fLpf(accLpf, &sensors.acc);
+	sensors.gyro.y = gyro_SF.y;
+	sensors.gyro.z = gyro_LPF.z;
 
-	// Axis3f gyroTmp;
-	// gyroTmp.x = sensors.gyro.x;
-	// gyroTmp.y = sensors.gyro.y;
-	// gyroTmp.z = sensors.gyro.z;
 
-	// sensors.gyro.x = (sensors.gyro.x + gyroBff.x) * 0.5f;
-	// sensors.gyro.y = (sensors.gyro.y + gyroBff.y) * 0.5f;
-	// sensors.gyro.z = (sensors.gyro.z + gyroBff.z) * 0.5f;
+	sensors.acc.x = smoothFilterApply(&accSF[0], accRaw.x);
+	sensors.acc.y = smoothFilterApply(&accSF[1], accRaw.y);
+#ifdef USE_DYN_NOTCH_FILTER_ACC
+	dynNotchPush(Z, accRaw.z);
+	acc_Notched.z = dynNotchFilter(Z, accRaw.z);
+	acc_Notched_LPF.z = lpf2pApply(&AccLpf_1, acc_Notched.z );
+	sensors.acc.z  = acc_Notched_LPF.z;
+#ifdef DEBUG
+	acc_SF.z = smoothFilterApply(&accSF[2], accRaw.z);	
+#endif
+#else
+	sensors.acc.z = smoothFilterApply(&accSF[2], accRaw.z);	
+#endif
 
-	// gyroBff.x = gyroTmp.x;
-	// gyroBff.y = gyroTmp.y;
-	// gyroBff.z = gyroTmp.z;
+
+    sensors.acc.x =  sensors.acc.x / accScale.x; /*单位 g(9.8m/s^2)*/
+    sensors.acc.y =  sensors.acc.y / accScale.y; /*单位 g(9.8m/s^2)*/
+    sensors.acc.z =  sensors.acc.z / accScale.z; /*单位 g(9.8m/s^2)*/
+
+    // applyAxis3fLpf(accLpf, &sensors.acc);
+
 }
+
+#ifdef PCBV4_5
+//VvRefIntCal: V(内部参考电压)/V(3.3V) 标定值；  batteryVoltageRaw[0]：V(实际引脚电压)/V(实际Vref的电压)；batteryVoltageRaw[1]：V(内部参考电压)/V(实际Vref的电压)
+void processBatteryVoltage(){
+	BatteryVoltage = lpf2pApply(&BatLpf, (u32)batteryVoltageRaw[0] * vRefIntCal / batteryVoltageRaw[1] * VoltageSeparateCoeff + VoltageBiasCoeff);
+}
+
+float getBatteryVoltage(){
+	return BatteryVoltage;
+}
+#endif
 
 /*传感器任务*/
 void sensorsTask(void *param)
 {
+//	u32	lastTime   = 0;
+//	u32	curentTime = 0;
+//	u16	dutytime   = 0;
 //	float accraw_num[3] = {0, 0, 0};
 	sensorsInit(); /*传感器初始化*/
 	vTaskDelay(150);
@@ -702,6 +772,7 @@ void sensorsTask(void *param)
 	{
 		if (xSemaphoreTake(sensorsDataReady, portMAX_DELAY) == pdTRUE)
 		{
+//			lastTime = getSysTickCnt();
 			/*确定数据长度*/
 			u8 dataLen = (u8)(SENSORS_MPU6500_BUFF_LEN +
 							  (isMagPresent ? SENSORS_MAG_BUFF_LEN : 0) +
@@ -711,19 +782,26 @@ void sensorsTask(void *param)
 
 			/*处理原始数据，并放入数据队列中*/
 			processAccGyroMeasurements(&(buffer[0]));
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
+			dynNotchUpdate(X);
+#endif // USE_DYN_NOTCH_FILTER_GYRO
+
+#ifdef USE_DYN_NOTCH_FILTER_ACC
+			dynNotchUpdate(Z);
+#endif // USE_DYN_NOTCH_FILTER_ACC
 			if (isMagPresent)
 			{
 				processMagnetometerMeasurements(&(buffer[SENSORS_MPU6500_BUFF_LEN]));
 			}
 			if (isBaroPresent)
 			{
-				//				bmp3_get_sensor_data(BMP3_ALL, &BMP_buffer_comp , BMP388_DEV);
+				//bmp3_get_sensor_data(BMP3_ALL, &BMP_buffer_comp , BMP388_DEV);
 				processBarometerMeasurements(&(buffer[isMagPresent ? SENSORS_MPU6500_BUFF_LEN + SENSORS_MAG_BUFF_LEN : SENSORS_MPU6500_BUFF_LEN]));
 			}
 
 			vTaskSuspendAll(); /*确保同一时刻把数据放入队列中*/
-			xQueueSend(accelerometerDataQueue, &sensors.acc, 0);
-			xQueueSend(gyroDataQueue, &sensors.gyro, 0);
+			xQueueOverwrite(accelerometerDataQueue, &sensors.acc);
+			xQueueOverwrite(gyroDataQueue, &sensors.gyro);
 			if (isBaroPresent)
 			{
 				xQueueOverwrite(barometerDataQueue, &sensors.baro);
@@ -732,7 +810,11 @@ void sensorsTask(void *param)
 			{
 				xQueueOverwrite(magnetometerDataQueue, &sensors.mag);
 			}
-
+			#ifdef PCBV4_5
+			processBatteryVoltage();
+			#endif
+//			curentTime = getSysTickCnt();
+//			dutytime = curentTime - lastTime;
 			xTaskResumeAll();
 		}
 	}
@@ -848,7 +930,40 @@ void resetaccBias_accScale(void)
     accScale.z = 1;
 }
 
-void getgyro_UnLPFData( Axis3i16 *temp )
+void getgyro_UnLPFData( Axis3f *temp )
 {
 	*temp = gyro_UnLPF;
 }
+
+
+void getgyro_LPFData( Axis3f *temp )
+{
+	*temp = gyro_LPF;
+}
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
+float getgyro_unNotchData( void)
+{
+	return gyro_UnNotch;
+}
+void getgyro_NotchedData( Axis3f *temp )
+{
+	*temp = gyro_Notched;
+}
+#endif
+float getgyro_smoothfilterData( void)
+{
+	return gyro_SF.x;
+}
+#ifdef USE_DYN_NOTCH_FILTER_ACC
+#ifdef DEBUG
+void getacc_SFData(Axis3f *temp )
+{
+	*temp = acc_SF;
+}
+void getacc_NotchedData( Axis3f *temp)
+{
+	*temp = acc_Notched_LPF;
+}
+#endif
+#endif
+

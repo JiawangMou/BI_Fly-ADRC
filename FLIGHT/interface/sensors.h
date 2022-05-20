@@ -1,6 +1,7 @@
 #ifndef __SENSORS_H
 #define __SENSORS_H
 #include "stabilizer_types.h"
+#include "config.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -47,8 +48,21 @@ bool sensorsReadAcc(Axis3f *acc);
 bool sensorsReadMag(Axis3f *mag);
 bool sensorsReadBaro(baro_t *baro);
 
-void getgyro_UnLPFData( Axis3i16 *temp );
+void getgyro_UnLPFData( Axis3f *temp );
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
+void getgyro_NotchedData( Axis3f *temp );
+float getgyro_unNotchData( void);
+#endif // USE_DYN_NOTCH_FILTER_GYRO
 
+#ifdef USE_DYN_NOTCH_FILTER_ACC
+#ifdef DEBUG
+void getacc_NotchedData( Axis3f *temp );
+void getacc_SFData(Axis3f *temp );
+#endif
+#endif
+
+float getgyro_smoothfilterData( void);
+void getgyro_LPFData( Axis3f *temp );
 
 /*磁力计标定数据获取*/
 void setMagCalibData(Axis3i16 offset, Axis3u16 radius);
@@ -64,4 +78,10 @@ Axis3f getaccBias(void);
 /*获取accScale的值*/
 Axis3f getaccScale(void);
 void resetaccBias_accScale(void);
+
+
+#ifdef PCBV4_5
+float getBatteryVoltage(void);
+#endif
+
 #endif //__SENSORS_H

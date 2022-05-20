@@ -31,9 +31,58 @@
 #define MCU_ID_ADDRESS          0x1FFF7A10
 #define MCU_FLASH_SIZE_ADDRESS  0x1FFF7A22
 
-#define BI_Fly_1
-//#define ENABLE_GET_TASK_STATUS
+//FOUR_WING 四翅  DOUBLE_WING 二翅
+#define FOUR_WING  
 
+
+//自定义的一些配置宏用于完成代码的切换
+
+//#define ENABLE_GET_TASK_STATUS     //查看系统每个线程大概占用了多少CPU的资源
+
+/**
+ * VERTICAL2
+ *  ________
+ * |    z  _|
+ * |  x | |
+ * |y__\| |
+ * |______|
+ * 
+ **/
+/**
+ * VERTICAL
+ *    ______
+ *   |    z |
+ *   |  x | |
+ *  _|y__\| |
+ * |________|
+ * 
+ **/
+
+// BOARD_VERTICAL 板子竖着放置  BOARD_HORIZONTAL 板子水平放置
+#define BOARD_VERTICAL             //板子竖着放置
+
+ 
+#define PCBV4_5                     //PCBV4.5将电池的电压检测换到主控上来检测，检测引脚为PA5 模拟输入 PA4 灌电流，电机的引脚换了
+
+//其中一个电机的引脚换成了PC7
+//#define PC7_OUT_ENABLE              
+
+//ADRC_CONTROL ADRC控制姿态Roll轴  PID_CONTROL PID控制姿态
+#define PID_CONTROL
+
+//是否使用动态陷波滤波器
+// #define USE_DYN_NOTCH_FILTER_GYRO
+// #define USE_DYN_NOTCH_FILTER_ACC
+
+
+//是否使用模型对定高进行补偿控制
+#define USE_MBD
+
+// ATI力测试代码
+// #define TEST   
+
+//代码调试阶段用宏
+#define DEBUG
 
 
 #endif /* __CONFIG_H */

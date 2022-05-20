@@ -30,7 +30,8 @@ typedef struct pt1Filter_s {
 /* this holds the data required to update samples thru a filter */
 typedef struct biquadFilter_s {
     float b0, b1, b2, a1, a2;
-    float d1, d2;
+    float x1, x2, y1, y2;
+    float weight;
 } biquadFilter_t;
 
 typedef enum {
@@ -65,8 +66,14 @@ float rateLimitFilterApply4(rateLimitFilter_t *filter, float input, float rate_l
 void biquadFilterInitNotch(biquadFilter_t *filter, uint32_t samplingIntervalUs, uint16_t filterFreq, uint16_t cutoffHz);
 void biquadFilterInitLPF(biquadFilter_t *filter, uint16_t filterFreq, uint32_t samplingIntervalUs);
 void biquadFilterInit(biquadFilter_t *filter, uint16_t filterFreq, uint32_t samplingIntervalUs, float Q, biquadFilterType_e filterType);
+void biquadFilterUpdate(biquadFilter_t *filter, float filterFreq, uint32_t refreshRate, float Q, biquadFilterType_e filterType, float weight);
 float biquadFilterApply(biquadFilter_t *filter, float sample);
 float filterGetNotchQ(uint16_t centerFreq, uint16_t cutoff);
+/* Computes a biquadFilter_t filter on a sample (slightly less precise than df2 but works in dynamic mode) */
+float biquadFilterApplyDF1(biquadFilter_t *filter, float input);
+/* Computes a biquadFilter_t filter in df1 and crossfades input with output */
+float biquadFilterApplyDF1Weighted(biquadFilter_t* filter, float input);
+
 
 void firFilterInit(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs);
 void firFilterInit2(firFilter_t *filter, float *buf, uint8_t bufLength, const float *coeffs, uint8_t coeffsLength);

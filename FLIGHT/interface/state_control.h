@@ -16,12 +16,14 @@
 ********************************************************************************/
 
 //#define ENABLE_PID_TUNING	/* 使能PID调节 yaw值不更新 */
+#define FULLTHROTTLE 60000
 
 void stateControlInit(void);
 bool stateControlTest(void);
 void stateControl(control_t *control, sensorData_t *sensors, state_t *state, setpoint_t *setpoint, const u32 tick);
-void getrateDesired(attitude_t *get);
-void getattitudeDesired(attitude_t *get);
+void getRateDesired(attitude_t *get);
+void getAngleDesired(attitude_t *get);
+void setThrust_cmd(uint16_t Thrust_cmd);
 
 #endif /*__STATE_CONTROL_H */
 

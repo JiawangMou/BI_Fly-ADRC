@@ -19,7 +19,10 @@
  * Copyright(C) 广州市星翼电子科技有限公司 2014-2024
  * All rights reserved
 ********************************************************************************/
+#define VL53LXX_TASK_MS 20 
+#define VL53LXX_TASK_HZ ( 1000 / VL53LXX_TASK_MS)
 
+#define VL53LXX_LPF_CUTOFF_FREQ 20
 
 extern u16 vl53lxxId;	/*vl53芯片ID*/
 extern bool isEnableVl53lxx;
@@ -31,7 +34,5 @@ bool vl53lxxReadRange(zRange_t* zrange);
 void setVl53lxxState(u8 enable);
 void vl53l1xTask(void* arg);
 bool getVl53l1xstate(void);
-u16 getVl53l1xxrangecompensated(void);
-
 #endif /* __VL53LXX_H */
 

@@ -1,7 +1,12 @@
 #ifndef __CONFIG_PARAM_H
 #define __CONFIG_PARAM_H
+
 #include "sys.h"
+#include "config.h"
 #include <stdbool.h>
+
+
+
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -89,9 +94,10 @@ typedef struct
 typedef struct 
 {
 	float N1;//跟踪微分器解决速度超调h1=N1*h
-	float r1;
 	float beta_1;
 	float beta_2;
+	float beta_I;
+	float I_limit;
 	float zeta;
 	float alpha1;
 	float alpha2;
@@ -121,7 +127,8 @@ typedef struct
 typedef struct 
 {
 	tdParam_t td;
-	nlsef_TOCParam_t nlsef_TOC;
+	// nlsef_TOCParam_t nlsef_TOC;
+	nlsefParam_t nlsef;
 	lesoParam_t leso;
 }adrcInit_t;
 
@@ -130,6 +137,16 @@ typedef struct
 	adrcInit_t roll;
 	adrcInit_t pitch;
 }adrcParam_t;
+
+typedef struct dynNotchConfig_s
+{
+    uint16_t dyn_notch_min_hz;
+    uint16_t dyn_notch_max_hz;
+    uint16_t dyn_notch_q;
+    uint8_t  dyn_notch_count;
+
+
+} dynNotchConfig_t;
 typedef struct	
 {
 	u8 version;				/*软件版本号*/
@@ -140,6 +157,11 @@ typedef struct
 //	magBias_t magBias;		/*磁力计校准值*/
 	adrcParam_t adrcAngle;	/*角度ADRC*/
 	adrcParam_t adrcRate;	/*角速度ADRC*/
+#if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
+	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
+#endif // USE_DYN_NOTCH_FILTER_GYRO
+	adrcInit_t adrcPosZ;	/*posZ adrc*/
+	adrcInit_t adrcVelZ;	/*velZ adrc*/
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
 	u16 thrustBase;			/*油门基础值*/
@@ -163,6 +185,7 @@ void changeServoinitpos_configParam(u16 s1,u16 s2,u16 s3);
 u16 getservoinitpos_configParam(u8 pwm_id);
 accBias_t getaccbias_configParam( void );
 void accbias_writeFlash(void);
+
 
 #endif /*__CONFIG_PARAM_H */
 

@@ -1,5 +1,9 @@
 #include "pid.h"
 
+
+// static lpf2pData pidRatePitchDTermFilter;
+// static lpf2pData pidRateRollDTermFilter;
+
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
  * ALIENTEK MiniFly
@@ -16,7 +20,7 @@
  * 版本V1.3 增加PID结构体的输出一项(out)。
 ********************************************************************************/
 
-void pidInit(PidObject* pid, const float desired, const pidInit_t pidParam, const float dt)
+void pidInit(PidObject* pid, const float desired, const pidInit_t pidParam, const float dt,const float cuttoff_freq)
 {
 	pid->error     = 0;
 	pid->prevError = 0;
@@ -29,6 +33,11 @@ void pidInit(PidObject* pid, const float desired, const pidInit_t pidParam, cons
 	pid->iLimit = DEFAULT_PID_INTEGRATION_LIMIT;
 	pid->outputLimit = pidParam.outputLimit;
 	pid->dt = dt;
+	if(cuttoff_freq == 0)
+		pid->dtermFilter = 0;
+	else
+		lpf2pInit(pid->dtermFilter, 1.0f/dt, cuttoff_freq);
+
 }
 
 float pidUpdate(PidObject* pid, const float error)
@@ -50,11 +59,16 @@ float pidUpdate(PidObject* pid, const float error)
 		pid->integ = -pid->iLimit;
 	}
 
-	pid->deriv = (pid->error - pid->prevError) / pid->dt;
-
 	pid->outP = pid->kp * pid->error;
 	pid->outI = pid->ki * pid->integ;
-	pid->outD = pid->kd * pid->deriv;
+	if(pid->kd > 0){
+		pid->deriv = (pid->error - pid->prevError) / pid->dt;
+		pid->outD = pid->kd * pid->deriv;
+
+		if(pid->dtermFilter) pid->outD = lpf2pApply(pid->dtermFilter, pid->outD);
+	}else{
+		pid->outD = 0;
+	}
 
 	output = pid->outP + pid->outI + pid->outD;
 	

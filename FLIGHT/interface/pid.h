@@ -2,6 +2,7 @@
 #define __PID_H
 #include <stdbool.h>
 #include "config_param.h"
+#include "filter.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -38,10 +39,11 @@ typedef struct
 	float outputLimit;  //< total PID output limit, absolute value. '0' means no limit.
 	float dt;           //< delta-time dt
 	float out;			//< out
+	lpf2pData* dtermFilter; // Dterm filter
 } PidObject;
 
 /*pid结构体初始化*/
-void pidInit(PidObject* pid, const float desired, const pidInit_t pidParam, const float dt);
+void pidInit(PidObject* pid, const float desired, const pidInit_t pidParam, const float dt,const float cuttoff_freq);
 void pidSetIntegralLimit(PidObject* pid, const float limit);/*pid积分限幅设置*/
 void pidSetOutputLimit(PidObject* pid, const float limit);
 void pidSetDesired(PidObject* pid, const float desired);	/*pid设置期望值*/

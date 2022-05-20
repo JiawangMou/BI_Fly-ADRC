@@ -76,9 +76,14 @@ void td_init(tdObject_t *tdobject,tdParam_t *tdparam, float tdDt)
     tdobject->r        = tdparam->r; //时间尺度
     tdobject->h        = tdDt; //ADRC系统积分时间
     tdobject->N0       = tdparam->N0; //跟踪微分器解决速度超调h0=N*h
+    tdobject->fh       = 0;
 }
-
-void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
+void td_states_update(tdObject_t *tdobject,const float x1,const float x2)
+{
+    tdobject->x1       = x1; //跟踪微分期状态量
+    tdobject->x2       = x2; //跟踪微分期状态量微分项
+}
+void leso_init(lesoObject_2rd_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
 {
     /*****LESO*******/
     lesoobject->z1      = 0;
@@ -89,7 +94,19 @@ void leso_init(lesoObject_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
     lesoobject->w0      = lesoparam->w0;
 
 }
-void nlsef_toc_init(nlsef_TOCPObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlsef_tocparam,float nlsefDt)
+void leso_3rd_init(lesoObject_3rd_t *lesoobject, lesoParam_t *lesoparam, float lesoDt)
+{
+    /*****LESO*******/
+    lesoobject->z1      = 0;
+    lesoobject->z2      = 0;
+    lesoobject->z3      = 0;    
+    lesoobject->e       = 0; //系统状态误差
+    lesoobject->b0      = lesoparam->b0;
+    lesoobject->h       = lesoDt;
+    lesoobject->w0      = lesoparam->w0;
+
+}
+void nlsef_toc_init(nlsef_TOCObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlsef_tocparam,float nlsefDt)
 {
     /**********NLSEF*********/
 //    adrcobject->nlsef_TOC.e0 = 0; //状态误差积分项
@@ -102,7 +119,23 @@ void nlsef_toc_init(nlsef_TOCPObject_t *nlsef_tocobject, nlsef_TOCParam_t * nlse
     nlsef_tocobject->u0 = 0; //扰动补偿
 }
 
+void nlsef_init(nlsefObject_t *nlsef_object, nlsefParam_t *nlsef_param, float nlsefDt)
+{
+    nlsef_object->N1 = nlsef_param->N1; //跟踪微分器解决速度超调h1=N1*h
+    nlsef_object->beta_1 = nlsef_param->beta_1;
+    nlsef_object->beta_2 = nlsef_param->beta_2;
+    nlsef_object->beta_I = nlsef_param->beta_I;    
+    nlsef_object->zeta = nlsef_param->zeta;
+    nlsef_object->alpha1 = nlsef_param->alpha1;
+    nlsef_object->alpha2 = nlsef_param->alpha2;
 
+    nlsef_object->h = nlsefDt;
+    nlsef_object->u0 = 0; //扰动补偿
+    nlsef_object->e1 = 0;
+    nlsef_object->e2 = 0; //非线性组合系统输出
+    nlsef_object->e1_out = 0;
+    nlsef_object->e2_out = 0;
+}
 
 
 
@@ -143,9 +176,9 @@ float adrc_fhan(float x1, float x2, float r0, float h0)
 
 void adrc_td(tdObject_t *td,float v)
 {
-    float fh = adrc_fhan(td->x1 - v, td->x2, td->r, td->h * td->N0);
+    td->fh = adrc_fhan(td->x1 - v, td->x2, td->r, td->h * td->N0);
     td->x1 += td->h * td->x2;
-    td->x2 += td->h  * fh;
+    td->x2 += td->h  * td->fh;
     td->TD_input = v;
 }
 
@@ -158,16 +191,32 @@ float Fal_ADRC(float e,float alpha,float zeta)
 		return powf(fabsf(e), alpha) * adrc_sign(e);
 	}
 }
-//LESO
-void adrc_leso(lesoObject_t* adrcobject,float expect_val, float u)
+//LESO_2rd
+void adrc_leso(lesoObject_2rd_t* adrcobject,const float x, const float u)
 {
     float Beta_01 = 2 * adrcobject->w0;
     float Beta_02 = adrcobject->w0 * adrcobject->w0;
 
-    adrcobject->e = adrcobject->z1 - expect_val;
+    adrcobject->e = adrcobject->z1 - x;
     adrcobject->z1 += (adrcobject->z2 - Beta_01 * adrcobject->e + adrcobject->b0 * lpf2pApply(&adrcobject->uLpf, u)) * adrcobject->h;
     // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
     adrcobject->z2 += -Beta_02 * adrcobject->e * adrcobject->h;
+}
+//LESO_3rd
+void adrc_leso_3rd(lesoObject_3rd_t* lesoobject,const float expect_val, const float u)
+{   //beta_01 = 3*w0; beta_02 = 3*w0^2; beta_01 = w0^3; 
+    // float Beta_01 = 3 * lesoobject->w0;
+    // float Beta_02 = 3 * lesoobject->w0 * lesoobject->w0;
+    // float Beta_03 = lesoobject->w0 * lesoobject->w0 * lesoobject->w0;
+    float Beta_01 = 3 * lesoobject->w0;
+    float Beta_02 = 1800.0f;
+    float Beta_03 = 9000.f;
+    
+    lesoobject->e = lesoobject->z1 - expect_val;
+    lesoobject->z1 += (lesoobject->z2 - Beta_01 * lesoobject->e) * lesoobject->h;
+    lesoobject->z2 += (lesoobject->z3 - Beta_02 * lesoobject->e + lesoobject->b0 * lpf2pApply(&lesoobject->uLpf, u)) * lesoobject->h;
+    // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
+    lesoobject->z3 += -Beta_03 * lesoobject->e * lesoobject->h;   
 }
 
 /************扩张状态观测器********************/
@@ -195,13 +244,22 @@ void adrc_eso(nlesoObject_t *nlesoObject,float expect_val,float u)
 
 }
 
-float adrc_nlsef(nlsef_TOCPObject_t* nlsef_t)
+float adrc_TOCnlsef(nlsef_TOCObject_t* nlsef_t)
 {
     return -adrc_fhan(nlsef_t->e1, nlsef_t->c * nlsef_t->e2, nlsef_t->r, nlsef_t->h * nlsef_t->N1);
 }
 
+float adrc_nlsef(nlsefObject_t *nlsef)
+{
+    nlsef->e1_out = nlsef->beta_1 * Fal_ADRC(nlsef->e1, nlsef->alpha1, nlsef->zeta);
+    nlsef->e2_out = nlsef->beta_2 * Fal_ADRC(nlsef->e2, nlsef->alpha2, nlsef->zeta);
 
+    // nlsef_t->e1_out = nlsef_t->beta_1 * nlsef_t->e1;
+    // nlsef_t->e2_out = nlsef_t->beta_2 * nlsef_t->e2;
 
+    nlsef->u0 = nlsef->e1_out + nlsef->e2_out;
+    return  nlsef->u0;
+}
 // void Nolinear_Conbination_ADRC(Fhan_Data *fhan_Input)
 // {
 //   float temp_e2=0;

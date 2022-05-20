@@ -1,19 +1,21 @@
 #include <stdbool.h>
 #include <string.h>
 #include "math.h"
-#include "config.h"
+
 #include "config_param.h"
 #include "watchdog.h"
 #include "stmflash.h"
 #include "delay.h"
 #include "sensors.h"
+#include "motors.h"
+#include "ADRC.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
 #include "queue.h"
-#include "motors.h"
+
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -28,19 +30,19 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 33 /*13 表示V3.3*/
+#define VERSION 23 /*13 表示V1.3*/
 
 configParam_t configParam;
 
-#ifdef BI_Fly_1
+#ifdef FOUR_WING
 static configParam_t configParamDefault =
-	{
-		.version = VERSION, /*软件版本号*/
+{
+	.version = VERSION, /*软件版本号*/
 
 		.pidAngle = /*角度PID*/
 		{
 			.roll =
-				{
+				{  
 					.kp = 10.0,
 					.ki = 0.0,
 					.kd = 0.0,
@@ -48,14 +50,14 @@ static configParam_t configParamDefault =
 				},
 			.pitch =
 				{
-					.kp = 8.0,
+					.kp = 12.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 5.0,
+					.kp = 10.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -65,21 +67,21 @@ static configParam_t configParamDefault =
 		{
 			.roll =
 				{
-					.kp = 50.0,
+					.kp = 80.0,
 					.ki = 0.0,
 					.kd = 1.0,
 					.outputLimit = 0,
 				},
 			.pitch =
 				{
-					.kp = 70.0,
+					.kp = 65.0,
 					.ki = 0.0,
-					.kd = 0.5,
+					.kd = 0.2,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 30.0,
+					.kp = 15.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -92,56 +94,49 @@ static configParam_t configParamDefault =
 					.kp = 4.5,
 					.ki = 0.0,
 					.kd = 0.0,
-					.outputLimit = 120.0f,
 				},
 			.vy =
 				{
 					.kp = 4.5,
 					.ki = 0.0,
 					.kd = 0.0,
-					.outputLimit = 120.0f,
 				},
 			.vz =
 				{
-					.kp = 80.0,
-					.ki = 130.0,
-					.kd = 10.0,
-					.outputLimit = 65500.0f,
+					.kp = 240.0,
+					.ki = 100.0,
+					.kd = 15.0,
 				},
-
 			.x =
 				{
 					.kp = 4.0,
 					.ki = 0.0,
 					.kd = 0.6,
-					.outputLimit = 1200.0f,
 				},
 			.y =
 				{
 					.kp = 4.0,
 					.ki = 0.0,
 					.kd = 0.6,
-					.outputLimit = 1200.0f,
 				},
 			.z =
 				{
-					.kp = 300.0,
-					.ki = 0.0,
-					.kd = 100.0,
-					.outputLimit = 65500.0f,
+					.kp = 60.0,
+					.ki = 10.0,
+					.kd = 10.0,
 				},
 		},
 
 		.servo_initpos =
-			{//面对控制板看
-				.s_left = 1500,
-				.s_right = 1500,
-				.s_middle = 1600,
-			},
+		{
+			.s_left = 1420,
+			.s_right = 1500,
+			.s_middle = 1420,
+		},
 		.accBias = 
 		{
-			.accZero = {32, -39, -92},
-			.accGain = {2049, 2045, 2068},
+			.accZero = {65, 35, -4},
+			.accGain = {2069, 2046, 2049},
 			.bias_isfound = true,
 		},
 		.adrcRate=
@@ -150,14 +145,23 @@ static configParam_t configParamDefault =
 			{
 				.td=
 				{
-					.r  = 8000000,
-					.N0 = 2,
+					.r  = 800000,
+					.N0 = 3,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
 				{
-					.r  = 4000.0,
-					.N1 = 70.0,
-					.c  = 0.0364,
+					.N1 = 2,
+					.beta_1 = 28.0,
+					.beta_2 = 0.06,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -170,14 +174,23 @@ static configParam_t configParamDefault =
 			{
 				.td=
 				{
-					.r  = 8000000,
+					.r  = 16000000,
 					.N0 = 2,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
 				{
-					.r  = 4000.0,
-					.N1 = 40.0,
-					.c  = 0.064,
+					.N1 = 2,
+					.beta_1 = 60.0,
+					.beta_2 = 1.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -195,11 +208,20 @@ static configParam_t configParamDefault =
 					.r  = 0,
 					.N0 = 0,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
 				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
+					.N1 = 2,
+					.beta_1 = 10.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -215,11 +237,20 @@ static configParam_t configParamDefault =
 					.r  = 0,
 					.N0 = 0,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
 				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
+					.N1 = 2,
+					.beta_1 = 12.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -228,13 +259,68 @@ static configParam_t configParamDefault =
 				},
 			},
 		},
+#if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
+		.dynNotchConfig = 
+		{
+			.dyn_notch_min_hz = 14,
+    		.dyn_notch_max_hz = 125,
+    		.dyn_notch_q = 300,
+    		.dyn_notch_count = 3,
+		},
+#endif // USE_DYN_NOTCH_FILTER_GYRO
+		.adrcPosZ = 
+		{
+			.td = 
+			{
+				.r  = 80, // max_a = 80cm/s^2
+				.N0 = 2,
+			},
+			.leso =
+			{
+				.b0 = 37.0,
+				.w0 = 200.0,
+			},
+			.nlsef =
+			{
+				.beta_1 = 30.0,
+				.beta_2 = 0.8,
+				.beta_I = 0.0f,
+				.I_limit = 8.0f,
+				.zeta   = 0.3,
+				.alpha1 = 0.6,
+				.alpha2 = 1.2,
+            },
+		},
+		.adrcVelZ = 
+		{
+			.td = 
+			{
+				.r  = 25000, // 加加速度 max_aa = 1200cm/s^3
+				.N0 = 2,
+			},
+			.nlsef =
+			{
+				.N1 = 2,//跟踪微分器解决速度超调h1=N1*h
+				.beta_1 = 28.0,
+				.beta_2 = 2.3,
+				.beta_I = 0.0,
+				.I_limit = 100.0,
+				.zeta   = 0.3,
+				.alpha1 = 1.0,
+				.alpha2 = 1.0,
+            },		
+			.leso =
+			{
+				.b0 = 37.0,
+				.w0 = 50.0,
+			},	
+		},
+
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
-		.thrustBase = 34000, /*定高油门基础值*/
+		.thrustBase = 40000.0, /*定高油门基础值*/
 };
-#endif
-
-#ifdef BI_Fly_2
+#elif defined DOUBLE_WING
 static configParam_t configParamDefault =
 	{
 		.version = VERSION, /*软件版本号*/
@@ -250,14 +336,14 @@ static configParam_t configParamDefault =
 				},
 			.pitch =
 				{
-					.kp = 8.0,
+					.kp = 12.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 5.0,
+					.kp = 10.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -267,21 +353,21 @@ static configParam_t configParamDefault =
 		{
 			.roll =
 				{
-					.kp = 50.0,
+					.kp = 80.0,
 					.ki = 0.0,
 					.kd = 1.0,
 					.outputLimit = 0,
 				},
 			.pitch =
 				{
-					.kp = 70.0,
+					.kp = 60.0,
 					.ki = 0.0,
-					.kd = 0.5,
+					.kd = 2,
 					.outputLimit = 0,
 				},
 			.yaw =
 				{
-					.kp = 20.0,
+					.kp = 15.0,
 					.ki = 0.0,
 					.kd = 0.0,
 					.outputLimit = 0,
@@ -330,9 +416,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1500,
+			.s_left = 1450,
 			.s_right = 1500,
-			.s_middle = 1500,
+			.s_middle = 1550,
 		},
 		.accBias = 
 		{
@@ -349,15 +435,24 @@ static configParam_t configParamDefault =
 					.r  = 16000000,
 					.N0 = 2,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
 				{
-					.r  = 4000.0,
-					.N1 = 40.0,
-					.c  = 0.064,
+					.N1 = 2,
+					.beta_1 = 80.0,
+					.beta_2 = 60.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
-					.b0 = 0.26,
+					.b0 = 0.6,
 					.w0 = 600,
 				},
 
@@ -369,11 +464,20 @@ static configParam_t configParamDefault =
 					.r  = 16000000,
 					.N0 = 2,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
 				{
-					.r  = 4000.0,
-					.N1 = 40.0,
-					.c  = 0.064,
+					.N1 = 2,
+					.beta_1 = 60.0,
+					.beta_2 = 1.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -391,11 +495,20 @@ static configParam_t configParamDefault =
 					.r  = 0,
 					.N0 = 0,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
 				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
+					.N1 = 2,
+					.beta_1 = 10.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -411,11 +524,20 @@ static configParam_t configParamDefault =
 					.r  = 0,
 					.N0 = 0,
 				},
-				.nlsef_TOC=
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 0,
+				// 	.N1 = 0,
+				// 	.c  = 0,
+				// },
+				.nlsef=
 				{
-					.r  = 0,
-					.N1 = 0,
-					.c  = 0,
+					.N1 = 2,
+					.beta_1 = 12.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
 				},
 				.leso=
 				{
@@ -423,10 +545,19 @@ static configParam_t configParamDefault =
 					.w0 = 0,
 				},
 			},
-		},		
+		},	
+#ifdef USE_DYN_NOTCH_FILTER_GYRO
+		.dynNotchConfig = 
+		{
+			.dyn_notch_min_hz = 0,
+    		.dyn_notch_max_hz = 125,
+    		.dyn_notch_q = 900,
+    		.dyn_notch_count = 1,
+		},
+#endif // USE_DYN_NOTCH_FILTER_GYRO
 		.trimP = 0.f,		 /*pitch微调*/
 		.trimR = 0.f,		 /*roll微调*/
-		.thrustBase = 44500, /*定高油门基础值*/
+		.thrustBase = 40000.0, /*定高油门基础值*/
 };
 #endif
 
@@ -522,10 +653,12 @@ void configParamGiveSemaphore(void)
 
 void resetConfigParamPID(void)
 {
-	configParam.pidAngle = configParamDefault.pidAngle;
-	configParam.pidRate = configParamDefault.pidRate;
-	configParam.pidPos = configParamDefault.pidPos;
+    configParam.pidAngle      = configParamDefault.pidAngle;
+    configParam.pidRate       = configParamDefault.pidRate;
+    configParam.pidPos        = configParamDefault.pidPos;
+    configParam.servo_initpos = configParamDefault.servo_initpos;
 }
+
 
 void saveConfigAndNotify(void)
 {
@@ -536,6 +669,7 @@ void saveConfigAndNotify(void)
 		STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*写入stm32 flash*/
 	}
 }
+
 
 void changeServoinitpos_configParam(u16 s1, u16 s2, u16 s3)
 {
@@ -561,6 +695,8 @@ u16 getservoinitpos_configParam(u8 pwm_id)
 	}
 	return value;
 }
+
+
 
 accBias_t getaccbias_configParam( void )
 {

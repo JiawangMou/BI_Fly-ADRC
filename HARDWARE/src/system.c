@@ -14,7 +14,7 @@
  * All rights reserved
 ********************************************************************************/
 
-static bool systemTest(void);
+//static bool systemTest(void);
 
 /*底层硬件初始化*/
 void systemInit(void)
@@ -29,6 +29,7 @@ void systemInit(void)
     atkpInit();
     usblinkInit();
     //  pmInit();
+    batVoltInit();
     //	ledseqInit();		/*led灯序列初始化*/
     //
     commInit();			/*通信初始化  STM32 & NRF51822 */
@@ -39,6 +40,18 @@ void systemInit(void)
     configParamInit();	/*初始化配置参数*/
     //	pmInit();			/*电源管理初始化*/
     stabilizerInit();	/*电机 传感器 PID初始化*/
+
+#ifdef TEST
+    GPIO_InitTypeDef GPIO_InitStructure;
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);  
+    GPIO_ResetBits(GPIOC, GPIO_Pin_4);	
+#endif
     //	expModuleDriverInit();/*扩展模块驱动初始化*/
 
     //	if(systemTest() == true)
@@ -62,16 +75,18 @@ void systemInit(void)
 
     //	watchdogInit(WATCHDOG_RESET_MS);	/*看门狗初始化*/
 }
-static bool systemTest(void)
-{
-    bool pass = true;
 
-    pass &= ledseqTest();
-    pass &= pmTest();
-    pass &= configParamTest();
-    pass &= commTest();
-    pass &= stabilizerTest();
-    pass &= watchdogTest();
+////minifly 上电自检
+//static bool systemTest(void)
+//{
+//    bool pass = true;
 
-    return pass;
-}
+//    pass &= ledseqTest();
+//    pass &= pmTest();
+//    pass &= configParamTest();
+//    pass &= commTest();
+//    pass &= stabilizerTest();
+//    pass &= watchdogTest();
+
+//    return pass;
+//}

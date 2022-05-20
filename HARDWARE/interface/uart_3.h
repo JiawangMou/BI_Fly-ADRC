@@ -31,7 +31,7 @@
 #define USB_GPIO_AF_TX GPIO_AF_USART3
 #define USB_GPIO_AF_RX GPIO_AF_USART3
 
-#define USB_BAUDRATE 1000000
+#define USB_BAUDRATE 1382400   //波特率 Baud rate 
 
 void usbInit(void); /*串口初始化*/
 bool usbTest(void);

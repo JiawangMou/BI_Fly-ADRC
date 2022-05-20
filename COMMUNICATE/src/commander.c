@@ -9,6 +9,9 @@
 #include "remoter_ctrl.h"
 #include "stabilizer.h"
 #include "state_estimator.h"
+#include "ADRC.h"
+#include "model.h"
+#include "position_adrc.h"
 #include <math.h>
 
 /*FreeRTOS相关头文件*/
@@ -89,7 +92,7 @@ static void ctrlDataUpdate(void)
         nowCache = &wifiCache; /* wifi缓存数据 */
         commanderLevelRPY();
     } else {
-        // isRCLocked = true; /*锁定*/
+        isRCLocked = true; /*锁定*/
         nowCache = &remoteCache;
         // commanderDropToGround();
     }
@@ -165,11 +168,53 @@ void flightCtrldataCache(ctrlSrc_e ctrlSrc, ctrlVal_t pk)
     }
 }
 
+
 extern bool isExitFlip; /*是否退出空翻*/
 /********************************************************
  * flyerAutoLand()
  * 四轴自动降落
  *********************************************************/
+#ifdef USE_MBD
+void flyerAutoLand(setpoint_t* setpoint, const state_t* state)
+{
+    static u8    lowThrustCnt = 0;
+
+    setpoint->mode.z = modeAbs;
+
+    if (getAltholdThrust() < 20000.f) /*定高油门值较低*/
+    {
+        lowThrustCnt++;
+        if (lowThrustCnt > 10) {
+            lowThrustCnt        = 0;
+            commander.keyLand   = false;
+            commander.keyFlight = false;
+            estRstAll(); /*复位估测*/
+        }
+    } else {
+        lowThrustCnt = 0;
+    }
+
+    if (isExitFlip == true) /*退出空翻，再检测加速度*/
+    {
+        float accZ = state->acc.z;
+        if (minAccZ > accZ)
+            minAccZ = accZ;
+        if (maxAccZ < accZ)
+            maxAccZ = accZ;
+    }
+
+    if (minAccZ < -80.f && maxAccZ > 320.f) {
+        commander.keyLand   = false;
+        commander.keyFlight = false;
+        estRstAll(); /*复位估测*/
+    }
+    if(state->position.z < 2.0f){   // 高度很小，落地
+        commander.keyLand   = false;
+        commander.keyFlight = false;
+        estRstAll();  /*复位估测*/
+    }
+}
+#else
 void flyerAutoLand(setpoint_t* setpoint, const state_t* state)
 {
     static u8    lowThrustCnt = 0;
@@ -206,9 +251,16 @@ void flyerAutoLand(setpoint_t* setpoint, const state_t* state)
         commander.keyFlight = false;
         estRstAll(); /*复位估测*/
     }
+    if(state->position.z < 4.0f){   // 高度很小，落地
+        commander.keyLand   = false;
+        commander.keyFlight = false;
+        estRstAll();  /*复位估测*/
+    }
 }
+#endif
 
 static bool  initHigh         = false;
+static bool  initLand         = false; /*刚进一键降落模式时，initLand = false,初始化后为true*/
 static bool  isAdjustingPosZ  = false; /*调整Z位置*/
 static bool  isAdjustingPosXY = true;  /*调整XY位置*/
 static u8    adjustPosXYTime  = 0;     /*XY位置调整时间*/
@@ -229,9 +281,13 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
         if (commander.keyLand) /*一键降落*/
         {
             flyerAutoLand(setpoint, state);
-            if (commander.keyFlight) {
+            if (initLand == false) {
                 pidReset(&pidZ);
+                setpoint->position.z = 0;    /*设定高度为0 单位cm/s*/
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
                 commander.keyFlight = false;
+                initLand = true;
             }
         } else if (commander.keyFlight) /*一键起飞*/
         {
@@ -244,8 +300,11 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
                 errorPosX        = 0.f;
                 errorPosY        = 0.f;
                 errorPosZ        = 0.f;
-
-                setFastAdjustPosParam(0, 1, 120.0f); /*一键起飞高度120cm*/
+#ifdef USE_MBD
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
+#endif
+                setFastAdjustPosParam(0, 1, 80.0f); /*一键起飞高度80cm*/
             }
 
             float climb = ((ctrlValLpf.thrust - 32767.f) / 32767.f);
@@ -278,6 +337,10 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
                 isAdjustingPosZ      = false;
                 setpoint->mode.z     = modeAbs;
                 setpoint->position.z = state->position.z + errorPosZ; /*调整新位置*/
+#ifdef USE_MBD                
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
+#endif          
                 //NOTE:为了下次进入定高的速率模式时使用PID叠加PID，现在只使用了 P 不需要清空PID缓存
                 // pidReset(&pidVZ);
             } else if (isAdjustingPosZ == false) /*Z位移误差*/
@@ -291,8 +354,14 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             setpoint->thrust     = 0;
             setpoint->velocity.z = 0;
             setpoint->position.z = 0;
-            initHigh             = false;
-            isAdjustingPosZ      = false;
+#ifdef  USE_MBD
+            setpoint->acc.z = 0;
+#endif
+            if(initHigh == true){
+                initHigh = false;
+            }
+            initLand        = false;
+            isAdjustingPosZ = false;
         }
     } else /*手动飞模式*/
     {
@@ -302,13 +371,8 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
 
     setpoint->attitude.roll  = ctrlValLpf.roll;
     setpoint->attitude.pitch = ctrlValLpf.pitch;
-#ifdef BI_Fly_1
-    setpoint->attitude.yaw = -ctrlValLpf.yaw; /*摇杆方向和yaw方向相反*/
-#endif
-
-#ifdef BI_Fly_2
     setpoint->attitude.yaw = ctrlValLpf.yaw; /*摇杆方向和yaw方向相反*/
-#endif
+
 
     if (getOpDataState() && commander.ctrlMode == 0x03) /*光流数据可用，定点模式*/
     {

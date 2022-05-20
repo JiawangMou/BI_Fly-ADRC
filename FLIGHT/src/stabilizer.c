@@ -12,6 +12,9 @@
 #include "state_estimator.h"
 #include "system.h"
 #include "vl53lxx.h"
+#include "model.h"
+
+#include "position_adrc.h"
 
 /*FreeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -43,6 +46,9 @@ static float setHeight = 0.f; /*设定目标高度 单位cm*/
 static float baroLast = 0.f;
 static float baroVelLpf = 0.f;
 
+//TODO：debug Check the timing accuracy of program scheduling
+Debug_stabi_tick_t stabi_tick;
+
 void stabilizerTask(void* param);
 
 void stabilizerInit(void)
@@ -50,8 +56,10 @@ void stabilizerInit(void)
     if (isInit)
         return;
 
-    stateControlInit(); /*姿态PID初始化*/
+    stateControlInit(); /*姿态和位置PID初始化*/
     powerControlInit(); /*电机初始化*/
+
+    model_initialize();
 
     isInit = true;
 }
@@ -113,6 +121,9 @@ void stabilizerTask(void* param)
 {
     u32 tick = 0;
     u32 lastWakeTime = getSysTickCnt();
+//    float flap_Hz = 0.0f;
+//    float F_flap = 0.0f;
+//    float Fd = 0.0;
 
     //	ledseqRun(SYS_LED, seq_alive);
 
@@ -123,51 +134,91 @@ void stabilizerTask(void* param)
     while (1) {
         vTaskDelayUntil(&lastWakeTime, MAIN_LOOP_DT); /*1ms周期延时*/
 
-        // 获取6轴和气压数据（500Hz）
-        // if (RATE_DO_EXECUTE(RATE_500_HZ, tick)) {
-        //     sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
-        // }
+        //获取6轴和气压数据（500Hz）
+        if (RATE_DO_EXECUTE(RATE_500_HZ, tick)) {
+            sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
+            stabi_tick.sensorsAcquire_tick = getSysTickCnt();
+        }
 
         //四元数和欧拉角计算（250Hz）
         if (RATE_DO_EXECUTE(ATTITUDE_ESTIMAT_RATE, tick)) {
-            sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
+            //sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
             imuUpdate(sensorData.acc, sensorData.gyro, &state, ATTITUDE_ESTIMAT_DT);
+            stabi_tick.imuUpdate_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         //位置预估计算（250Hz）
         if (RATE_DO_EXECUTE(POSITION_ESTIMAT_RATE, tick)) {
             positionEstimate(&sensorData, &state, POSITION_ESTIMAT_DT);
+            stabi_tick.positionEstimate_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         //目标姿态和飞行模式设定（100Hz）
         if (RATE_DO_EXECUTE(RATE_100_HZ, tick) && getIsCalibrated() == true) {
             commanderGetSetpoint(&setpoint, &state); /*目标数据和飞行模式设定*/
+            stabi_tick.commanderGetSetpoint_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         if (RATE_DO_EXECUTE(RATE_250_HZ, tick)) {
             fastAdjustPosZ(); /*快速调整高度*/
         }
-        //
+        
         /*读取光流数据(100Hz)*/
         if (RATE_DO_EXECUTE(RATE_100_HZ, tick)) {
             getOpFlowData(&state, 0.01f);
+            stabi_tick.getOpFlowData_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         /*翻滚检测(500Hz) 非定点模式*/
         if (RATE_DO_EXECUTE(RATE_500_HZ, tick) && (getCommanderCtrlMode() != 0x03)) {
             flyerFlipCheck(&setpoint, &control, &state);
+            stabi_tick.flyerFlipCheck_tick= (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         /*异常检测*/
         anomalDetec(&sensorData, &state, &control);
+        if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) {
+            adrc_td(&posZ_TD, setpoint.position.z);
+        }
+        velZ_ESO_estimate(&control, &state);
+        if (RATE_DO_EXECUTE(VELZ_TD_RATE, tick)) { 
+            adrc_td(&velZ_TD, setpoint.velocity.z);
+        }
+            
+
+
 
         /*PID控制*/
-
         stateControl(&control, &sensorData, &state, &setpoint, tick);
+        stabi_tick.stateControl_tick = (s16)(getSysTickCnt()& 0x00ffff);
 
-        //控制电机输出（500Hz）
-        if (RATE_DO_EXECUTE(RATE_500_HZ, tick)) {
+        // #ifdef USE_MBD
+        // /*MBD compensation*/
+        // if ((getCommanderCtrlMode() & 0x01) && (getCommanderKeyland() || getCommanderKeyFlight())) /*定高模式,且不处于着落状态时*/
+        // {
+        //     if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) /*TD_update*/
+        //     {
+        //         posZ_transient_process_update(&setpoint);
+        //     }
+        //     if (RATE_DO_EXECUTE(VELZ_TD_RATE, tick)) /*TD_update*/
+        //     {
+        //         velZ_transient_process_update(&setpoint);
+        //     }
+        // }
+        // if(RATE_DO_EXECUTE(RATE_500_HZ, tick)) 
+        // {
+        //     flap_Hz = constrainf(0.00036 85f*control.thrust +1.43f,0.0f,25.0f);
+        //     F_flap = constrainf((0.03543f*sq(flap_Hz)-0.2027f),0.0f,22.0f);
+        //     Fd = F_flap * state.velocity.z * 0.00198f;
+        //     velZ_ESO_estimate(2.0f*(F_flap - Fd)- 27.0f ,state.velocity.z);
+        // }
+        // #endif
+
+
+        //控制电机输出（250Hz）
+        if (RATE_DO_EXECUTE(RATE_250_HZ, tick)) {
             motorControl(&control);
+            stabi_tick.motorControl_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 
         tick++;
@@ -176,9 +227,9 @@ void stabilizerTask(void* param)
 
 void getAttitudeData(attitude_t* get)
 {
-    get->pitch = -state.attitude.pitch;
+    get->pitch = state.attitude.pitch;
     get->roll = state.attitude.roll;
-    get->yaw = -state.attitude.yaw;
+    get->yaw = state.attitude.yaw;
     get->timestamp = state.attitude.timestamp;
 }
 
@@ -214,3 +265,19 @@ mode_e getZmode(void)
 {
     return setpoint.mode.z;
 }
+
+int8_t calculateThrottlePercentAbs(void)
+{
+    return control.thrust * 100 / FULLTHROTTLE;
+}
+
+state_t getState(void)
+{
+    return state;
+}
+
+setpoint_t getSetpoint(void)
+{
+    return setpoint;
+}
+

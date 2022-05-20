@@ -1,10 +1,12 @@
 #include "system.h"
-#include "vl53lxx_i2c.h"
+#include "vl53lxx_i2c_hw.h"
 #include "vl53lxx.h"
 #include "vl53l1_api.h"
 #include "math.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "filter.h"
+#include "arm_math.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -27,7 +29,7 @@ bool isEnableVl53lxx = true; /*是否使能激光*/
 
 //static bool isInitvl53l0x = false; /*初始化vl53l0x*/
 static bool isInitvl53l1x = false; /*初始化vl53l1x*/
-static bool reInitvl53l0x = false; /*再次初始化vl53l0x*/
+// static bool reInitvl53l0x = false; /*再次初始化vl53l0x*/
 //static bool reInitvl53l1x = false; /*再次初始化vl53l1x*/
 
 static u8 count = 0;
@@ -35,22 +37,18 @@ static u8 validCnt = 0;
 static u8 inValidCnt = 0;
 static bool isVl53l1xOk = false;
 
-static u16 range_last = 0;
-static u16 range_compensated = 0;
-float quality = 1.0f;
-
-zRange_t vl53lxx;
-
+static zRange_t vl53lxx;
+static lpf2pData vl53lxxLpf[2];
 void vl53l0xTask(void *arg);
 void vl53l1xTask(void *arg);
 
 void vl53lxxInit(void)
 {
-	vl53IICInit();
+	vl53_HWIIC_Init();
 	delay_ms(10);
 
 	/*vl53l0x 初始化*/
-	vl53lxxId = vl53l0xGetModelID();
+	// vl53lxxId = vl53l0xGetModelID();
 	// if(vl53lxxId == VL53L0X_ID)
 	// {
 	// 	if (isInitvl53l0x)
@@ -89,74 +87,73 @@ void vl53lxxInit(void)
 	// vl53lxxId = 0;
 }
 
-void vl53l0xTask(void *arg)
-{
-	TickType_t xLastWakeTime = xTaskGetTickCount();
+// void vl53l0xTask(void *arg)
+// {
+// 	TickType_t xLastWakeTime = xTaskGetTickCount();
 
-	vl53l0xSetParam(); /*设置vl53l0x 参数*/
+// 	vl53l0xSetParam(); /*设置vl53l0x 参数*/
 
-	while (1)
-	{
-		if (reInitvl53l0x == true)
-		{
-			count = 0;
-			reInitvl53l0x = false;
-			vl53l0xSetParam(); /*设置vl53l0x 参数*/
-			xLastWakeTime = xTaskGetTickCount();
-		}
-		else
-		{
-			range_last = vl53l0xReadRangeContinuousMillimeters() * 0.1f; //单位cm
+// 	while (1)
+// 	{
+// 		if (reInitvl53l0x == true)
+// 		{
+// 			count = 0;
+// 			reInitvl53l0x = false;
+// 			vl53l0xSetParam(); /*设置vl53l0x 参数*/
+// 			xLastWakeTime = xTaskGetTickCount();
+// 		}
+// 		else
+// 		{
+// 			range_last = vl53l0xReadRangeContinuousMillimeters() * 0.1f; //单位cm
 
-			if (range_last < VL53L0X_MAX_RANGE)
-				validCnt++;
-			else
-				inValidCnt++;
+// 			if (range_last < VL53L0X_MAX_RANGE)
+// 				validCnt++;
+// 			else
+// 				inValidCnt++;
 
-			if (inValidCnt + validCnt == 10)
-			{
-				quality += (validCnt / 10.f - quality) * 0.1f; /*低通*/
-				validCnt = 0;
-				inValidCnt = 0;
-			}
+// 			if (inValidCnt + validCnt == 10)
+// 			{
+// 				quality += (validCnt / 10.f - quality) * 0.1f; /*低通*/
+// 				validCnt = 0;
+// 				inValidCnt = 0;
+// 			}
 
-			if (range_last >= 6550) /*vl53 错误*/
-			{
-				if (++count > 30)
-				{
-					count = 0;
-					isVl53l1xOk = false;
-					vTaskSuspend(vl53l0xTaskHandle); /*挂起激光测距任务*/
-				}
-			}
-			else
-				count = 0;
+// 			if (range_last >= 6550) /*vl53 错误*/
+// 			{
+// 				if (++count > 30)
+// 				{
+// 					count = 0;
+// 					isVl53l1xOk = false;
+// 					vTaskSuspend(vl53l0xTaskHandle); /*挂起激光测距任务*/
+// 				}
+// 			}
+// 			else
+// 				count = 0;
 
-			vTaskDelayUntil(&xLastWakeTime, measurement_timing_budget_ms);
-		}
-	}
-}
+// 			vTaskDelayUntil(&xLastWakeTime, measurement_timing_budget_ms);
+// 		}
+// 	}
+// }
+
+static VL53L1_RangingMeasurementData_t rangingData;
 
 void vl53l1xTask(void *arg)
 {
 	int status;
+	float rangeComp = 0;
+	float quality = 1.0f;
+	u32 timestamp = 0;
 	attitude_t attitude_now; /*存放四轴姿态的变量*/
 	u8 isDataReady = 0;
 	TickType_t xLastWakeTime = xTaskGetTickCount();
-	static VL53L1_RangingMeasurementData_t rangingData;
+	float DCMeb[9];
 	vl53lxxInit();
 	vl53l1xSetParam(); /*设置vl53l1x 参数*/
-
+	for (u8 i = 0; i < 2; i++) {// 初始化光流数据的低通滤波器
+		lpf2pInit(&vl53lxxLpf[i], VL53LXX_TASK_HZ, VL53LXX_LPF_CUTOFF_FREQ);
+	}
 	while (1)
 	{
-		// if(reInitvl53l1x == true)
-		// {
-		// 	count = 0;
-		// 	reInitvl53l1x = false;
-		// 	vl53l1xSetParam();	/*设置vl53l1x 参数*/
-		// 	xLastWakeTime = xTaskGetTickCount();
-		// }else
-		// {
 		status = VL53L1_GetMeasurementDataReady(&dev, &isDataReady);
 
 		if (isDataReady)
@@ -164,14 +161,17 @@ void vl53l1xTask(void *arg)
 			status = VL53L1_GetRangingMeasurementData(&dev, &rangingData);
 			if (status == 0)
 			{
-				range_last = rangingData.RangeMilliMeter * 0.1f; /*单位cm*/
+				vl53lxx.rawdata = rangingData.RangeMilliMeter * 0.1f; /*单位cm*/
 				
-				if (range_last < VL53L1X_MAX_RANGE)
+				if (vl53lxx.rawdata < VL53L1X_MAX_RANGE)
 				{
+					getDCMeb(DCMeb);/*旋转矩阵*/
 					validCnt++;
 					getAttitudeData(&attitude_now);
-//					range_compensated = range_last * cosf(attitude_now.pitch*DEG2RAD) * cosf(attitude_now.roll*DEG2RAD);
-					range_last = range_last * cosf(attitude_now.pitch*DEG2RAD) * cosf(attitude_now.roll*DEG2RAD);
+					rangeComp = vl53lxx.rawdata * DCMeb[8];
+					vl53lxx.timestamp = getSysTickCnt();
+					vl53lxx.distance_uncomp = lpf2pApply(&vl53lxxLpf[0], vl53lxx.rawdata);
+					vl53lxx.distance = lpf2pApply(&vl53lxxLpf[1], rangeComp);
 				}
 				else
 					inValidCnt++;
@@ -179,55 +179,24 @@ void vl53l1xTask(void *arg)
 				if (inValidCnt + validCnt == 10)
 				{
 					quality += (validCnt / 10.f - quality) * 0.1f; /*低通*/
+					vl53lxx.quality = quality;
 					validCnt = 0;
 					inValidCnt = 0;
 				}
 			}
 			status = VL53L1_ClearInterruptAndStartMeasurement(&dev);
 		}
-
-		// if(getModuleID() != OPTICAL_FLOW)
-		// {
-		// 	if(++count > 10)
-		// 	{
-		// 		count = 0;
-		// 		VL53L1_StopMeasurement(&dev);
-		// 		vTaskSuspend(vl53l1xTaskHandle);	/*挂起激光测距任务*/
-		// 	}
-		// }else count = 0;
-
-		vTaskDelayUntil(&xLastWakeTime, 50);
-		// }
+		vTaskDelayUntil(&xLastWakeTime, VL53LXX_TASK_MS);
 	}
 }
 
 bool vl53lxxReadRange(zRange_t *zrange)
 {
-//	if (vl53lxxId == VL53L0X_ID)
-//	{
-//		zrange->quality = quality; //可信度
-//		vl53lxx.quality = quality;
-
-//		if (range_last != 0 && range_last < VL53L0X_MAX_RANGE)
-//		{
-//			zrange->distance = (float)range_last; //单位[cm]
-//			vl53lxx.distance = zrange->distance;
-//			return true;
-//		}
-//	}
-//	else if (vl53lxxId == VL53L1X_ID)
-//	{
-		zrange->quality = quality; //可信度
-		vl53lxx.quality = quality;
-
-		if (range_last != 0 && range_last < VL53L1X_MAX_RANGE)
-		{
-			zrange->distance = (float)range_last; //单位[cm]
-			vl53lxx.distance = zrange->distance;
-			return true;
-		}
-//	}
-
+	if (vl53lxx.distance_uncomp  != 0 && vl53lxx.distance_uncomp < VL53L1X_MAX_RANGE)
+	{
+		*zrange = vl53lxx;
+		return true;
+	}
 	return false;
 }
 /*使能激光*/
@@ -241,10 +210,3 @@ bool getVl53l1xstate(void)
 {
 	return isVl53l1xOk;
 }
-
-u16 getVl53l1xxrangecompensated(void)
-{
-	return range_compensated;
-}
-
-

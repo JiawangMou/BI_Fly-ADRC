@@ -17,7 +17,6 @@
 *.pch
 
 # Libraries
-*.lib
 *.a
 *.la
 *.lo
@@ -76,10 +75,9 @@ JLinkSettings.ini
 *.plg
 *.scvd
 /out
-/.vscode/.cortex-debug.peripherals.state.json
-/.vscode/.cortex-debug.registers.state.json
-/.vscode/c_cpp_properties.json
-/.vscode/settings.json
-/.eide/arm_builder.log
-/.eide/log
+/.vscode/
+/.eide/
+/build/
 /BI_Fly-FreeRTOS.si4project/
+*.code-workspace
+
