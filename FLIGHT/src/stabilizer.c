@@ -177,17 +177,14 @@ void stabilizerTask(void* param)
 
         /*“Ï≥£ºÏ≤‚*/
         anomalDetec(&sensorData, &state, &control);
-        if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) {
-            adrc_td(&posZ_TD, setpoint.position.z);
-        }
-        velZ_ESO_estimate(&control, &state);
-        if (RATE_DO_EXECUTE(VELZ_TD_RATE, tick)) { 
-            adrc_td(&velZ_TD, setpoint.velocity.z);
-        }
+        // if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) {
+        //     adrc_td(&posZ_TD, setpoint.position.z);
+        // }
+        // velZ_ESO_estimate(&control, &state);
+        // if (RATE_DO_EXECUTE(VELZ_TD_RATE, tick)) { 
+        //     adrc_td(&velZ_TD, setpoint.velocity.z);
+        // }
             
-
-
-
         /*PIDøÿ÷∆*/
         stateControl(&control, &sensorData, &state, &setpoint, tick);
         stabi_tick.stateControl_tick = (s16)(getSysTickCnt()& 0x00ffff);

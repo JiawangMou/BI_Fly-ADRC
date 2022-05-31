@@ -5,7 +5,11 @@ typedef enum {
     Y,
     Z
 } axis_e;
-
+typedef enum {
+    ROLL,
+	PITCH,
+	YAW
+} axis_b;
 
 #define XYZ_AXIS_COUNT  3
 // See http://en.wikipedia.org/wiki/Flight_dynamics

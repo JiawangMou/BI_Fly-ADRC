@@ -4,17 +4,18 @@
 #include "config.h"
 #include <stdbool.h>
 #include "sensors_types.h"
+#include "arm_math.h"
 
 /********************************************************************************	 
- * ±¾³ÌÐòÖ»¹©Ñ§Ï°Ê¹ÓÃ£¬Î´¾­×÷ÕßÐí¿É£¬²»µÃÓÃÓÚÆäËüÈÎºÎÓÃÍ¾
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ñ§Ï°Ê¹ï¿½Ã£ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îºï¿½ï¿½ï¿½Í¾
  * ALIENTEK MiniFly
- * ½á¹¹ÌåÀàÐÍ¶¨Òå	
- * ÕýµãÔ­×Ó@ALIENTEK
- * ¼¼ÊõÂÛÌ³:www.openedv.com
- * ´´½¨ÈÕÆÚ:2017/5/12
- * °æ±¾£ºV1.3
- * °æÈ¨ËùÓÐ£¬µÁ°æ±Ø¾¿¡£
- * Copyright(C) ¹ãÖÝÊÐÐÇÒíµç×Ó¿Æ¼¼ÓÐÏÞ¹«Ë¾ 2014-2024
+ * ï¿½á¹¹ï¿½ï¿½ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½	
+ * ï¿½ï¿½ï¿½ï¿½Ô­ï¿½ï¿½@ALIENTEK
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì³:www.openedv.com
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:2017/5/12
+ * ï¿½æ±¾ï¿½ï¿½V1.3
+ * ï¿½ï¿½È¨ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ï¿½ï¿½
+ * Copyright(C) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿Æ¼ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾ 2014-2024
  * All rights reserved
 ********************************************************************************/
 
@@ -24,7 +25,7 @@
 
 typedef struct  
 {
-	u32 timestamp;	/*Ê±¼ä´Á*/
+	u32 timestamp;	/*Ê±ï¿½ï¿½ï¿½*/
 
 	float roll;
 	float pitch;
@@ -33,7 +34,7 @@ typedef struct
 
 struct  vec3_s 
 {
-	u32 timestamp;	/*Ê±¼ä´Á*/
+	u32 timestamp;	/*Ê±ï¿½ï¿½ï¿½*/
 
 	float x;
 	float y;
@@ -114,11 +115,11 @@ typedef struct distanceMeasurement_s
 
 typedef struct zRange_s 
 {
-	uint32_t timestamp;	//Ê±¼ä´Á
-	float distance;		//²âÁ¿¾àÀë
+	uint32_t timestamp;	//Ê±ï¿½ï¿½ï¿½
+	float distance;		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	float distance_uncomp;
 	float rawdata;
-	float quality;		//¿ÉÐÅ¶È
+	float quality;		//ï¿½ï¿½ï¿½Å¶ï¿½
 } zRange_t;
 
 /** Flow measurement**/
@@ -163,13 +164,13 @@ typedef struct
 typedef struct
 {
 	Axis3f acc;
-	Axis3f gyro;
+	Axis3f gyro;  // Unit: Â°/s
 	Axis3f mag;
 	baro_t baro;
 	point_t position;
 	zRange_t zrange;
 	mag_calib mag_calibration;
-	Axis3f velocity;   //Ë®Æ½ËÙ¶ÈÓÉ¹âÁ÷´«¸ÐÆ÷µÃµ½£¬¸ß¶ÈËÙ¶ÈÓÉ¼¤¹â´«¸ÐÆ÷µÃµ½£¬ÊÇÔÚ¹âÁ÷´«¸ÐÆ÷×ø±êÏµÏÂµÄËÙ¶È£¬²»ÊÇ»úÌåËÙ¶È
+	Axis3f velocity;   //Ë®Æ½ï¿½Ù¶ï¿½ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½ß¶ï¿½ï¿½Ù¶ï¿½ï¿½É¼ï¿½ï¿½â´«ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½Âµï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
 } sensorData_t;
 
 typedef struct
@@ -191,13 +192,21 @@ enum dir_e
 	RIGHT,
 };
 
+enum u_id
+{
+	T_l=0,
+	T_r,
+	beta_l,
+	beta_r,
+};
+
 
 
 typedef enum
 {
-	modeDisable = 0,/*¹Ø±ÕÄ£Ê½*/
-	modeAbs,		/*¾ø¶ÔÖµÄ£Ê½*/
-	modeVelocity	/*ËÙÂÊÄ£Ê½*/
+	modeDisable = 0,/*ï¿½Ø±ï¿½Ä£Ê½*/
+	modeAbs,		/*ï¿½ï¿½ï¿½ï¿½ÖµÄ£Ê½*/
+	modeVelocity	/*ï¿½ï¿½ï¿½ï¿½Ä£Ê½*/
 } mode_e;
 
 typedef struct
@@ -247,13 +256,10 @@ typedef struct
 	s16 yaw;
 	float thrust;
 	thrust_t thrust_part;
-	enum dir_e flipDir;		/*·­¹ö·½Ïò*/
-	float actual_motorPWM;	//¾­¹ýmotorTfºóµÄPWMÖµ
-	float actual_servoPWM;//¾­¹ýservoTfºóµÄÆËÒí»ú¹¹×ª½Ç
-	float actual_servoangle;//¾­¹ýservoTfºóµÄÆËÒí»ú¹¹×ª½Ç
-	float a;
-	float b;
-	float u;
+	enum dir_e flipDir;		/*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
+	float32_t ADRC_u0[4];
+	float32_t ADRC_u[4];
+	float actuator[4];  //T_l  T_r  beta_l  beta_r
 } control_t;
 #else
 
@@ -263,13 +269,12 @@ typedef struct
 	s16 pitch;
 	s16 yaw;
 	float thrust;
-	enum dir_e flipDir;		/*·­¹ö·½Ïò*/
+	enum dir_e flipDir;		/*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 } control_t;
 
 #endif
 typedef struct
 {
-	
 	union 
 	{
 		struct 
@@ -299,9 +304,10 @@ typedef struct
 #define RATE_1000_HZ 	1000
 
 #define MAIN_LOOP_RATE 	RATE_1000_HZ
-#define MAIN_LOOP_DT	(u32)(1000/MAIN_LOOP_RATE)	/*µ¥Î»ms*/
+#define MAIN_LOOP_DT	(u32)(1000/MAIN_LOOP_RATE)	/*ï¿½ï¿½Î»ms*/
 
 #define RATE_DO_EXECUTE(RATE_HZ, TICK) ((TICK % (MAIN_LOOP_RATE / RATE_HZ)) == 0)
+
 
 #endif
 

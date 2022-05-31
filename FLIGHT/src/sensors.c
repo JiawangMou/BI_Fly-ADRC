@@ -13,7 +13,6 @@
 #include "axis.h"
 #include "spl06.h"
 #include "atkp.h"
-#include "axis.h"
 #include "config.h"
 #include "dyn_notch_filter.h"
 #include "arm_math.h"

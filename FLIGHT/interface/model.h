@@ -32,6 +32,7 @@
 #include "sensors_types.h"
 #endif                                 /* model_COMMON_INCLUDES_ */
 #include "arm_math.h"
+#include "power_control.h"
 
 /* Model Code Variants */
 
@@ -50,8 +51,18 @@
 #define SERVO_PWM2ANGLE_A 0.06   //PWM to servo angle  cofficient a; servo angle(unit: °) = servo_a * PWM + servo_b 
 #define SERVO_PWM2ANGLE_B -90    
 
-#define MASS 32.8f
+#define MASS 29.0f
 #define G 980.0f
+
+#define Jxx 364  //x轴转动惯量（单位： g.cm^2）
+#define Jyy 294  //y轴转动惯量（单位： g.cm^2）
+#define Jzz 343  //z轴转动惯量（单位： g.cm^2）
+
+#define WINGCR 0.3543f
+
+
+#define MOTORCR  0.000368f  
+
 /* Forward declaration for rtModel */
 typedef struct tag_RTM_model_T RT_MODEL_model_T;
 
@@ -148,75 +159,15 @@ float TfApply(Tf_t *tf,const float input);
 
 float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle);
 float Ffz_coffe_cal(const attitude_t *atti,float servoangle);
-float U_cal(const float a,const float b,const float disturb,const float u0);
 
-
-/*-
- * These blocks were eliminated from the model due to optimizations:
- *
- * Block '<S4>/Data Type Duplicate' : Unused code path elimination
- * Block '<S1>/Scope' : Unused code path elimination
- * Block '<S17>/Data Type Duplicate' : Unused code path elimination
- * Block '<S18>/Data Type Duplicate' : Unused code path elimination
- * Block '<S10>/Gain1' : Unused code path elimination
- * Block '<S10>/Gain2' : Unused code path elimination
- * Block '<S10>/Gain3' : Unused code path elimination
- * Block '<S10>/Scope1' : Unused code path elimination
- * Block '<S10>/Scope2' : Unused code path elimination
- * Block '<S10>/Scope4' : Unused code path elimination
- * Block '<S1>/Reshape1' : Reshape block reduction
- * Block '<S1>/Reshape2' : Reshape block reduction
- * Block '<S6>/Reshape1' : Reshape block reduction
- * Block '<S6>/Reshape2' : Reshape block reduction
- * Block '<S6>/Reshape3' : Reshape block reduction
- * Block '<S21>/Reshape (9) to [3x3] column-major' : Reshape block reduction
- * Block '<S22>/Reshape (9) to [3x3] column-major' : Reshape block reduction
- */
-
-/*-
- * The generated code includes comments that allow you to trace directly
- * back to the appropriate location in the model.  The basic format
- * is <system>/block_name, where system is the system number (uniquely
- * assigned by Simulink) and block_name is the name of the block.
- *
- * Use the MATLAB hilite_system command to trace the generated code back
- * to the model.  For example,
- *
- * hilite_system('<S3>')    - opens system 3
- * hilite_system('<S3>/Kp') - opens and selects block Kp which resides in S3
- *
- * Here is the system hierarchy for this model
- *
- * '<Root>' : 'model'
- * '<S1>'   : 'model/MBD_control'
- * '<S2>'   : 'model/MBD_control/Degrees to Radians'
- * '<S3>'   : 'model/MBD_control/Degrees to Radians1'
- * '<S4>'   : 'model/MBD_control/Discrete Derivative'
- * '<S5>'   : 'model/MBD_control/Vcop introduced by servo'
- * '<S6>'   : 'model/MBD_control/coordinate of Cop'
- * '<S7>'   : 'model/MBD_control/flappingHz2PWM'
- * '<S8>'   : 'model/MBD_control/servoangle To DCM & W_servo'
- * '<S9>'   : 'model/MBD_control/solve for thrust'
- * '<S10>'  : 'model/MBD_control/velocity of Cop'
- * '<S11>'  : 'model/MBD_control/Vcop introduced by servo/3x3 Cross Product'
- * '<S12>'  : 'model/MBD_control/Vcop introduced by servo/3x3 Cross Product1'
- * '<S13>'  : 'model/MBD_control/Vcop introduced by servo/3x3 Cross Product/Subsystem'
- * '<S14>'  : 'model/MBD_control/Vcop introduced by servo/3x3 Cross Product/Subsystem1'
- * '<S15>'  : 'model/MBD_control/Vcop introduced by servo/3x3 Cross Product1/Subsystem'
- * '<S16>'  : 'model/MBD_control/Vcop introduced by servo/3x3 Cross Product1/Subsystem1'
- * '<S17>'  : 'model/MBD_control/servoangle To DCM & W_servo/Discrete Derivative'
- * '<S18>'  : 'model/MBD_control/servoangle To DCM & W_servo/Discrete Derivative1'
- * '<S19>'  : 'model/MBD_control/servoangle To DCM & W_servo/Rotation Angles to Direction Cosine Matrix'
- * '<S20>'  : 'model/MBD_control/servoangle To DCM & W_servo/Rotation Angles to Direction Cosine Matrix1'
- * '<S21>'  : 'model/MBD_control/servoangle To DCM & W_servo/Rotation Angles to Direction Cosine Matrix/Create 3x3 Matrix'
- * '<S22>'  : 'model/MBD_control/servoangle To DCM & W_servo/Rotation Angles to Direction Cosine Matrix1/Create 3x3 Matrix'
- * '<S23>'  : 'model/MBD_control/velocity of Cop/3x3 Cross Product'
- * '<S24>'  : 'model/MBD_control/velocity of Cop/3x3 Cross Product1'
- * '<S25>'  : 'model/MBD_control/velocity of Cop/3x3 Cross Product/Subsystem'
- * '<S26>'  : 'model/MBD_control/velocity of Cop/3x3 Cross Product/Subsystem1'
- * '<S27>'  : 'model/MBD_control/velocity of Cop/3x3 Cross Product1/Subsystem'
- * '<S28>'  : 'model/MBD_control/velocity of Cop/3x3 Cross Product1/Subsystem1'
- */
+arm_status U_cal(Axis3f *anglerate,attitude_t *angle, float32_t *u0, float32_t *u);
+void D_coffe_cal(float32_t *D, Axis3f *anglerate);
+void C_coffe_cal(float32_t *C, attitude_t *angle);
+void Thrust2motorPWM(Motorstatus_t *motorstatus,float32_t u );
+void ServoAngle2ServoPWM(Servostatus_t *servo_l,Servostatus_t *servo_r, float32_t *u );
+void control_allocation(control_t *control);
+void actuator2PWM(control_t *control, actuatorStatus_t *actuatorStatus);
+float Thrustcommand2ADRC_u0(float command);
 #endif                                 /* RTW_HEADER_model_h_ */
 
 /*

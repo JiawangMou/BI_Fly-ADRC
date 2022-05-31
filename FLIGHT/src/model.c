@@ -30,6 +30,22 @@
 #include "motors.h"
 
 
+arm_matrix_instance_f32 mat_model_C_44;
+arm_matrix_instance_f32 mat_model_C_inv_44;
+arm_matrix_instance_f32 mat_model_B_33;
+arm_matrix_instance_f32 mat_model_D_41;
+arm_matrix_instance_f32 mat_model_J_33;
+
+arm_matrix_instance_f32 mat_ADRC_u0_41;
+arm_matrix_instance_f32 mat_ADRC_u_41;
+
+
+float32_t model_C[16] = {2.0025,0,-2.0025,0,0,2.0408,0,2.0408,0,-2.1251,0,2.1251,0,0,0,0};
+// float32_t model_C[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
+float32_t model_C_inv[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
+float32_t model_B[9] = {0};
+float32_t model_D[4] = {0};
+float32_t model_J[9] = {364,0,0,0,294,0,0,0,343};
 
 
 /* Invariant block signals (default storage) */
@@ -91,492 +107,6 @@ float servotf_dec[SERVOTF_ORDER-1] = {-1.6455,0.6828};//Fs = 250 这里的系数
 Tf_t motortf;
 Tf_t servotf;
 
-// /* Model update function */
-// u16 MBD_update(float aZ_E_desired, velocity_t state_velE,Axis3f gyro)
-// {
-//   real_T rtb_Transpose[9];
-//   real_T rtb_Transpose1[9];
-//   real_T rtb_Transpose_0[9];
-//   real_T rtb_Cop_L_b[3];
-//   real_T rtb_Cop_L_b_i[3];
-//   real_T rtb_Cop_R_b[3];
-//   real_T rtb_Cop_R_b_g[3];
-//   real_T rtb_Sum_p[3];
-//   real_T rtb_Thrust_coeff_B_vector[3];
-//   real_T rtb_vel_B_vector[3];
-//   real_T tmp[3];
-//   real_T a;
-//   real_T denAccum;
-//   real_T denAccum_0;
-//   real_T rtb_Cop_L_b_j;
-//   real_T rtb_Gain1_idx_0;
-//   real_T rtb_Gain1_idx_1;
-//   real_T rtb_Sum_d_idx_2;
-//   real_T rtb_Transpose1_1;
-//   real_T rtb_Transpose1_f;
-//   real_T rtb_Transpose_2;
-//   real_T rtb_Transpose_o;
-//   real_T rtb_vel_B_vector_tmp;
-//   real_T rtb_vel_B_vector_tmp_0;
-//   int32_T i;
-//   actuatorStatus_t motorPWM;
-// //get DCMbe
-//   getDCMeb(DCMeb);
-//   arm_status result = arm_mat_inverse_f32 (&DCMeb_arm,&DCMbe_arm);
-// //get VelE 单位：state_velE cm -> m velE
-//     velE[0] = state_velE.x;
-//     velE[1] = state_velE.y;   
-//     velE[2] = state_velE.z;
-// //get servo command
-//     getMotorPWM(&motorPWM);
-//     model_U.angle_command[0] = constrainf( ServoPWM2angle(motorPWM.s_middle,PWM_MIDDLE),-50.0f,50.0f);
-//     model_U.angle_command[1] = constrainf( ServoPWM2angle(motorPWM.s_left,  PWM_LEFT  ),-50.0f,50.0f);
-// //get Wb
-//   for(int i=0;i< 3;i++)
-//     model_U.Wb[i]= gyro.axis[i]*DEG2RAD;
-// //get aZ_E_desired
-//   model_U.aZ_E_desired = aZ_E_desired;
-
-//   /* DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn' incorporates:
-//    *  Inport: '<Root>/angle_command'
-//    */
-//   denAccum = (model_U.angle_command[0] - 1.6451487309864259f *
-//               model_DW.DiscreteTransferFcn_states[0]) - 0.682538626130998f *
-//     model_DW.DiscreteTransferFcn_states[1];
-//   rtb_Gain1_idx_0 = (0.009347473786143f * denAccum + 0.018694947572286f *
-//                      model_DW.DiscreteTransferFcn_states[0]) + 0.009347473786143f
-//     * model_DW.DiscreteTransferFcn_states[1];
-
-//   /* DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn1' incorporates:
-//    *  Inport: '<Root>/angle_command'
-//    */
-//   denAccum_0 = (model_U.angle_command[1] - 1.6451487309864259f *
-//                 model_DW.DiscreteTransferFcn1_states[0]) - 0.682538626130998f *
-//     model_DW.DiscreteTransferFcn1_states[1];
-//   rtb_Gain1_idx_1 = (0.009347473786143f * denAccum_0 + 0.018694947572286f *
-//                      model_DW.DiscreteTransferFcn1_states[0]) +
-//     0.009347473786143f * model_DW.DiscreteTransferFcn1_states[1];
-
-//   /* Saturate: '<S1>/Signal_Saturation_3' incorporates:
-//    *  DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn'
-//    */
-//   if (rtb_Gain1_idx_0 > 50.0f) {
-//     rtb_Gain1_idx_0 = 50.0f;
-//   } else if (rtb_Gain1_idx_0 < -50.0f) {
-//     rtb_Gain1_idx_0 = -50.0f;
-//   }
-
-//   /* Gain: '<S2>/Gain1' */
-//   rtb_Gain1_idx_0 *= 0.017453292519943295f;
-
-//   /* Saturate: '<S1>/Signal_Saturation_3' incorporates:
-//    *  DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn1'
-//    */
-//   if (rtb_Gain1_idx_1 > 50.0f) {
-//     rtb_Gain1_idx_1 = 50.0f;
-//   } else if (rtb_Gain1_idx_1 < -50.0f) {
-//     rtb_Gain1_idx_1 = -50.0f;
-//   }
-
-//   /* Gain: '<S2>/Gain1' */
-//   rtb_Gain1_idx_1 *= 0.017453292519943295f;
-
-//   /* Trigonometry: '<S20>/sincos' incorporates:
-//    *  SignalConversion generated from: '<S20>/sincos'
-//    */
-//   rtb_Cop_R_b_g[1] = arm_cos_f32(rtb_Gain1_idx_1);
-//   a = arm_sin_f32(rtb_Gain1_idx_1);
-
-//   /* Fcn: '<S20>/Fcn11' */
-//   rtb_Transpose[0] = rtb_Cop_R_b_g[1];
-
-//   /* Fcn: '<S20>/Fcn21' */
-//   rtb_Transpose[1] = 0.0f;
-
-//   /* Fcn: '<S20>/Fcn31' */
-//   rtb_Transpose[2] = a;
-
-//   /* Fcn: '<S20>/Fcn12' */
-//   rtb_Transpose[3] = 0.0f;
-
-//   /* Fcn: '<S20>/Fcn22' */
-//   rtb_Transpose[4] = 1.0f;
-
-//   /* Fcn: '<S20>/Fcn32' */
-//   rtb_Transpose[5] = 0.0f;
-
-//   /* Fcn: '<S20>/Fcn13' */
-//   rtb_Transpose[6] = -a;
-
-//   /* Fcn: '<S20>/Fcn23' */
-//   rtb_Transpose[7] = 0.0f;
-
-//   /* Fcn: '<S20>/Fcn33' */
-//   rtb_Transpose[8] = rtb_Cop_R_b_g[1];
-
-//   /* Math: '<S8>/Transpose' */
-//   for (i = 0; i < 3; i++) {
-//     rtb_Transpose_0[3 * i] = rtb_Transpose[i];
-//     rtb_Transpose_0[3 * i + 1] = rtb_Transpose[i + 3];
-//     rtb_Transpose_0[3 * i + 2] = rtb_Transpose[i + 6];
-//   }
-
-//   memcpy(&rtb_Transpose[0], &rtb_Transpose_0[0], 9U * sizeof(real_T));
-
-//   /* End of Math: '<S8>/Transpose' */
-
-//   /* Trigonometry: '<S19>/sincos' incorporates:
-//    *  Gain: '<S8>/Gain1'
-//    */
-//   rtb_Cop_R_b[1] = arm_cos_f32(-rtb_Gain1_idx_0);
-//   a = arm_sin_f32(-rtb_Gain1_idx_0);
-
-//   /* Fcn: '<S19>/Fcn11' */
-//   rtb_Transpose1[0] = rtb_Cop_R_b[1];
-
-//   /* Fcn: '<S19>/Fcn21' */
-//   rtb_Transpose1[1] = 0.0f;
-
-//   /* Fcn: '<S19>/Fcn31' */
-//   rtb_Transpose1[2] = a;
-
-//   /* Fcn: '<S19>/Fcn12' */
-//   rtb_Transpose1[3] = 0.0f;
-
-//   /* Fcn: '<S19>/Fcn22' */
-//   rtb_Transpose1[4] = 1.0f;
-
-//   /* Fcn: '<S19>/Fcn32' */
-//   rtb_Transpose1[5] = 0.0f;
-
-//   /* Fcn: '<S19>/Fcn13' */
-//   rtb_Transpose1[6] = -a;
-
-//   /* Fcn: '<S19>/Fcn23' */
-//   rtb_Transpose1[7] = 0.0f;
-
-//   /* Fcn: '<S19>/Fcn33' */
-//   rtb_Transpose1[8] = rtb_Cop_R_b[1];
-
-//   /* Math: '<S8>/Transpose1' */
-//   for (i = 0; i < 3; i++) {
-//     rtb_Transpose_0[3 * i] = rtb_Transpose1[i];
-//     rtb_Transpose_0[3 * i + 1] = rtb_Transpose1[i + 3];
-//     rtb_Transpose_0[3 * i + 2] = rtb_Transpose1[i + 6];
-//   }
-
-//   memcpy(&rtb_Transpose1[0], &rtb_Transpose_0[0], 9U * sizeof(real_T));
-
-//   /* End of Math: '<S8>/Transpose1' */
-
-//   /* SampleTimeMath: '<S18>/TSamp'
-//    *
-//    * About '<S18>/TSamp':
-//    *  y = u * K where K = 1 / ( w * Ts )
-//    */
-//   rtb_Gain1_idx_1 *= 250.0f;
-
-//   /* SampleTimeMath: '<S17>/TSamp' incorporates:
-//    *  Gain: '<S8>/Gain1'
-//    *
-//    * About '<S17>/TSamp':
-//    *  y = u * K where K = 1 / ( w * Ts )
-//    */
-//   rtb_Gain1_idx_0 = -rtb_Gain1_idx_0 * 250.0f;
-
-//   /* Product: '<S1>/Product5' incorporates:
-//    *  Constant: '<S1>/mass'
-//    *  DotProduct: '<S1>/Dot Product'
-//    *  Inport: '<Root>/aZ_E_desired'
-//    */
-//   /* :  a = K(3,1) * K1; */
-//   /* :  b =  - Cdz * (V_L(3,1)+Vz_b) - Cdz * (V_R(3,1)+Vz_b); */
-//   /* :  c = -ma(3,1) + K(3,1) * K2; */
-//   /* f = ma(3,1) - K(3,1) *(K1*f^2 + K2) + Cdz * (V_L(3,1)+Vz_b) *f + Cdz * (V_R(3,1)+Vz_b)*f; */
-//   /* :  result = (-b + sqrt(b^2 -4*a*c))/(2*a); */
-//   rtb_Sum_d_idx_2 = model_U.aZ_E_desired * 27.0f;
-//   for (i = 0; i < 3; i++) {
-//     /* Product: '<S1>/Product3' incorporates:
-//      *  Math: '<S8>/Transpose'
-//      */
-//     rtb_Transpose_o = rtb_Transpose[i];
-
-//     /* Product: '<S1>/Product2' incorporates:
-//      *  Math: '<S8>/Transpose1'
-//      */
-//     rtb_Transpose1_f = rtb_Transpose1[i];
-//     rtb_Transpose1_1 = 0.0f;
-
-//     /* Product: '<S1>/Product3' */
-//     rtb_Transpose_2 = 0.0f;
-
-//     /* Product: '<S6>/Product1' incorporates:
-//      *  Sum: '<S6>/Subtract'
-//      */
-//     a = rtb_Transpose1_f * model_ConstB.Subtract[0];
-
-//     /* Product: '<S6>/Product2' incorporates:
-//      *  Sum: '<S6>/Subtract1'
-//      */
-//     rtb_Cop_L_b_j = rtb_Transpose_o * model_ConstB.Subtract1[0];
-
-//     /* Product: '<S1>/Product3' incorporates:
-//      *  Math: '<S8>/Transpose'
-//      */
-//     rtb_Transpose_o = rtb_Transpose[i + 3];
-
-//     /* Product: '<S1>/Product2' incorporates:
-//      *  Math: '<S8>/Transpose1'
-//      */
-//     rtb_Transpose1_f = rtb_Transpose1[i + 3];
-//     rtb_Transpose1_1 += 0.0f;
-
-//     /* Product: '<S1>/Product3' */
-//     rtb_Transpose_2 += 0.0f;
-
-//     /* Product: '<S6>/Product1' incorporates:
-//      *  Sum: '<S6>/Subtract'
-//      */
-//     a += rtb_Transpose1_f * model_ConstB.Subtract[1];
-
-//     /* Product: '<S6>/Product2' incorporates:
-//      *  Sum: '<S6>/Subtract1'
-//      */
-//     rtb_Cop_L_b_j += rtb_Transpose_o * model_ConstB.Subtract1[1];
-
-//     /* Product: '<S1>/Product6' incorporates:
-//      *  Inport: '<Root>/DCMbe'
-//      *  Product: '<S1>/Product4'
-//      *  Product: '<S1>/Product5'
-//      *  Sum: '<S1>/Add1'
-//      */
-//     rtb_vel_B_vector_tmp = DCMbe[i + 3];
-
-//     /* Product: '<S1>/Product3' incorporates:
-//      *  Math: '<S8>/Transpose'
-//      */
-//     rtb_Transpose_o = rtb_Transpose[i + 6];
-
-//     /* Product: '<S1>/Product2' incorporates:
-//      *  Math: '<S8>/Transpose1'
-//      */
-//     rtb_Transpose1_f = rtb_Transpose1[i + 6];
-
-//     /* Product: '<S6>/Product1' incorporates:
-//      *  Sum: '<S6>/Subtract'
-//      */
-//     a += rtb_Transpose1_f * model_ConstB.Subtract[2];
-
-//     /* Product: '<S6>/Product2' incorporates:
-//      *  Sum: '<S6>/Subtract1'
-//      */
-//     rtb_Cop_L_b_j += rtb_Transpose_o * model_ConstB.Subtract1[2];
-
-//     /* Product: '<S1>/Product6' incorporates:
-//      *  Inport: '<Root>/DCMbe'
-//      *  Product: '<S1>/Product4'
-//      *  Product: '<S1>/Product5'
-//      *  Sum: '<S1>/Add1'
-//      */
-//     rtb_vel_B_vector_tmp_0 = DCMbe[i + 6];
-
-//     /* Sum: '<S1>/Add8' incorporates:
-//      *  Product: '<S1>/Product2'
-//      *  Product: '<S1>/Product3'
-//      */
-//     rtb_Thrust_coeff_B_vector[i] = (rtb_Transpose1_1 + rtb_Transpose1_f) +
-//       (rtb_Transpose_2 + rtb_Transpose_o);
-
-//     /* Sum: '<S6>/Add' incorporates:
-//      *  Constant: '<S1>/param.ModelParam_Rb_CoR'
-//      */
-//     rtb_Cop_R_b[i] = a + model_ConstP.paramModelParam_Rb_CoR_Value[i];
-
-//     /* Sum: '<S6>/Add1' incorporates:
-//      *  Constant: '<S1>/param.ModelParam_Rb_CoR'
-//      */
-//     rtb_Cop_L_b_i[i] = rtb_Cop_L_b_j +
-//       model_ConstP.paramModelParam_Rb_CoR_Value[i];
-
-//     /* Gain: '<S3>/Gain1' incorporates:
-//      *  Inport: '<Root>/Wb'
-//      *  Sum: '<S23>/Sum'
-//      */
-//     rtb_Sum_p[i] = 0.017453292519943295f * model_U.Wb[i];
-
-//     /* Sum: '<S1>/Add1' incorporates:
-//      *  Inport: '<Root>/DCMbe'
-//      *  Product: '<S1>/Product'
-//      *  Product: '<S1>/Product4'
-//      *  Product: '<S1>/Product5'
-//      */
-//     tmp[i] = (rtb_vel_B_vector_tmp_0 * rtb_Sum_d_idx_2) -
-//       (rtb_vel_B_vector_tmp_0 * model_ConstB.mg_E[2] + (rtb_vel_B_vector_tmp *
-//         model_ConstB.mg_E[1] + DCMbe[i] * model_ConstB.mg_E[0]));
-
-//     /* Product: '<S6>/Product1' */
-//     rtb_Cop_R_b_g[i] = a;
-
-//     /* Product: '<S6>/Product2' */
-//     rtb_Cop_L_b[i] = rtb_Cop_L_b_j;
-
-//     /* Product: '<S1>/Product6' incorporates:
-//      *  Inport: '<Root>/DCMbe'
-//      *  Inport: '<Root>/velE'
-//      */
-//     rtb_vel_B_vector[i] = rtb_vel_B_vector_tmp_0 * velE[2] +
-//       (rtb_vel_B_vector_tmp * velE[1] + DCMbe[i] * velE[0]);
-//   }
-
-//   /* Sum: '<S24>/Sum' incorporates:
-//    *  Product: '<S27>/i x j'
-//    *  Product: '<S28>/j x i'
-//    */
-//   rtb_Sum_d_idx_2 = rtb_Sum_p[0] * rtb_Cop_L_b_i[1] - rtb_Cop_L_b_i[0] * rtb_Sum_p[1];
-
-//   /* Sum: '<S23>/Sum' incorporates:
-//    *  Product: '<S25>/i x j'
-//    *  Product: '<S26>/j x i'
-//    */
-//   rtb_Transpose_o = rtb_Sum_p[0] * rtb_Cop_R_b[1];
-//   rtb_Transpose1_f = rtb_Cop_R_b[0] * rtb_Sum_p[1];
-
-//   /* MATLAB Function: '<S1>/solve for thrust' incorporates:
-//    *  Constant: '<S1>/Constant2'
-//    *  Constant: '<S1>/Constant3'
-//    *  Constant: '<S1>/param.ModelParam_Cdz'
-//    *  Product: '<S13>/i x j'
-//    *  Product: '<S14>/j x i'
-//    *  Product: '<S15>/i x j'
-//    *  Product: '<S16>/j x i'
-//    *  Sum: '<S10>/Add4'
-//    *  Sum: '<S10>/Add5'
-//    *  Sum: '<S11>/Sum'
-//    *  Sum: '<S12>/Sum'
-//    *  Sum: '<S17>/Diff'
-//    *  Sum: '<S18>/Diff'
-//    *  Sum: '<S1>/Add8'
-//    *  Sum: '<S23>/Sum'
-//    *  UnitDelay: '<S17>/UD'
-//    *  UnitDelay: '<S18>/UD'
-//    *
-//    * Block description for '<S17>/Diff':
-//    *
-//    *  Add in CPU
-//    *
-//    * Block description for '<S18>/Diff':
-//    *
-//    *  Add in CPU
-//    *
-//    * Block description for '<S17>/UD':
-//    *
-//    *  Store in Global RAM
-//    *
-//    * Block description for '<S18>/UD':
-//    *
-//    *  Store in Global RAM
-//    */
-//   a = rtb_Thrust_coeff_B_vector[2] * 35.43f;
-//   rtb_Sum_d_idx_2 = ((( - (rtb_Gain1_idx_1 -
-//     model_DW.UD_DSTATE) * rtb_Cop_L_b[0]) + (rtb_vel_B_vector[2] +
-//     rtb_Sum_d_idx_2)) + rtb_vel_B_vector[2]) * -0.00198f - ((((- (rtb_Gain1_idx_0 - model_DW.UD_DSTATE_f) * rtb_Cop_R_b_g[0]) + 
-//     rtb_vel_B_vector[2]) + (rtb_Transpose_o - rtb_Transpose1_f)) +
-//     rtb_vel_B_vector[2]) * 0.00198f;
-//   rtb_Sum_d_idx_2 = (sqrt(rtb_Sum_d_idx_2 * rtb_Sum_d_idx_2 -
-//     (rtb_Thrust_coeff_B_vector[2] * -202.7f + -tmp[2]) * (4.0f * a)) +
-//                      -rtb_Sum_d_idx_2) / (2.0f * a);
-
-//   /* SampleTimeMath: '<S4>/TSamp' incorporates:
-//    *  MATLAB Function: '<S1>/solve for thrust'
-//    *
-//    * About '<S4>/TSamp':
-//    *  y = u * K where K = 1 / ( w * Ts )
-//    */
-//   /* :  Fd_L = -Cdz * (V_L(3,1)+Vz_b) *result; */
-//   /* :  Fd_R = -Cdz * (V_R(3,1)+Vz_b)*result; */
-//   /* :  F = K(3,1) *(K1*result^2 + K2); */
-//   /* :  y = result; */
-//   a = rtb_Sum_d_idx_2 * 250.0f;
-
-//   /* Sum: '<S1>/Add4' incorporates:
-//    *  Gain: '<S1>/Gain'
-//    *  MATLAB Function: '<S1>/solve for thrust'
-//    *  Sum: '<S4>/Diff'
-//    *  UnitDelay: '<S4>/UD'
-//    *
-//    * Block description for '<S4>/Diff':
-//    *
-//    *  Add in CPU
-//    *
-//    * Block description for '<S4>/UD':
-//    *
-//    *  Store in Global RAM
-//    */
-//   rtb_Sum_d_idx_2 += (a - model_DW.UD_DSTATE_c) * 0.016129032258064516f;
-
-//   /* Saturate: '<S1>/Saturation5' */
-//   if (rtb_Sum_d_idx_2 > 25.580016f) {
-//     rtb_Sum_d_idx_2 = 25.580016f;
-//   } else if (rtb_Sum_d_idx_2 < 0.0f) {
-//     rtb_Sum_d_idx_2 = 0.0f;
-//   }
-
-//   /* End of Saturate: '<S1>/Saturation5' */
-
-//   /* MATLAB Function: '<S1>/flappingHz2PWM' */
-//   /* :  if f < 1.5 */
-//   if (rtb_Sum_d_idx_2 < 1.5f) {
-//     /* Outport: '<Root>/PWM_compensation' */
-//     /* :  PWM = 0; */
-//     model_Y.PWM_compensation = 0.0f;
-//   } else {
-//     /* Outport: '<Root>/PWM_compensation' incorporates:
-//      *  Constant: '<S1>/ModelParam_motorCb'
-//      *  Constant: '<S1>/ModelParam_motorCr'
-//      */
-//     /* :  else */
-//     /* :  PWM = (f - Cb) / Cr; */
-//     model_Y.PWM_compensation = (rtb_Sum_d_idx_2 - 1.43f) / 0.0003685f;
-//   }
-
-//   /* End of MATLAB Function: '<S1>/flappingHz2PWM' */
-
-//   /* Update for DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn' */
-//   /* :  y = PWM; */
-//   model_DW.DiscreteTransferFcn_states[1] = model_DW.DiscreteTransferFcn_states[0];
-//   model_DW.DiscreteTransferFcn_states[0] = denAccum;
-
-//   /* Update for DiscreteTransferFcn: '<S1>/Discrete Transfer Fcn1' */
-//   model_DW.DiscreteTransferFcn1_states[1] =
-//     model_DW.DiscreteTransferFcn1_states[0];
-//   model_DW.DiscreteTransferFcn1_states[0] = denAccum_0;
-
-//   /* Update for UnitDelay: '<S18>/UD'
-//    *
-//    * Block description for '<S18>/UD':
-//    *
-//    *  Store in Global RAM
-//    */
-//   model_DW.UD_DSTATE = rtb_Gain1_idx_1;
-
-//   /* Update for UnitDelay: '<S17>/UD'
-//    *
-//    * Block description for '<S17>/UD':
-//    *
-//    *  Store in Global RAM
-//    */
-//   model_DW.UD_DSTATE_f = rtb_Gain1_idx_0;
-
-//   /* Update for UnitDelay: '<S4>/UD'
-//    *
-//    * Block description for '<S4>/UD':
-//    *
-//    *  Store in Global RAM
-//    */
-//   model_DW.UD_DSTATE_c = a;
-//   return model_Y.PWM_compensation;
-// }
-
 /* Model initialize function */
 void model_initialize(void)
 {
@@ -606,6 +136,12 @@ void model_initialize(void)
   servotf.nump  = servotf_num;
   servotf.x     = servotf_x;
   servotf.y     = servotf_y;
+
+    arm_mat_init_f32(&mat_model_C_44, 4,4, model_C);
+    arm_mat_init_f32(&mat_model_C_inv_44, 4,4, model_C_inv);
+    arm_mat_init_f32(&mat_model_B_33, 3,3, model_B);
+    arm_mat_init_f32(&mat_model_D_41, 4,1, model_D);
+
 
   // arm_mat_init_f32(&pSrc_motortf_x, MOTORTF_ORDER,1, motortf_x);
   // arm_mat_init_f32(&pSrc_motortf_y, MOTORTF_ORDER,1, motortf_y);
@@ -829,29 +365,167 @@ float Ffz_coffe_cal(const attitude_t *atti,float servoangle)
 
 * Others: 控制律设计
 */
-float U_cal(const float a,const float b,const float disturb,const float u0)
-{
-    float result = 0;
-    float temp = 0;
-    if (a != 0.0f) {
-        // temp = (u0  + 25.0f * b * b / (MASS * a) + G - disturb) * MASS /(100.0f * a);
-        temp = (u0  + 25.0f * b * b / (MASS * a) + G - 0.5f * disturb) * MASS /(100.0f * a);
-        if (temp <= 0)
-            result = 0;
-        else
-            arm_sqrt_f32(temp, &result);
-        return result - b / (2.0f * a);
-    } else {
-        if (b != 0.0f)
-            return (u0 - 0.5f * disturb + G) * MASS / (100.0f *b);
-        else
-            return 0;
-    }
-}
+// float U_cal(const float a,const float b,const float disturb,const float u0)
+// {
+//     float result = 0;
+//     float temp = 0;
+//     if (a != 0.0f) {
+//         // temp = (u0  + 25.0f * b * b / (MASS * a) + G - disturb) * MASS /(100.0f * a);
+//         temp = (u0  + 25.0f * b * b / (MASS * a) + G - 0.5f * disturb) * MASS /(100.0f * a);
+//         if (temp <= 0)
+//             result = 0;
+//         else
+//             arm_sqrt_f32(temp, &result);
+//         return result - b / (2.0f * a);
+//     } else {
+//         if (b != 0.0f)
+//             return (u0 - 0.5f * disturb + G) * MASS / (100.0f *b);
+//         else
+//             return 0;
+//     }
+// }
 
 /*
+U = C_inv ( u0 - D - disturb )
+*/
+arm_status U_cal(Axis3f *anglerate, attitude_t *angle,float32_t *u0, float32_t *u)
+{
+    float temp[4] = {0};
+    arm_matrix_instance_f32 mat_temp_41;
+    arm_matrix_instance_f32 mat_u_41;
+    arm_matrix_instance_f32 mat_u0_41;
+
+    arm_mat_init_f32(&mat_temp_41, 4,1, temp);
+    arm_mat_init_f32(&mat_u_41, 4,1, u);
+    arm_mat_init_f32(&mat_u0_41, 4,1,u0);
+	arm_status status = ARM_MATH_SUCCESS;
+    Axis3f Wb = {0};
+    for(int i=0; i < 3; i++)
+        Wb.axis[i] =  DEGREES_TO_RADIANS(anglerate->axis[i]);
+
+    D_coffe_cal(model_D, &Wb);
+    arm_mat_sub_f32(&mat_u0_41,&mat_model_D_41,&mat_temp_41);
+    // for(int i = 0; i < 4; i++)
+    //     temp[i] = *(u0 + i) - model_D[i];
+    C_coffe_cal(model_C, angle);
+
+    status = arm_mat_inverse_f32(&mat_model_C_44, &mat_model_C_inv_44);
+    if(status == ARM_MATH_SUCCESS ){
+        arm_mat_mult_f32(&mat_model_C_inv_44, &mat_temp_41, &mat_u_41);
+        // arm_mat_vec_mult_f32( &mat_model_C_inv_44, temp, u);
+    }	
+    return status;
+}
+
+void D_coffe_cal(float32_t *D, Axis3f *wb)
+{
+    *D = (Jzz * wb->y * wb->z - Jyy * wb->y * wb->z)/Jxx;
+    *(D+1) = (-Jzz * wb->x * wb->z + Jxx * wb->x * wb->z)/Jyy;
+    *(D+2) = ( Jyy * wb->x * wb->y - Jxx * wb->x * wb->y)/Jzz;
+    *(D+3) = -G;
+}
+
+void C_coffe_cal(float32_t *C, attitude_t *angle)
+{
+    float Cr = arm_cos_f32(DEGREES_TO_RADIANS(angle->roll));
+    float Cp = arm_cos_f32(DEGREES_TO_RADIANS(angle->pitch));
+    float Sp = arm_sin_f32(DEGREES_TO_RADIANS(angle->pitch));
+
+    *C        = 2.0025f;
+    *(C + 1)  = 0.000001f;
+    *(C + 2)  = -2.0025f;
+    *(C + 3)  = 0.000001f;
+    *(C + 4)  = 0.000001f;
+    *(C + 5)  = 2.0408f;
+    *(C + 6)  = 0.000001f;
+    *(C + 7)  = 2.0408f;
+    *(C + 8)  = 0.000001f;
+    *(C + 9)  = -2.1251f;
+    *(C + 10) = 0.000001f;
+    *(C + 11) = 2.1251f;
+
+    *(C + 12) = Cr * Cp * 3.448f;  //100 / mass(29g) = 3.448f 
+    *(C + 13) = -Sp * 3.448f;
+    *(C + 14) = Cr * Cp * 3.448f;
+    *(C + 15) = -Sp * 3.448f;
+}
+
+void control_allocation(control_t *control)
+{
+    arm_sqrt_f32(((control->ADRC_u[0] * control->ADRC_u[0]) + (control->ADRC_u[1] * control->ADRC_u[1])), &(control->actuator[T_l]));
+    arm_sqrt_f32(((control->ADRC_u[2] * control->ADRC_u[2]) + (control->ADRC_u[3] * control->ADRC_u[3])), &(control->actuator[T_r]));
+    control->actuator[beta_l] = atan2_approx(control->ADRC_u[1], control->ADRC_u[0]);
+    control->actuator[beta_r] = atan2_approx(control->ADRC_u[3], control->ADRC_u[2]);
+
+    control->actuator[T_l] = constrainf(control->actuator[T_l], 0.0f, 200.0f);
+    control->actuator[T_r] = constrainf(control->actuator[T_r], 0.0f, 200.0f); //200 对应于200mN
+    control->actuator[beta_l] = constrainf(control->actuator[beta_l], -0.9f, 0.9f);  //0.8726对应50°
+    control->actuator[beta_r] = constrainf(control->actuator[beta_r], -0.9f, 0.9f);  //0.8726对应50°
+}
+void actuator2PWM(control_t *control, actuatorStatus_t *actuatorStatus)
+{
+    Thrust2motorPWM(&actuatorStatus->motor_l,control->actuator[T_l]);
+    Thrust2motorPWM(&actuatorStatus->motor_r,control->actuator[T_r]);
+    ServoAngle2ServoPWM(&actuatorStatus->servo_l, &actuatorStatus->servo_r, control->actuator);
+}
+//将遥控指令转换成  g/cm^2
+float Thrustcommand2ADRC_u0(float command)
+{
+    float u0 = command * ( G + 200 ) / 65000;
+    return (u0 >= ( G + 200 ) ? (G + 200) : u0);
+}
+/*
+
+* Function: Thrust2motorPWM
+
+* Description:  根据占空比计算扑翼频率
+
+* Input: 升力大小 mN
+
+* Return: 平均扑翼频率 HZ
+
+* Others: T = ModelParam_wingCr * f^2 + ModelParam_wingCb 单位：mN(10^2 g*cm/s^2)
+          param.ModelParam_wingCr = 0.3543;
+          param.ModelParam_wingCb = -2.027;
+          f = ModelParam_motorCr * PWM + ModelParam_motorCb;
+          ModelParam_motorCr = 0.0003685;    %控制器输入PWM-扑翼频率曲线斜率
+          ModelParam_motorCb = 1.43;    %控制器输入PWM-扑翼频率曲线常数项
+
+*/
+void Thrust2motorPWM(Motorstatus_t *motorstatus,float32_t u )
+{
+    arm_sqrt_f32(u / WINGCR, &(motorstatus->f_Hz));
+    motorstatus->PWM = motorstatus->f_Hz  / MOTORCR;
+}
+/*
+
+* Function: ServoAngle2ServoPWM
+
+* Description:  根据舵机角度计算舵机控制
+
+* Input:  1. 两个舵机角度 
+
+* Output: 舵机控制量
+
+* Others: T = wing_a*f^2;% unit : mN
+
+*/
+void ServoAngle2ServoPWM(Servostatus_t *servo_l,Servostatus_t *servo_r, float32_t *u )
+{
+    float servo_l_initpos = getservoinitpos_configParam(PWM_LEFT);
+    float servo_r_initpos = getservoinitpos_configParam(PWM_RIGHT);
+    servo_l->angle = *(u+2) * RAD2DEG;
+    servo_r->angle = -(*(u+3) * RAD2DEG);
+
+    // servo_l->PWM = ((servo_l->angle + 125) *12 - servo_l_initpos) *2 * 32767 / 1200;
+    // servo_l->PWM = ((servo_l->angle + 125) *12 - servo_l_initpos) * 54.6166f;
+    // servo_r->PWM = ((servo_r->angle + 125) *12 - servo_r_initpos) * 54.6166f;
+
+    servo_l->PWM = servo_l->angle * 12 + servo_l_initpos;
+    servo_r->PWM = servo_r->angle * 12 + servo_r_initpos;
+}
+/*
  * File trailer for generated code.
- *
  * [EOF]
  */
 

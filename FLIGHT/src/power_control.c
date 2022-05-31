@@ -48,6 +48,18 @@ u16 limitThrust(int value)
 	return (u16)value;
 }
 
+void limitServoPWM(u32 *value)
+{
+	if (*value > SERVO_MAXPWM)
+	{
+		*value = SERVO_MAXPWM;
+	}
+	else if (*value < SERVO_MINPWM)
+	{
+		*value = SERVO_MINPWM;
+	}
+}
+
 /*************************************************
 Function: Servo_Int16ToPWM
 Description: 将舵机相对中立位置位移的范围从-32767~32767 映射到 -SERVO_HalfRANGE ~ SERVO_HalfRANGE 范围内（SERVO_HalfRANGE 为舵机行程的一半）
@@ -83,13 +95,20 @@ void motorControl(control_t *control) /*功率输出控制*/
 #ifdef FOUR_WING
 //	s16 r = control->roll / 2.0f;
 //	s16 p = control->pitch / 2.0f;
-	s16 r = control->roll;
-	s16 p = control->pitch;
-	//控制分配	改！
-	actuator.motor_r.PWM = limitThrust(control->thrust  + r / 2);
-	actuator.motor_l.PWM = limitThrust(control->thrust  - r / 2);
-	actuator.servo_l.PWM = Servo_Int16ToPWM(PWM_LEFT, p - control->yaw * 1.5f );
-	actuator.servo_r.PWM = Servo_Int16ToPWM(PWM_MIDDLE, -p - control->yaw * 1.5f );
+	// s16 r = control->roll;
+	// s16 p = control->pitch;
+	// //控制分配	改！
+	// actuator.motor_r.PWM = limitThrust(control->thrust  + r / 2);
+	// actuator.motor_l.PWM = limitThrust(control->thrust  - r / 2);
+	// actuator.servo_l.PWM = Servo_Int16ToPWM(PWM_LEFT, p - control->yaw * 1.5f );
+	// actuator.servo_r.PWM = Servo_Int16ToPWM(PWM_MIDDLE, -p - control->yaw * 1.5f );
+	actuator2PWM(control, &actuator);
+	actuator.motor_r.PWM = limitThrust(actuator.motor_r.PWM);
+	actuator.motor_l.PWM = limitThrust(actuator.motor_l.PWM);
+	limitServoPWM(&actuator.servo_l.PWM);
+	limitServoPWM(&actuator.servo_r.PWM);
+	// actuator.servo_l.PWM = Servo_Int16ToPcWM(PWM_LEFT, actuator.servo_l.PWM);
+	// actuator.servo_r.PWM = Servo_Int16ToPWM(PWM_MIDDLE, actuator.servo_r.PWM);
 
 	if (motorSetEnable)
 	{
@@ -105,11 +124,11 @@ void motorControl(control_t *control) /*功率输出控制*/
 	motorsSetRatio(PWMF2, actuator.motor_r.PWM);
 	servoSetPWM(PWM_LEFT,  actuator.servo_l.PWM); /*舵机输出占空比设置*/
 	servoSetPWM(PWM_MIDDLE,actuator.servo_r.PWM);
-	//servo Tf apply
-	control->actual_servoPWM = TfApply(&servotf, p * 600.0f/ 32768 +1500.0f);
-	control->actual_servoangle = ServoPWM2Servoangle(control->actual_servoPWM);
-	//motor Tf apply
-	control->actual_motorPWM = TfApply(&motortf,0.5f*(actuator.motor_l.PWM + actuator.motor_r.PWM));
+	// //servo Tf apply
+	// control->actual_servoPWM = TfApply(&servotf, p * 600.0f/ 32768 +1500.0f);
+	// control->actual_servoangle = ServoPWM2Servoangle(control->actual_servoPWM);
+	// //motor Tf apply
+	// control->actual_motorPWM = TfApply(&motortf,0.5f*(actuator.motor_l.PWM + actuator.motor_r.PWM));
 
 #elif defined DOUBLE_WING
 	s16 r = control->roll;

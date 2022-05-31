@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 23 /*13 表示V1.3*/
+#define VERSION 13 /*13 表示V1.3*/
 
 configParam_t configParam;
 
@@ -129,9 +129,9 @@ static configParam_t configParamDefault =
 
 		.servo_initpos =
 		{
-			.s_left = 1420,
+			.s_left = 1380,
 			.s_right = 1500,
-			.s_middle = 1420,
+			.s_middle = 1620,
 		},
 		.accBias = 
 		{
@@ -157,8 +157,8 @@ static configParam_t configParamDefault =
 				.nlsef=
 				{
 					.N1 = 2,
-					.beta_1 = 28.0,
-					.beta_2 = 0.06,
+					.beta_1 = 0.1,
+					.beta_2 = 0,
 					.zeta = 0.01,
 					.alpha1 = 0.6,
 					.alpha2 = 1.2,
@@ -186,7 +186,7 @@ static configParam_t configParamDefault =
 				.nlsef=
 				{
 					.N1 = 2,
-					.beta_1 = 60.0,
+					.beta_1 = 0.1,
 					.beta_2 = 1.0,
 					.zeta = 0.01,
 					.alpha1 = 0.6,
@@ -198,6 +198,34 @@ static configParam_t configParamDefault =
 					.w0 = 600,
 				},
 			},
+			.yaw=
+			{
+				.td=
+				{
+					.r  = 16000000,
+					.N0 = 2,
+				},
+				// .nlsef_TOC=
+				// {
+				// 	.r  = 4000.0,
+				// 	.N1 = 40.0,
+				// 	.c  = 0.064,
+				// },
+				.nlsef=
+				{
+					.N1 = 2,
+					.beta_1 = 0.1,
+					.beta_2 = 1.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
+				},
+				.leso=
+				{
+					.b0 = 0.26,
+					.w0 = 600,
+				},
+			}
 		},
 		.adrcAngle=
 		{
@@ -205,8 +233,8 @@ static configParam_t configParamDefault =
 			{
 				.td=
 				{
-					.r  = 0,
-					.N0 = 0,
+					.r  = 500,
+					.N0 = 2,
 				},
 				// .nlsef_TOC=
 				// {
@@ -234,8 +262,8 @@ static configParam_t configParamDefault =
 			{
 				.td=
 				{
-					.r  = 0,
-					.N0 = 0,
+					.r  = 100,
+					.N0 = 2,
 				},
 				// .nlsef_TOC=
 				// {
@@ -243,6 +271,28 @@ static configParam_t configParamDefault =
 				// 	.N1 = 0,
 				// 	.c  = 0,
 				// },
+				.nlsef=
+				{
+					.N1 = 2,
+					.beta_1 = 12.0,
+					.beta_2 = 0.0,
+					.zeta = 0.01,
+					.alpha1 = 0.6,
+					.alpha2 = 1.2,
+				},
+				.leso=
+				{
+					.b0 = 0,
+					.w0 = 0,
+				},
+			},
+			.yaw=
+			{
+				.td=
+				{
+					.r  = 100,
+					.N0 = 2,
+				},
 				.nlsef=
 				{
 					.N1 = 2,

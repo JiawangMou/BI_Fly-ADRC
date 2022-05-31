@@ -1,16 +1,23 @@
 #include "ADRC.h"
 #include "config_param.h"
 #include "attitude_adrc.h"
+#include "arm_math.h"
+#include "axis.h"
+
 
 
 
 #define U_LPF_CUTOFF_FREQ 50
 
 
-adrcObject_t ADRCAnglePitch;
-adrcObject_t ADRCAngleRoll;
 adrcObject_t ADRCRatePitch;
 adrcObject_t ADRCRateRoll;
+adrcObject_t ADRCRateYaw;
+
+adrcObject_t ADRCAngleRoll;
+adrcObject_t ADRCAnglePitch;
+adrcObject_t ADRCAngleYaw;
+
 
 void adrc_init(adrcObject_t *adrcobject,adrcInit_t *param, float tdDt,float lesoDt,float nlsefDt)
 {
@@ -51,7 +58,7 @@ void adrc_reset(adrcObject_t *adrcobject)
 
 }
 
-void ADRC_RateControl(adrcObject_t *adrcObject,float expect_ADRC,float feedback_ADRC)
+void ADRC_RateControl(adrcObject_t *adrcObject,float desired_rate,float rate)
 {
 	//TD  这里TD由于刷新频率高不放在ADRC_RateControl中
 	//LESO 这里LESO由于刷新频率高不放在ADRC_RateControl中
@@ -63,18 +70,18 @@ void ADRC_RateControl(adrcObject_t *adrcObject,float expect_ADRC,float feedback_
     // adrcObject->nlsef_TOC.e1 = adrcObject->td.x1; //状态偏差项
     // adrcObject->nlsef_TOC.e2 = adrcObject->td.x2; //状态微分项
     //nlsef
-    adrcObject->nlsef.e1 = adrcObject->td.x1; //状态偏差项
-    adrcObject->nlsef.e2 = adrcObject->td.x2; //状态微分项
+    adrcObject->nlsef.e1 = desired_rate - rate; //状态偏差项
+    adrcObject->nlsef.e2 = 0; //状态微分项
     /********NLSEF*******/
     //nlsef_TOC
     // adrcObject->nlsef_TOC.u0 = adrc_TOCnlsef(&adrcObject->nlsef_TOC);
     //nlsef
     adrcObject->nlsef.u0 = adrc_nlsef(&adrcObject->nlsef);
     /**********扰动补偿*******/
-    adrcObject->u = (adrcObject->nlsef.u0 - 0.5f * adrcObject->leso.z2) / adrcObject->leso.b0;
-    // adrcObject->u = adrcObject->nlsef.u0 / adrcObject->leso.b0;
-    //实际输出
-    adrcObject->u = Constrain_Float(adrcObject->u, -32767, 32767);
+    // adrcObject->u = (adrcObject->nlsef.u0 - 0.5f * adrcObject->leso.z2) / adrcObject->leso.b0;
+    // // adrcObject->u = adrcObject->nlsef.u0 / adrcObject->leso.b0;
+    // //实际输出
+    // adrcObject->u = Constrain_Float(adrcObject->u, -32767, 32767);
 }
 
 void ADRC_AngleControl(adrcObject_t *adrcObject,float expect_ADRC,float feedback)
@@ -129,4 +136,51 @@ void attitudeADRCwriteToConfigParam(void)
     configParam.adrcRate.roll.nlsef.zeta    = ADRCRateRoll.nlsef.zeta;
     configParam.adrcRate.roll.td.N0         = ADRCRateRoll.td.N0;
     configParam.adrcRate.roll.td.r          = ADRCRateRoll.td.r;
+}
+
+void attitudeRateADRC(Axis3f *actualRate, attitude_t *desiredRate, float32_t *ADRC_u0)
+{
+    ADRC_RateControl(&ADRCRateRoll,desiredRate->roll,actualRate->x);
+    ADRC_RateControl(&ADRCRatePitch,desiredRate->pitch,actualRate->y);
+    ADRC_RateControl(&ADRCRateYaw,desiredRate->yaw,actualRate->z);
+    *ADRC_u0 = ADRCRateRoll.nlsef.u0;
+    *(ADRC_u0+1) = ADRCRatePitch.nlsef.u0;
+    *(ADRC_u0+2) = ADRCRateYaw.nlsef.u0;
+
+    // output->pitch = pidOutLimit(pidUpdate(&pidRatePitch, desiredRate->pitch - actualRate->y));
+    // output->roll = pidOutLimit(ADRCRateRoll.u);
+    // output->yaw = pidOutLimit(pidUpdate(&pidRateYaw, desiredRate->yaw - actualRate->z));
+}
+
+void attitudeTD(axis_b id, float input, float *output)
+{
+    switch (id)
+    {
+        case ROLL:{
+            adrc_td(&ADRCAngleRoll.td,input);
+            *output = ADRCAngleRoll.td.x1;
+        };break;
+        case PITCH:{
+            adrc_td(&ADRCAnglePitch.td,input);
+            *output = ADRCAnglePitch.td.x1;
+        };break;
+        case YAW:{
+            adrc_td(&ADRCAngleYaw.td,input);
+            *output = ADRCAngleYaw.td.x1;
+        };break;
+
+    default:
+        break;
+    }
+}
+
+void attitudeADRCinit(void)
+{
+    td_init(&ADRCAngleRoll.td,&configParam.adrcAngle.roll.td,ANGLE_TD_DT);
+    td_init(&ADRCAnglePitch.td,&configParam.adrcAngle.pitch.td,ANGLE_TD_DT);
+    td_init(&ADRCAngleYaw.td,&configParam.adrcAngle.yaw.td,ANGLE_TD_DT);
+
+    nlsef_init(&ADRCRateRoll.nlsef,&configParam.adrcRate.roll.nlsef,RATE_LOOP_DT);
+    nlsef_init(&ADRCRatePitch.nlsef,&configParam.adrcRate.pitch.nlsef,RATE_LOOP_DT);
+    nlsef_init(&ADRCRateYaw.nlsef,&configParam.adrcRate.yaw.nlsef,RATE_LOOP_DT);
 }

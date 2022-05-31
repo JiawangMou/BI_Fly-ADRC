@@ -5,33 +5,34 @@
 #include "maths.h"
 #include "position_pid.h"
 #include "stabilizer.h"
-#include <math.h>
 #include "ADRC.h"
 #include "attitude_adrc.h"
 #include "position_adrc.h"
 #include "stm32f4xx_gpio.h"
+#include "model.h"
+#include "axis.h"
 
 /********************************************************************************
- * ±¾³ÌÐòÖ»¹©Ñ§Ï°Ê¹ÓÃ£¬Î´¾­×÷ÕßÐí¿É£¬²»µÃÓÃÓÚÆäËüÈÎºÎÓÃÍ¾
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ñ§Ï°Ê¹ï¿½Ã£ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îºï¿½ï¿½ï¿½Í¾
  * ALIENTEK MiniFly
- * ËÄÖá×ËÌ¬¿ØÖÆ´úÂë
- * ÕýµãÔ­×Ó@ALIENTEK
- * ¼¼ÊõÂÛÌ³:www.openedv.com
- * ´´½¨ÈÕÆÚ:2017/5/12
- * °æ±¾£ºV1.3
- * °æÈ¨ËùÓÐ£¬µÁ°æ±Ø¾¿¡£
- * Copyright(C) ¹ãÖÝÊÐÐÇÒíµç×Ó¿Æ¼¼ÓÐÏÞ¹«Ë¾ 2014-2024
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¬ï¿½ï¿½ï¿½Æ´ï¿½ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½Ô­ï¿½ï¿½@ALIENTEK
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì³:www.openedv.com
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:2017/5/12
+ * ï¿½æ±¾ï¿½ï¿½V1.3
+ * ï¿½ï¿½È¨ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ï¿½ï¿½
+ * Copyright(C) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿Æ¼ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾ 2014-2024
  * All rights reserved
  ********************************************************************************/
 
 static attitude_t attitudeDesired;
+static attitude_t atti_TD;
 static float      actualThrust;
 static attitude_t rateDesired;
 
-extern adrcObject_t ADRCAnglePitch;
-extern adrcObject_t ADRCAngleRoll;
-extern adrcObject_t ADRCRatePitch;
-extern adrcObject_t ADRCRateRoll;
+
+
+
 
 
 #ifdef TEST
@@ -41,10 +42,10 @@ extern adrcObject_t ADRCRateRoll;
 #define THRUST_ENDPOINT 50000
 #define THRUST_DELTA ((THRUST_ENDPOINT - THRUST_STARTPOINT) / THRUST_NUM )
 
-#define THRUST_WAIT_ACCEL_TIME 10000 // scan Ä£ÐÍÏÂµÄ¼ÓËÙÊ±¼ä µ¥Î»£ºms
-#define THRUST_SCAN_TIME 5000 // scan Ä£ÐÍÏÂµÄÉ¨ÃèÊ±¼ä µ¥Î»£ºms
-#define THRUST_SCAN_ACCEL_TIME 2000 // scan Ä£ÐÍÏÂµÄ¼ÓËÙÊ±¼ä µ¥Î»£ºms
-#define THRUST_ACCEL_DIV_MS 10 // scanÄ£Ê½ÏÂ£¬¼ÓËÙ1sµÄÏ¸·Ö£¬10±íÊ¾10ms¸Ä±äÒ»´ÎËÙ¶È
+#define THRUST_WAIT_ACCEL_TIME 10000 // scan Ä£ï¿½ï¿½ï¿½ÂµÄ¼ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½ms
+#define THRUST_SCAN_TIME 5000 // scan Ä£ï¿½ï¿½ï¿½Âµï¿½É¨ï¿½ï¿½Ê±ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½ms
+#define THRUST_SCAN_ACCEL_TIME 2000 // scan Ä£ï¿½ï¿½ï¿½ÂµÄ¼ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ ï¿½ï¿½Î»ï¿½ï¿½ms
+#define THRUST_ACCEL_DIV_MS 10 // scanÄ£Ê½ï¿½Â£ï¿½ï¿½ï¿½ï¿½ï¿½1sï¿½ï¿½Ï¸ï¿½Ö£ï¿½10ï¿½ï¿½Ê¾10msï¿½Ä±ï¿½Ò»ï¿½ï¿½ï¿½Ù¶ï¿½
 #define THRUST_WAIT_ACCEL_COUNT (THRUST_WAIT_ACCEL_TIME / THRUST_ACCEL_DIV_MS)
 #define THRUST_SCAN_ACCEL_COUNT (THRUST_SCAN_ACCEL_TIME / THRUST_ACCEL_DIV_MS)
 
@@ -66,9 +67,10 @@ enum PHASE{start = 0, waiting = 1, accelerating = 2, scanning = 3, holdon = 4};
 
 void stateControlInit(void)
 {
-	attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*³õÊ¼»¯×ËÌ¬PID*/	
-	positionControlInit(VEL_PID_DT, POS_PID_DT); /*³õÊ¼»¯Î»ÖÃPID*/
-
+	attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ì¬PID*/	
+	positionControlInit(VEL_PID_DT, POS_PID_DT); /*ï¿½ï¿½Ê¼ï¿½ï¿½Î»ï¿½ï¿½PID*/
+    attitudeADRCinit();
+    positionADRCinit();
     //     // Filter the setpoint
     // lpf2pInit(&setpointFilter[0], ANGEL_PID_RATE, 20);
     // lpf2pInit(&setpointFilter[1], ANGEL_PID_RATE, 20);
@@ -84,7 +86,15 @@ bool stateControlTest(void)
 void stateControl(control_t* control, sensorData_t* sensors, state_t* state, setpoint_t* setpoint, const u32 tick)
 {
     static u16 cnt = 0;
+    float diff_Thrust = 0;
 #ifndef TEST
+
+#ifdef ADRC_CONTROL
+    if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) { 
+        posZ_transient_process_update(setpoint);
+    }
+
+#endif
 
     if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
@@ -96,20 +106,21 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
     }
 
-    if (RATE_DO_EXECUTE(VEL_PID_RATE, tick)) {
+    if (RATE_DO_EXECUTE(VELZ_LOOP_RATE, tick)) {
         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
             velocityController(&actualThrust,control, &attitudeDesired,setpoint, state, sensors);
         }
     }
 
-    // if (RATE_DO_EXECUTE(VEL_ESO_RATE, tick)) {
-    //         velZ_ESO_estimate(control->thrust,state->velocity.z);
-    // }
-
-    //½Ç¶È»·£¨Íâ»·£©
+    //è§’åº¦çŽ¯
     if (RATE_DO_EXECUTE(ANGEL_PID_RATE, tick)) {
         if (setpoint->mode.z == modeDisable) {
-            actualThrust = setpoint->thrust;
+            actualThrust = Thrustcommand2ADRC_u0(setpoint->thrust);
+            actualThrust = constrainf(actualThrust, 0.0f, (float)FULLTHROTTLE);
+            if(actualThrust < G)
+                control->ADRC_u0[3] = 0;
+            else
+                control->ADRC_u0[3] = actualThrust - G; 
         }
         if (setpoint->mode.x == modeDisable || setpoint->mode.y == modeDisable) {
             attitudeDesired.roll  = setpoint->attitude.roll;
@@ -117,32 +128,33 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         }
 
         if (control->flipDir == CENTER) {
-            attitudeDesired.yaw -= setpoint->attitude.yaw / ANGEL_PID_RATE; /*ÆÚÍûYAW ËÙÂÊÄ£Ê½*/
+            attitudeDesired.yaw -= setpoint->attitude.yaw / ANGEL_PID_RATE; /*ï¿½ï¿½ï¿½ï¿½YAW ï¿½ï¿½ï¿½ï¿½Ä£Ê½*/
             if (attitudeDesired.yaw > 180.0f)
                 attitudeDesired.yaw -= 360.0f;
             if (attitudeDesired.yaw < -180.0f)
                 attitudeDesired.yaw += 360.0f;
         }
 
-        attitudeDesired.roll += configParam.trimR; //µþ¼ÓÎ¢µ÷Öµ
+        attitudeDesired.roll += configParam.trimR; //ï¿½ï¿½ï¿½ï¿½Î¢ï¿½ï¿½Öµ
         attitudeDesired.pitch += configParam.trimP;
 
+
+#ifdef ADRC_CONTROL
+        if (RATE_DO_EXECUTE(ANGLE_TD_RATE, tick)) { 
+            attitudeTD(ROLL, attitudeDesired.roll, &atti_TD.roll);
+            attitudeTD(PITCH, attitudeDesired.pitch, &atti_TD.pitch);
+            attitudeTD(YAW, attitudeDesired.yaw, &atti_TD.yaw);
+        }
+#endif
         // attitudeDesired.roll  = lpf2pApply(&setpointFilter[0], attitudeDesired.roll);
         // attitudeDesired.pitch = lpf2pApply(&setpointFilter[1], attitudeDesired.pitch);
 
-        attitudeAnglePID(&state->attitude, &attitudeDesired, &rateDesired);
+        attitudeAnglePID(&state->attitude, &atti_TD, &rateDesired);
     }
-#ifdef ADRC_CONTROL
-    /*ADRC-ESO*/
-    // adrc_leso(&ADRCRatePitch.leso, sensors->gyro.y,ADRCRatePitch.u);
-    adrc_leso(&ADRCRateRoll.leso, sensors->gyro.x,ADRCRateRoll.u);	
-	/*ADRC-TD*/
-    // adrc_td(&ADRCRatePitch.td, rateDesired.pitch - ADRCRatePitch.leso.z1);
-    adrc_td(&ADRCRateRoll.td,  rateDesired.roll - ADRCRateRoll.leso.z1);
-#endif
 
 
-    //½ÇËÙ¶È»·£¨ÄÚ»·£©
+
+    //è§’é€Ÿåº¦çŽ¯
     if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {
         if (setpoint->mode.roll == modeVelocity) {
             rateDesired.roll = setpoint->attitudeRate.roll;
@@ -153,38 +165,51 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
             attitudeControllerResetPitchAttitudePID();
         }
         extern u8 fstate;
-        if (control->flipDir != CENTER && fstate == 4) /*¿Õ·­¹ý³ÌÖ»Ê¹ÓÃÄÚ»·PID*/
+        if (control->flipDir != CENTER && fstate == 4) /*ï¿½Õ·ï¿½ï¿½ï¿½ï¿½ï¿½Ö»Ê¹ï¿½ï¿½ï¿½Ú»ï¿½PID*/
         {
             rateDesired.pitch = setpoint->attitude.pitch;
             rateDesired.roll  = setpoint->attitude.roll;
         }
+        #ifdef PID_CONTROL
         attitudeRatePID(&sensors->gyro, &rateDesired, control);
+        #elif defined ADRC_CONTROL
+        attitudeRateADRC(&sensors->gyro,  &rateDesired, control->ADRC_u0);
+        U_cal(&sensors->gyro,&state->attitude, control->ADRC_u0, control->ADRC_u);
+        control_allocation(control);
+        if(setpoint->mode.z == modeDisable) {
+            if(actualThrust < G){
+                diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
+                control->actuator[T_l] = actualThrust * MASS / 100 + diff_Thrust;
+                control->actuator[T_r] = actualThrust * MASS / 100 - diff_Thrust;
+                control->actuator[T_l] = constrainf(control->actuator[T_l], 0.0f, 200.0f);
+                control->actuator[T_r] = constrainf(control->actuator[T_r], 0.0f, 200.0f); //200 å¯¹åº”äºŽ200mN
+            }
+        }
+        #endif
     }
-    control->thrust = constrainf(actualThrust, 0.0f, (float)FULLTHROTTLE);
+    
     // control->thrust = actualThrust;
 
-    if (control->thrust < 5.f) {
+    if (actualThrust < 5.f) {
 #ifdef FOUR_WING
-        control->roll = 0;
+        // control->roll = 0;
 #endif
         // control->pitch = 0;
         // control->yaw = 0;
 
         attitudeResetAllPID_TEST();
-        // attitudeResetAllPID();	/*¸´Î»×ËÌ¬PID*/
-        // /*ÕâÀïÈ¡Ïû¸´Î»µÄÔ­ÒòÊÇ£¬ÈÃ·ÉÐÐÆ÷³á°ò²»ÅÄ¶¯µÄÊ±ºò£¬»¹ÄÜ¿´µ½¶æ»úµÄ·´Ó¦£¬´Ó¶øÈ·ÈÏPID¼ÆËã½á¹ûÊÇ·ñÕý³££¬»òÕßÊÇ½ÓÏßÊÇ·ñÓÐÎÊÌâ*/
-        positionResetAllPID();                     /*¸´Î»Î»ÖÃPID*/
+        // attitudeResetAllPID();	/*ï¿½ï¿½Î»ï¿½ï¿½Ì¬PID*/
+        // /*ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½Ô­ï¿½ï¿½ï¿½Ç£ï¿½ï¿½Ã·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ê±ï¿½ò£¬»ï¿½ï¿½Ü¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½Ó¦ï¿½ï¿½ï¿½Ó¶ï¿½È·ï¿½ï¿½PIDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
+        positionResetAllPID();                     /*ï¿½ï¿½Î»Î»ï¿½ï¿½PID*/
         // velZ_LESO.z2 = 0;
-        control->thrust = 0;
-        control->a = 0;
-        control->b = 0;
-        control->u = 0;
+        control->actuator[T_l] = 0;
+        control->actuator[T_r] = 0;
 
         // adrc_reset(&ADRCRatePitch);
 #ifdef ADRC_CONTROL
-		adrc_reset(&ADRCRateRoll);
+		// adrc_reset(&ADRCRateRoll);
 #endif
-        attitudeDesired.yaw = state->attitude.yaw; /*¸´Î»¼ÆËãµÄÆÚÍûyawÖµ*/
+        attitudeDesired.yaw = state->attitude.yaw; /*ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½yawÖµ*/
 
         if (cnt++ > 1500) {
             cnt = 0;
@@ -231,14 +256,14 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 {
                     if (((tick - tick_init) % 1000) == 0) {
                         control_thrust_target = thrust_init_cmd + thrust_count * THRUST_DELTA;
-                        control_thrust_delta = control_thrust_target / THRUST_WAIT_ACCEL_COUNT; // Ã¿´ÎË¢ÐÂÔöÁ¿
+                        control_thrust_delta = control_thrust_target / THRUST_WAIT_ACCEL_COUNT; // Ã¿ï¿½ï¿½Ë¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                         phase                = accelerating;
                         tick_init            = tick;
                     }
                 };break;
                 case accelerating:
                 {
-                    if(start_scan_flag ==1){//scanÄ£ÐÍÏÂµÄ¼ÓËÙ¶È¹ý³Ì
+                    if(start_scan_flag ==1){//scanÄ£ï¿½ï¿½ï¿½ÂµÄ¼ï¿½ï¿½Ù¶È¹ï¿½ï¿½ï¿½
                         if(((tick-tick_init) % THRUST_SCAN_ACCEL_TIME ) == 0){
                             control_thrust_current = control_thrust_target;
                             phase = scanning;
@@ -249,12 +274,12 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                                 control_thrust_current += control_thrust_delta; 
                             }
                         }
-                    }else{//waiting Ä£Ê½ÏÂµÄ¼ÓËÙ¹ý³Ì
+                    }else{//waiting Ä£Ê½ï¿½ÂµÄ¼ï¿½ï¿½Ù¹ï¿½ï¿½ï¿½
                         if(((tick-tick_init) % THRUST_WAIT_ACCEL_TIME) == 0){
                             control_thrust_current = control_thrust_target;
                             phase = scanning;
                             tick_init = tick;
-                            start_scan_flag = 1;       //¿ªÊ¼É¨Ãè
+                            start_scan_flag = 1;       //ï¿½ï¿½Ê¼É¨ï¿½ï¿½
                             scan_cnt = 0;
                         }else{
                             if(((tick-tick_init) % 10) == 0){
@@ -314,8 +339,6 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         control->yaw = 0;
 
 #endif
-
-
 
 }
 

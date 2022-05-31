@@ -136,6 +136,7 @@ typedef struct
 {
 	adrcInit_t roll;
 	adrcInit_t pitch;
+	adrcInit_t yaw;
 }adrcParam_t;
 
 typedef struct dynNotchConfig_s

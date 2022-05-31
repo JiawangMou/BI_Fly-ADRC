@@ -20,7 +20,6 @@
 
 #define RATE_DO_EXECUTE(RATE_HZ, TICK) ((TICK % (MAIN_LOOP_RATE / RATE_HZ)) == 0)
 
-
 #define MAIN_LOOP_RATE 			RATE_1000_HZ
 #define MAIN_LOOP_DT			(u32)(1000/MAIN_LOOP_RATE)	/*单位ms*/
 #define MAIN_LOOP_DTS    		(1.0/MAIN_LOOP_RATE)	    /*单位s*/
@@ -35,15 +34,16 @@
 #define RATE_PID_RATE			RATE_500_HZ //角速度环（内环）PID速率
 #define RATE_PID_DT				(1.0/RATE_PID_RATE)
 
-#define ANGEL_PID_RATE			ATTITUDE_ESTIMAT_RATE //角度环（外环）PID速率
+#define ANGEL_PID_RATE			RATE_250_HZ //角度环（外环）PID速率
 #define ANGEL_PID_DT			(1.0/ANGEL_PID_RATE)
 
 
-#define VEL_PID_RATE		    POSITION_ESTIMAT_RATE //位置环（外环）PID速率
+#define VEL_PID_RATE		    RATE_250_HZ //位置环（外环）PID速率
 #define VEL_PID_DT			    (1.0/VEL_PID_RATE)
 
 #define POS_PID_RATE		    RATE_100_HZ //位置环（外环）PID速率
 #define POS_PID_DT			    (1.0/POS_PID_RATE)
+
 
 // #define MBD_RATE                RATE_250_HZ
 // #define MBD_DT                  (1.0/MBD_RATE)
