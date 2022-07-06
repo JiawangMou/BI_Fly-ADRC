@@ -4,11 +4,11 @@
 #include "ADRC.h"
 #include "stabilizer_types.h"
 
-#define ANGLE_TD_RATE             RATE_500_HZ
+// #define ANGLE_TD_RATE             RATE_500_HZ
 #define ANGLE_TD_DT               (1.0f/ANGLE_TD_RATE)
 
-#define RATE_LOOP_RATE RATE_500_HZ
-#define RATE_LOOP_DT   (1.0f/RATE_LOOP_RATE)
+// #define RATE_LOOP_RATE RATE_500_HZ
+// #define RATE_LOOP_DT   (1.0f/RATE_LOOP_RATE)
 
 void adrc_init(adrcObject_t *adrcobject,adrcInit_t *param, float tdDt,float lesoDt,float nlsefDt);
 void adrc_reset(adrcObject_t *adrcobject);

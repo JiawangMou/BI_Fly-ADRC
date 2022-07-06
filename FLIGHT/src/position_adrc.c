@@ -6,29 +6,29 @@
 #include "maths.h"
 
 
-#define POSZ_INTEGRAL 8.0f
-#define POSZ_U_LPF_CUTOFF_FREQ 80
+// #define POSZ_INTEGRAL 8.0f
+// #define POSZ_U_LPF_CUTOFF_FREQ 80
 
-#define VELZ_INTEGRAL 120.0f
+// #define VELZ_INTEGRAL 120.0f
 
 tdObject_t posZ_TD;
 
 
-nlsefObject_t velZ_nlsef;
+// nlsefObject_t velZ_nlsef;
 // lesoObject_3rd_t posZ_LESO;
 // lesoObject_2rd_t velZ_LESO;
 
 // static float pos_integral = 0;
 // static float vel_integral = 0;
 
-Tf_t u_tf;
+// Tf_t u_tf;
 
-#define  UTF_ORDER 2  // 这里的阶数是系统实际阶数+1
+// #define  UTF_ORDER 2  // 这里的阶数是系统实际阶数+1
  
-float32_t u_tf_x[UTF_ORDER] = {0};
-float32_t u_tf_y[UTF_ORDER-1] = {0};
-float32_t u_tf_num[UTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
-float32_t u_tf_dec[UTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
+// float32_t u_tf_x[UTF_ORDER] = {0};
+// float32_t u_tf_y[UTF_ORDER-1] = {0};
+// float32_t u_tf_num[UTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
+// float32_t u_tf_dec[UTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
 
 
 // void posZ_adrc_init(adrcInit_t *param)
@@ -76,12 +76,12 @@ float32_t u_tf_dec[UTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样
 // 	}  
 //     return  adrc_nlsef(&velZ_nlsef) + vel_integral * velZ_nlsef.beta_I;
 // }
-void adrc_VelControl(const float desired_vel, const float vel, float *ADRC_u0)
-{
-    velZ_nlsef.e1 = desired_vel - vel;
-    velZ_nlsef.e2 = 0;
-    *(ADRC_u0+3) = velZ_nlsef.beta_1 * velZ_nlsef.e1;
-}
+// void adrc_VelControl(const float desired_vel, const float vel, float *ADRC_u0)
+// {
+//     velZ_nlsef.e1 = desired_vel - vel;
+//     velZ_nlsef.e2 = 0;
+//     *(ADRC_u0+3) = velZ_nlsef.beta_1 * velZ_nlsef.e1;
+// }
 
 // float adrc_PosControl(float x1,float x2, setpoint_t *setpoint)
 // {
@@ -118,14 +118,14 @@ void posZ_adrc_writeToConfigParam(void)
     // configParam.adrcPosZ.nlsef.N1      = posZ_nlsef.N1;
     // configParam.adrcPosZ.nlsef.I_limit = posZ_nlsef.I_limit;
 
-    configParam.adrcVelZ.nlsef.alpha1  = velZ_nlsef.alpha1;
-    configParam.adrcVelZ.nlsef.alpha2  = velZ_nlsef.alpha2;
-    configParam.adrcVelZ.nlsef.beta_1  = velZ_nlsef.beta_1;
-    configParam.adrcVelZ.nlsef.beta_2  = velZ_nlsef.beta_2;
-    configParam.adrcVelZ.nlsef.beta_I  = velZ_nlsef.beta_I;
-    configParam.adrcVelZ.nlsef.zeta    = velZ_nlsef.zeta;
-    configParam.adrcVelZ.nlsef.N1      = velZ_nlsef.N1;
-    configParam.adrcVelZ.nlsef.I_limit = velZ_nlsef.I_limit;
+    // configParam.adrcVelZ.nlsef.alpha1  = velZ_nlsef.alpha1;
+    // configParam.adrcVelZ.nlsef.alpha2  = velZ_nlsef.alpha2;
+    // configParam.adrcVelZ.nlsef.beta_1  = velZ_nlsef.beta_1;
+    // configParam.adrcVelZ.nlsef.beta_2  = velZ_nlsef.beta_2;
+    // configParam.adrcVelZ.nlsef.beta_I  = velZ_nlsef.beta_I;
+    // configParam.adrcVelZ.nlsef.zeta    = velZ_nlsef.zeta;
+    // configParam.adrcVelZ.nlsef.N1      = velZ_nlsef.N1;
+    // configParam.adrcVelZ.nlsef.I_limit = velZ_nlsef.I_limit;
 
     // configParam.adrcVelZ.leso.w0 = velZ_LESO.w0;
 }
@@ -170,10 +170,10 @@ void posZ_transient_process_update(setpoint_t *setpoint)
 //     return velZ_LESO;
 // }
 
-nlsefObject_t getVelZ_nlsef(void)
-{
-    return velZ_nlsef;
-}
+// nlsefObject_t getVelZ_nlsef(void)
+// {
+//     return velZ_nlsef;
+// }
 
 float getPosZ_TD_x1(void)
 {
@@ -182,5 +182,5 @@ float getPosZ_TD_x1(void)
 void positionADRCinit(void)
 {
     td_init(&posZ_TD,&configParam.adrcPosZ.td,POSZ_TD_DT);
-    nlsef_init(&velZ_nlsef,&configParam.adrcVelZ.nlsef,VELZ_LOOP_DT);
+    // nlsef_init(&velZ_nlsef,&configParam.adrcVelZ.nlsef,VELZ_LOOP_DT);
 }

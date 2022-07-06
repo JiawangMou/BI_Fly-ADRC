@@ -4,6 +4,11 @@
 #include "stm32f4xx.h"
 #include "filter.h"
 #include "config_param.h"
+#include "arm_math.h"
+
+#if defined(__CC_ARM) 
+	#pragma anon_unions
+#endif
 
 typedef struct 
 {

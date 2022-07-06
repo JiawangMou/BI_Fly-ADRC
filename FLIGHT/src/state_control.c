@@ -76,12 +76,12 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     static u16 cnt = 0;
 #ifndef TEST
 
-// #ifdef ADRC_CONTROL
-//     if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) { 
-//         // posZ_transient_process_update(setpoint);
-//     }
+#ifdef ADRC_CONTROL
+    if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) { 
+        posZ_transient_process_update(setpoint);
+    }
 
-// #endif
+#endif
 
 //     if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
 //         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {

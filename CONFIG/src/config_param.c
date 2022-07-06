@@ -51,6 +51,19 @@ static configParam_t configParamDefault =
 		.A3 = 1,
 		.M_gamma = 1,
 	},
+	.Roll_td={
+		.r = 200,
+		.N0 = 2,
+	},
+	.Pitch_td={
+		.r = 50,
+		.N0 = 2,
+	},
+	.Yaw_td={
+		.r = 50,
+		.N0 = 2,
+	},
+	
 		// .pidAngle = /*½Ç¶ÈPID*/
 		// {
 		// 	.roll =

@@ -18,6 +18,8 @@ typedef struct
     float Y_transpose[18];
     float J_gamma[9];
     float Tao0_gamma[9];
+    float Tao0[3];
+    float Torque[3];
 } BASC_Attitude_Object;
 
 typedef struct
@@ -36,10 +38,9 @@ typedef struct
     float M_gamma;
 } BASC_Pos_Object;
 
-void Torque_Cal(BASC_Attitude_Object *BASC, Axis3f *Wb, attitude_t *actualAngle, attitude_t *desiredAngle);
+void Torque_Cal(Axis3f *Wb, attitude_t *actualAngle, attitude_t *desiredAngle, tdObject_t *Roll_td, tdObject_t *Pitch_td, tdObject_t *Yaw_td);
 void Fz_Cal(BASC_Pos_Object *BASC, float *Wb, float *Vb);
 
-void Vector2diag_matrix(float *vector, float *matrix);
 
 
 #endif
