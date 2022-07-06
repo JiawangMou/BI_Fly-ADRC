@@ -26,10 +26,16 @@
 typedef struct  
 {
 	u32 timestamp;	/*ʱ���*/
-
-	float roll;
-	float pitch;
-	float yaw;
+	union 
+	{
+		struct 
+		{
+			float roll;
+			float pitch;
+			float yaw;
+		};
+		float axis[3];
+	};
 } attitude_t;
 
 struct  vec3_s 

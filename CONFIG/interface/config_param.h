@@ -145,27 +145,44 @@ typedef struct dynNotchConfig_s
     uint16_t dyn_notch_max_hz;
     uint16_t dyn_notch_q;
     uint8_t  dyn_notch_count;
-
-
 } dynNotchConfig_t;
+
+typedef struct 
+{
+	uint16_t A1[3];
+    uint16_t A2[3];
+    uint16_t A3[3];
+	uint16_t J_gamma[3];
+	uint16_t Tao0_gamma[3];
+} BASCAttiParam_t;
+
+typedef struct 
+{
+	float A1;
+    float A2;
+    float A3;
+	float M_gamma;
+} BASCPosParam_t;
 typedef struct	
 {
 	u8 version;				/*软件版本号*/
-	pidParam_t pidAngle;	/*角度PID*/	
-	pidParam_t pidRate;		/*角速度PID*/	
-	pidParamPos_t pidPos;	/*位置PID*/
+	BASCAttiParam_t BASCAtti;
+	BASCPosParam_t BASCPos;
+	// pidParam_t pidAngle;	/*角度PID*/	
+	// pidParam_t pidRate;		/*角速度PID*/	
+	// pidParamPos_t pidPos;	/*位置PID*/
 //	accBias_t accBias;		/*加速度校准值*/
 //	magBias_t magBias;		/*磁力计校准值*/
-	adrcParam_t adrcAngle;	/*角度ADRC*/
-	adrcParam_t adrcRate;	/*角速度ADRC*/
+	// adrcParam_t adrcAngle;	/*角度ADRC*/
+	// adrcParam_t adrcRate;	/*角速度ADRC*/
 #if defined USE_DYN_NOTCH_FILTER_GYRO || defined USE_DYN_NOTCH_FILTER_ACC
 	dynNotchConfig_t dynNotchConfig;/*动态notch滤波器参数*/
 #endif // USE_DYN_NOTCH_FILTER_GYRO
-	adrcInit_t adrcPosZ;	/*posZ adrc*/
-	adrcInit_t adrcVelZ;	/*velZ adrc*/
+	// adrcInit_t adrcPosZ;	/*posZ adrc*/
+	// adrcInit_t adrcVelZ;	/*velZ adrc*/
 	float trimP;			/*pitch微调*/
 	float trimR;			/*roll微调*/
-	u16 thrustBase;			/*油门基础值*/
+	// u16 thrustBase;			/*油门基础值*/
 	Servo_initpos servo_initpos;	/*舵机初始值*/
 	accBias_t accBias;
 	u8 cksum;				/*校验*/
@@ -180,7 +197,7 @@ void configParamTask(void* param);	/*参数配置任务*/
 bool configParamTest(void);
 
 void configParamGiveSemaphore(void);
-void resetConfigParamPID(void);
+//void resetConfigParamPID(void);
 void saveConfigAndNotify(void);
 void changeServoinitpos_configParam(u16 s1,u16 s2,u16 s3);
 u16 getservoinitpos_configParam(u8 pwm_id);

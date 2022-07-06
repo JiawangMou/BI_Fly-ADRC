@@ -94,27 +94,27 @@ void flyerFlipCheck(setpoint_t* setpoint, control_t* control, state_t* state)
 			}				
 			break;
 		}
-		case FLIP_SET:	/*翻滚设置*/
-		{
-			currentRate = 0.f;
-			maxRateCnt = 0;
-			currentAngle = 0.f;
-			
-			flipTimeout = 0;
-			control->flipDir = flipDir;
-			flipThrust = -9000.0f + 1.2f * configParam.thrustBase;
-			deltaThrust = configParam.thrustBase / 90.0f;
-			flipThrustMax = configParam.thrustBase + 20000;
-			if(flipThrustMax > 62000) flipThrustMax = 62000;
-			tempThrust = flipThrust; 
-					
-			rollTemp = state->attitude.roll;
-			pitchTemp = state->attitude.pitch;									
-			yawTemp = state->attitude.yaw;
-			
-			flipState = FLIP_SPEED_UP;
-			break;
-		}
+//		case FLIP_SET:	/*翻滚设置*/
+//		{
+//			currentRate = 0.f;
+//			maxRateCnt = 0;
+//			currentAngle = 0.f;
+//			
+//			flipTimeout = 0;
+//			control->flipDir = flipDir;
+//			flipThrust = -9000.0f + 1.2f * configParam.thrustBase;
+//			deltaThrust = configParam.thrustBase / 90.0f;
+//			flipThrustMax = configParam.thrustBase + 20000;
+//			if(flipThrustMax > 62000) flipThrustMax = 62000;
+//			tempThrust = flipThrust; 
+//					
+//			rollTemp = state->attitude.roll;
+//			pitchTemp = state->attitude.pitch;									
+//			yawTemp = state->attitude.yaw;
+//			
+//			flipState = FLIP_SPEED_UP;
+//			break;
+//		}
 		case FLIP_SPEED_UP:	/*加速上升过程*/
 		{
 			if(state->velocity.z < desiredVelZ)

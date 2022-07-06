@@ -141,8 +141,9 @@ void positionEstimate(sensorData_t* sensorData, state_t* state, float dt)
 #ifdef USE_MBD
         model_reset();
 #endif
-        pidReset(&pidZ);
-        pidReset(&pidVZ);
+//TODO£º In order to replace the PID controller, delete the following code, it may cause some mistakes
+        // pidReset(&pidZ);
+        // pidReset(&pidVZ);
     }
 
     Axis3f accelBF; // BF:body frame ?

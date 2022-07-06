@@ -12,26 +12,14 @@
 #include "model.h"
 #include "axis.h"
 
-/********************************************************************************
- * ������ֻ��ѧϰʹ�ã�δ���������ɣ��������������κ���;
- * ALIENTEK MiniFly
- * ������̬���ƴ���
- * ����ԭ��@ALIENTEK
- * ������̳:www.openedv.com
- * ��������:2017/5/12
- * �汾��V1.3
- * ��Ȩ���У�����ؾ���
- * Copyright(C) �������������ӿƼ����޹�˾ 2014-2024
- * All rights reserved
- ********************************************************************************/
 
 static attitude_t attitudeDesired;
-static attitude_t atti_TD;
+//static attitude_t atti_TD;
 static float      actualThrust;
 static attitude_t rateDesired;
 
 
-
+static float thrustLpf        = 35000; /*基础油门*/
 
 
 
@@ -61,16 +49,16 @@ enum PHASE{start = 0, waiting = 1, accelerating = 2, scanning = 3, holdon = 4};
 
 
 
-
+float getAltholdThrust(void) { return thrustLpf; }
 // // remoter setpoint(roll,pitch) filter
 // static lpf2pData setpointFilter[2];
 
 void stateControlInit(void)
 {
-	attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*��ʼ����̬PID*/	
-	positionControlInit(VEL_PID_DT, POS_PID_DT); /*��ʼ��λ��PID*/
-    attitudeADRCinit();
-    positionADRCinit();
+	// attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*��ʼ����̬PID*/	
+	// positionControlInit(VEL_PID_DT, POS_PID_DT); /*��ʼ��λ��PID*/
+    // attitudeADRCinit();
+    // positionADRCinit();
     //     // Filter the setpoint
     // lpf2pInit(&setpointFilter[0], ANGEL_PID_RATE, 20);
     // lpf2pInit(&setpointFilter[1], ANGEL_PID_RATE, 20);
@@ -79,114 +67,113 @@ void stateControlInit(void)
 bool stateControlTest(void)
 {
     bool pass = true;
-    pass &= attitudeControlTest();
+    // pass &= attitudeControlTest();
     return pass;
 }
 
 void stateControl(control_t* control, sensorData_t* sensors, state_t* state, setpoint_t* setpoint, const u32 tick)
 {
     static u16 cnt = 0;
-    float diff_Thrust = 0;
 #ifndef TEST
 
-#ifdef ADRC_CONTROL
-    if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) { 
-        posZ_transient_process_update(setpoint);
-    }
+// #ifdef ADRC_CONTROL
+//     if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) { 
+//         // posZ_transient_process_update(setpoint);
+//     }
 
-#endif
+// #endif
 
-    if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
-        if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
-            #ifdef USE_MBD
-            positionController(setpoint, state);
-            #else 
-            positionController(&actualThrust, &attitudeDesired, setpoint, state, POS_PID_DT);
-            #endif
-        }
-    }
+//     if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
+//         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
+//             #ifdef USE_MBD
+//             positionController(setpoint, state);
+//             #else 
+//             positionController(&actualThrust, &attitudeDesired, setpoint, state, POS_PID_DT);
+//             #endif
+//         }
+//     }
 
-    if (RATE_DO_EXECUTE(VELZ_LOOP_RATE, tick)) {
-        if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
-            velocityController(&actualThrust,control, &attitudeDesired,setpoint, state, sensors);
-        }
-    }
+//     if (RATE_DO_EXECUTE(VELZ_LOOP_RATE, tick)) {
+//         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
+//             velocityController(&actualThrust,control, &attitudeDesired,setpoint, state, sensors);
+//         }
+//     }
 
-    //角度环
-    if (RATE_DO_EXECUTE(ANGEL_PID_RATE, tick)) {
-        if (setpoint->mode.z == modeDisable) {
-            actualThrust = Thrustcommand2ADRC_u0(setpoint->thrust);
-            actualThrust = constrainf(actualThrust, 0.0f, (float)FULLTHROTTLE);
-            if(actualThrust < G)
-                control->ADRC_u0[3] = 0;
-            else
-                control->ADRC_u0[3] = actualThrust - G; 
-        }
-        if (setpoint->mode.x == modeDisable || setpoint->mode.y == modeDisable) {
-            attitudeDesired.roll  = setpoint->attitude.roll;
-            attitudeDesired.pitch = setpoint->attitude.pitch;
-        }
+//     //角度环
+//     if (RATE_DO_EXECUTE(ANGEL_PID_RATE, tick)) {
+//         if (setpoint->mode.z == modeDisable) {
+//             actualThrust = Thrustcommand2ADRC_u0(setpoint->thrust);
+//             actualThrust = constrainf(actualThrust, 0.0f, (float)FULLTHROTTLE);
+//             if(actualThrust < G)
+//                 control->ADRC_u0[3] = 0;
+//             else
+//                 control->ADRC_u0[3] = actualThrust - G; 
+//         }
+//         if (setpoint->mode.x == modeDisable || setpoint->mode.y == modeDisable) {
+//             attitudeDesired.roll  = setpoint->attitude.roll;
+//             attitudeDesired.pitch = setpoint->attitude.pitch;
+//         }
 
-        if (control->flipDir == CENTER) {
-            attitudeDesired.yaw -= setpoint->attitude.yaw / ANGEL_PID_RATE; /*����YAW ����ģʽ*/
-            if (attitudeDesired.yaw > 180.0f)
-                attitudeDesired.yaw -= 360.0f;
-            if (attitudeDesired.yaw < -180.0f)
-                attitudeDesired.yaw += 360.0f;
-        }
+//         if (control->flipDir == CENTER) {
+//             attitudeDesired.yaw -= setpoint->attitude.yaw / ANGEL_PID_RATE; /*����YAW ����ģʽ*/
+//             if (attitudeDesired.yaw > 180.0f)
+//                 attitudeDesired.yaw -= 360.0f;
+//             if (attitudeDesired.yaw < -180.0f)
+//                 attitudeDesired.yaw += 360.0f;
+//         }
 
-        attitudeDesired.roll += configParam.trimR; //����΢��ֵ
-        attitudeDesired.pitch += configParam.trimP;
-
-
-#ifdef ADRC_CONTROL
-        if (RATE_DO_EXECUTE(ANGLE_TD_RATE, tick)) { 
-            attitudeTD(ROLL, attitudeDesired.roll, &atti_TD.roll);
-            attitudeTD(PITCH, attitudeDesired.pitch, &atti_TD.pitch);
-            attitudeTD(YAW, attitudeDesired.yaw, &atti_TD.yaw);
-        }
-#endif
-        // attitudeDesired.roll  = lpf2pApply(&setpointFilter[0], attitudeDesired.roll);
-        // attitudeDesired.pitch = lpf2pApply(&setpointFilter[1], attitudeDesired.pitch);
-
-        attitudeAnglePID(&state->attitude, &atti_TD, &rateDesired);
-    }
+//         attitudeDesired.roll += configParam.trimR; //����΢��ֵ
+//         attitudeDesired.pitch += configParam.trimP;
 
 
+// #ifdef ADRC_CONTROL
+//         if (RATE_DO_EXECUTE(ANGLE_TD_RATE, tick)) { 
+//             attitudeTD(ROLL, attitudeDesired.roll, &atti_TD.roll);
+//             attitudeTD(PITCH, attitudeDesired.pitch, &atti_TD.pitch);
+//             attitudeTD(YAW, attitudeDesired.yaw, &atti_TD.yaw);
+//         }
+// #endif
+//         // attitudeDesired.roll  = lpf2pApply(&setpointFilter[0], attitudeDesired.roll);
+//         // attitudeDesired.pitch = lpf2pApply(&setpointFilter[1], attitudeDesired.pitch);
 
-    //角速度环
-    if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {
-        if (setpoint->mode.roll == modeVelocity) {
-            rateDesired.roll = setpoint->attitudeRate.roll;
-            attitudeControllerResetRollAttitudePID();
-        }
-        if (setpoint->mode.pitch == modeVelocity) {
-            rateDesired.pitch = setpoint->attitudeRate.pitch;
-            attitudeControllerResetPitchAttitudePID();
-        }
-        extern u8 fstate;
-        if (control->flipDir != CENTER && fstate == 4) /*�շ�����ֻʹ���ڻ�PID*/
-        {
-            rateDesired.pitch = setpoint->attitude.pitch;
-            rateDesired.roll  = setpoint->attitude.roll;
-        }
-        #ifdef PID_CONTROL
-        attitudeRatePID(&sensors->gyro, &rateDesired, control);
-        #elif defined ADRC_CONTROL
-        attitudeRateADRC(&sensors->gyro,  &rateDesired, control->ADRC_u0);
-        U_cal(&sensors->gyro,&state->attitude, control->ADRC_u0, control->ADRC_u);
-        control_allocation(control);
-        if(setpoint->mode.z == modeDisable) {
-            if(actualThrust < G){
-                diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
-                control->actuator[T_l] = actualThrust * MASS / 100 + diff_Thrust;
-                control->actuator[T_r] = actualThrust * MASS / 100 - diff_Thrust;
-                control->actuator[T_l] = constrainf(control->actuator[T_l], 0.0f, 200.0f);
-                control->actuator[T_r] = constrainf(control->actuator[T_r], 0.0f, 200.0f); //200 对应于200mN
-            }
-        }
-        #endif
-    }
+//         attitudeAnglePID(&state->attitude, &atti_TD, &rateDesired);
+//     }
+
+
+
+//     //角速度环
+//     if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {
+//         if (setpoint->mode.roll == modeVelocity) {
+//             rateDesired.roll = setpoint->attitudeRate.roll;
+//             attitudeControllerResetRollAttitudePID();
+//         }
+//         if (setpoint->mode.pitch == modeVelocity) {
+//             rateDesired.pitch = setpoint->attitudeRate.pitch;
+//             attitudeControllerResetPitchAttitudePID();
+//         }
+//         extern u8 fstate;
+//         if (control->flipDir != CENTER && fstate == 4) /*�շ�����ֻʹ���ڻ�PID*/
+//         {
+//             rateDesired.pitch = setpoint->attitude.pitch;
+//             rateDesired.roll  = setpoint->attitude.roll;
+//         }
+//         #ifdef PID_CONTROL
+//         attitudeRatePID(&sensors->gyro, &rateDesired, control);
+//         #elif defined ADRC_CONTROL
+//         attitudeRateADRC(&sensors->gyro,  &rateDesired, control->ADRC_u0);
+//         U_cal(&sensors->gyro,&state->attitude, control->ADRC_u0, control->ADRC_u);
+//         control_allocation(control);
+//         if(setpoint->mode.z == modeDisable) {
+//             if(actualThrust < G){
+//                 diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
+//                 control->actuator[T_l] = actualThrust * MASS / 100 + diff_Thrust;
+//                 control->actuator[T_r] = actualThrust * MASS / 100 - diff_Thrust;
+//                 control->actuator[T_l] = constrainf(control->actuator[T_l], 0.0f, 200.0f);
+//                 control->actuator[T_r] = constrainf(control->actuator[T_r], 0.0f, 200.0f); //200 对应于200mN
+//             }
+//         }
+//         #endif
+//     }
     
     // control->thrust = actualThrust;
 
@@ -197,10 +184,10 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // control->pitch = 0;
         // control->yaw = 0;
 
-        attitudeResetAllPID_TEST();
+        // attitudeResetAllPID_TEST();
         // attitudeResetAllPID();	/*��λ��̬PID*/
         // /*����ȡ����λ��ԭ���ǣ��÷���������Ķ���ʱ�򣬻��ܿ�������ķ�Ӧ���Ӷ�ȷ��PID�������Ƿ������������ǽ����Ƿ�������*/
-        positionResetAllPID();                     /*��λλ��PID*/
+        // positionResetAllPID();                     /*��λλ��PID*/
         // velZ_LESO.z2 = 0;
         control->actuator[T_l] = 0;
         control->actuator[T_r] = 0;

@@ -24,6 +24,6 @@ void stateControl(control_t *control, sensorData_t *sensors, state_t *state, set
 void getRateDesired(attitude_t *get);
 void getAngleDesired(attitude_t *get);
 void setThrust_cmd(uint16_t Thrust_cmd);
-
+float getAltholdThrust(void);
 #endif /*__STATE_CONTROL_H */
 

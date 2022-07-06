@@ -71,8 +71,8 @@ void td_init(tdObject_t *tdobject,tdParam_t *tdparam, float tdDt)
 {
     /*****TD*******/
     tdobject->TD_input = 0;
-    tdobject->x1       = 0; //跟踪微分期状态量
-    tdobject->x2       = 0; //跟踪微分期状态量微分项
+    tdobject->x1       = 0; //跟踪微分器状态量
+    tdobject->x2       = 0; //跟踪微分器状态量微分项
     tdobject->r        = tdparam->r; //时间尺度
     tdobject->h        = tdDt; //ADRC系统积分时间
     tdobject->N0       = tdparam->N0; //跟踪微分器解决速度超调h0=N*h

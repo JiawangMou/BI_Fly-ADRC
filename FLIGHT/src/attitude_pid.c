@@ -40,12 +40,12 @@
 #define PITCH_RATE_PID_DTERM_CUTOFF_FREQ 0.0
 #define YAW_RATE_PID_DTERM_CUTOFF_FREQ 90.0
 
-PidObject pidAngleRoll;
-PidObject pidAnglePitch;
-PidObject pidAngleYaw;
-PidObject pidRateRoll;
-PidObject pidRatePitch;
-PidObject pidRateYaw;
+//PidObject pidAngleRoll;
+//PidObject pidAnglePitch;
+//PidObject pidAngleYaw;
+//PidObject pidRateRoll;
+//PidObject pidRatePitch;
+//PidObject pidRateYaw;
 
 
 

@@ -9,12 +9,19 @@ typedef struct
 {
 /*****安排过度过程*******/
 	float TD_input;
-	float x1;//跟踪微分期状态量
-	float x2;//跟踪微分期状态量微分项
+	union 
+	{
+		struct 
+		{
+			float x1;//跟踪微分期状态量
+			float x2;//跟踪微分期状态量微分项
+			float fh;
+		};
+		float x[3];
+	};
 	float r;//时间尺度
 	float h;//ADRC系统积分时间
 	float N0;//跟踪微分器解决速度超调h0=N*h	
-	float fh;
 }tdObject_t;
 
 typedef struct 
