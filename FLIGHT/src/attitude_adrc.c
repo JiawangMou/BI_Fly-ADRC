@@ -154,27 +154,15 @@ void attitudeADRCwriteToConfigParam(void)
 //     // output->yaw = pidOutLimit(pidUpdate(&pidRateYaw, desiredRate->yaw - actualRate->z));
 // }
 
-// void attitudeTD(axis_b id, float input, float *output)
-// {
-//     switch (id)
-//     {
-//         case ROLL:{
-//             adrc_td(&ADRCAngleRoll.td,input);
-//             *output = ADRCAngleRoll.td.x1;
-//         };break;
-//         case PITCH:{
-//             adrc_td(&ADRCAnglePitch.td,input);
-//             *output = ADRCAnglePitch.td.x1;
-//         };break;
-//         case YAW:{
-//             adrc_td(&ADRCAngleYaw.td,input);
-//             *output = ADRCAngleYaw.td.x1;
-//         };break;
-
-//     default:
-//         break;
-//     }
-// }
+void attitudeTD(setpoint_t *setpoint)
+{
+    adrc_td(&Roll_td, setpoint->attitude.roll);
+    adrc_td(&Pitch_td, setpoint->attitude.pitch);
+    adrc_td(&Yaw_td, setpoint->attitude.yaw);
+    setpoint->attitudeDesired.roll = Roll_td.x1;
+    setpoint->attitudeDesired.pitch = Pitch_td.x1;
+    setpoint->attitudeDesired.yaw = Yaw_td.x1;    
+}
 
 void attitudeADRCinit(void)
 {

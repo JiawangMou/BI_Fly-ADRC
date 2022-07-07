@@ -228,13 +228,15 @@ typedef struct
 #ifdef USE_MBD
 typedef struct
 {
-	attitude_t attitude;		// deg	
-	attitude_t attitudeRate;	// deg/s
-	point_t position;         	// transient position setpoint cm
-	velocity_t velocity;      	// transient velocity setpoint cm/s
-	Axis3f acc;
-	mode_t mode;
-	float thrust;
+    attitude_t attitude;        // deg
+    attitude_t attitudeDesired; // deg  transient process  TD
+    attitude_t attitudeRate;    // deg/s
+    point_t    position;        // cm
+    point_t    positionDesired; // cm   transient process  TD
+    velocity_t velocity;        // transient velocity setpoint cm/s
+    Axis3f     acc;
+    mode_t     mode;
+    float      thrust;
 } setpoint_t;
 #else
 typedef struct

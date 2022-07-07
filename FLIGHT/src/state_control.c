@@ -1,9 +1,9 @@
 #include "state_control.h"
-#include "attitude_pid.h"
+// #include "attitude_pid.h"
 #include "config.h"
 #include "config_param.h"
 #include "maths.h"
-#include "position_pid.h"
+// #include "position_pid.h"
 #include "stabilizer.h"
 #include "ADRC.h"
 #include "attitude_adrc.h"
@@ -11,6 +11,7 @@
 #include "stm32f4xx_gpio.h"
 #include "model.h"
 #include "axis.h"
+#include "BASC_controller.h"
 
 
 static attitude_t attitudeDesired;
@@ -77,11 +78,12 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 #ifndef TEST
 
 #ifdef ADRC_CONTROL
-    if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) { 
-        posZ_transient_process_update(setpoint);
+    if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) {
+        if (setpoint->mode.z != modeDisable) 
+            posZ_transient_process_update(setpoint);
     }
     if (RATE_DO_EXECUTE(ATTITUDE_TD_RATE, tick)) { 
-        posZ_transient_process_update(setpoint);
+        attitudeTD(setpoint);
     }
 #endif
 
@@ -142,8 +144,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 //     }
 
     if (RATE_DO_EXECUTE(RATE_BASC_RATE, tick)) {
-
-
+        Torque_Cal(&sensors->gyro, &state->attitude);
+        
     }
 //     //角速度环
 //     if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {

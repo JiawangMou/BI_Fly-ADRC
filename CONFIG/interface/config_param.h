@@ -165,15 +165,16 @@ typedef struct
 } BASCPosParam_t;
 typedef struct	
 {
-	u8 version;				/*软件版本号*/
-	BASCAttiParam_t BASCAtti;
+    u8              version; /*软件版本号*/
+    BASCAttiParam_t BASCAtti;
     BASCPosParam_t  BASCPos;
-    tdParam_t      Roll_td;
-    tdParam_t      Pitch_td;
-    tdParam_t      Yaw_td;
-        // pidParam_t pidAngle;	/*角度PID*/	
-	// pidParam_t pidRate;		/*角速度PID*/	
-	// pidParamPos_t pidPos;	/*位置PID*/
+    tdParam_t       Roll_td;
+    tdParam_t       Pitch_td;
+    tdParam_t       Yaw_td;
+    tdParam_t       PosZ_td;
+    // pidParam_t pidAngle;	/*角度PID*/
+    // pidParam_t pidRate;		/*角速度PID*/
+    // pidParamPos_t pidPos;	/*位置PID*/
 //	accBias_t accBias;		/*加速度校准值*/
 //	magBias_t magBias;		/*磁力计校准值*/
 	// adrcParam_t adrcAngle;	/*角度ADRC*/

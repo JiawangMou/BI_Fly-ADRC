@@ -63,7 +63,10 @@ static configParam_t configParamDefault =
 		.r = 50,
 		.N0 = 2,
 	},
-	
+	.PosZ_td={
+		.r = 50,
+		.N0 = 2,
+	},
 		// .pidAngle = /*½Ç¶ÈPID*/
 		// {
 		// 	.roll =

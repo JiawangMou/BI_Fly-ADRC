@@ -36,10 +36,10 @@
 
 extern tdObject_t posZ_TD;
 // extern tdObject_t velZ_TD;
-extern nlsefObject_t posZ_nlsef;
-extern nlsefObject_t velZ_nlsef;
+// extern nlsefObject_t posZ_nlsef;
+// extern nlsefObject_t velZ_nlsef;
 // extern lesoObject_3rd_t posZ_LESO;
-extern lesoObject_2rd_t velZ_LESO;
+// extern lesoObject_2rd_t velZ_LESO;
 
 // extern lesoObject_3rd_t posZ_LESO;
 
