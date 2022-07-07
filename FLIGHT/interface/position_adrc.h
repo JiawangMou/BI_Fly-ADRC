@@ -12,8 +12,10 @@
 // #define VELZ_ADRC_RATE           VEL_PID_RATE
 // #define VELZ_ADRC_DT             (1.0f/VELZ_ADRC_RATE)
 
-#define POSZ_TD_RATE             RATE_200_HZ
+#define POSZ_TD_RATE             RATE_1000_HZ
 #define POSZ_TD_DT               (1.0f/POSZ_TD_RATE)
+#define ATTITUDE_TD_RATE         RATE_1000_HZ
+#define ATTITUDE_TD_DT           (1.0f/ATTITUDE_TD_RATE)
 
 #define VELZ_LOOP_RATE           RATE_250_HZ
 #define VELZ_LOOP_DT             (1.0f/VELZ_LOOP_RATE)

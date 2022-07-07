@@ -80,7 +80,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) { 
         posZ_transient_process_update(setpoint);
     }
-
+    if (RATE_DO_EXECUTE(ATTITUDE_TD_RATE, tick)) { 
+        posZ_transient_process_update(setpoint);
+    }
 #endif
 
 //     if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
@@ -139,8 +141,10 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 //         attitudeAnglePID(&state->attitude, &atti_TD, &rateDesired);
 //     }
 
+    if (RATE_DO_EXECUTE(RATE_BASC_RATE, tick)) {
 
 
+    }
 //     //角速度环
 //     if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {
 //         if (setpoint->mode.roll == modeVelocity) {

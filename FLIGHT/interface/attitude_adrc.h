@@ -18,5 +18,6 @@ void attitudeADRCwriteToConfigParam(void);
 void attitudeRateADRC(Axis3f *actualRate, attitude_t *desiredRate, float32_t *ADRC_u0);
 void attitudeTD(axis_b id, float input, float *output);
 void attitudeADRCinit(void);
+void Attitude_transient_process_update(setpoint_t *setpoint);
 
 #endif
