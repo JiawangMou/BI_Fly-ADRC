@@ -34,17 +34,17 @@ typedef struct
     float x2d;
     float x2d_dot;
     float disturb;
-    float tao0_hat;
-    float J_hat;
+    float m_hat;
     float Y_transpose;
     float M_gamma;
+    float Fz;
 } BASC_Pos_Object;
 
 void BASCAttitudeInit(void);
 
-void Torque_Cal(Axis3f *Wb, attitude_t *actualAngle);
-void Fz_Cal(BASC_Pos_Object *BASC, float *Wb, float *Vb);
-
+void Torque_Cal(control_t *control, Axis3f *Wb, attitude_t *actualAngle);
+void Fz_Cal(control_t *control, const float posZ, const float velZ);
+void Thrustcommand2Fz(control_t* control,float command);
 
 
 #endif

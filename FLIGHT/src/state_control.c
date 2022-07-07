@@ -56,8 +56,8 @@ float getAltholdThrust(void) { return thrustLpf; }
 
 void stateControlInit(void)
 {
-	// attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*��ʼ����̬PID*/	
-	// positionControlInit(VEL_PID_DT, POS_PID_DT); /*��ʼ��λ��PID*/
+	// attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
+	// positionControlInit(VEL_PID_DT, POS_PID_DT); /*初始化位置PID*/
     // attitudeADRCinit();
     // positionADRCinit();
     //     // Filter the setpoint
@@ -126,8 +126,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 //                 attitudeDesired.yaw += 360.0f;
 //         }
 
-//         attitudeDesired.roll += configParam.trimR; //����΢��ֵ
-//         attitudeDesired.pitch += configParam.trimP;
+        // attitudeDesired.roll += configParam.trimR; //叠加微调值
+        // attitudeDesired.pitch += configParam.trimP;
 
 
 // #ifdef ADRC_CONTROL
@@ -145,6 +145,13 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
     if (RATE_DO_EXECUTE(RATE_BASC_RATE, tick)) {
         Torque_Cal(&sensors->gyro, &state->attitude);
+        if (setpoint->mode.z != modeDisable) 
+            Fz_Cal(control,state->position.z, state->velocity.z);
+        else{
+            Thrustcommand2Fz(control,setpoint->thrust);
+            if(control->Tao_Fz[3] < MASS * G)
+                
+        }
         
     }
 //     //角速度环
@@ -158,7 +165,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 //             attitudeControllerResetPitchAttitudePID();
 //         }
 //         extern u8 fstate;
-//         if (control->flipDir != CENTER && fstate == 4) /*�շ�����ֻʹ���ڻ�PID*/
+//         if (control->flipDir != CENTER && fstate == 4) /*空翻过程只使用内环PID*/
 //         {
 //             rateDesired.pitch = setpoint->attitude.pitch;
 //             rateDesired.roll  = setpoint->attitude.roll;

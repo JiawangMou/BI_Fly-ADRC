@@ -468,12 +468,7 @@ void actuator2PWM(control_t *control, actuatorStatus_t *actuatorStatus)
     Thrust2motorPWM(&actuatorStatus->motor_r,control->actuator[T_r]);
     ServoAngle2ServoPWM(&actuatorStatus->servo_l, &actuatorStatus->servo_r, control->actuator);
 }
-//将遥控指令转换成  g/cm^2
-float Thrustcommand2ADRC_u0(float command)
-{
-    float u0 = command * ( G + 200 ) / 65000;
-    return (u0 >= ( G + 200 ) ? (G + 200) : u0);
-}
+
 /*
 
 * Function: Thrust2motorPWM

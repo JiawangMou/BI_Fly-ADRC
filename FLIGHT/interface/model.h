@@ -167,7 +167,7 @@ void Thrust2motorPWM(Motorstatus_t *motorstatus,float32_t u );
 void ServoAngle2ServoPWM(Servostatus_t *servo_l,Servostatus_t *servo_r, float32_t *u );
 void control_allocation(control_t *control);
 void actuator2PWM(control_t *control, actuatorStatus_t *actuatorStatus);
-float Thrustcommand2ADRC_u0(float command);
+
 #endif                                 /* RTW_HEADER_model_h_ */
 
 /*

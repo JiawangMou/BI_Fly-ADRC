@@ -123,7 +123,7 @@ void BASCAttitudeInit(void)
 
 }
 
-void Torque_Cal(Axis3f *Wb, attitude_t *actualAngle)
+void Torque_Cal(control_t* control,Axis3f *Wb, attitude_t *actualAngle)
 {
     arm_scale_f32(Wb->axis, RAD, wb_rad, 3); 
     arm_scale_f32(actualAngle->axis, RAD, angle_rad, 3); 
@@ -165,20 +165,32 @@ void Torque_Cal(Axis3f *Wb, attitude_t *actualAngle)
     x2_J_hat_x2[1] = BASCAtti.J_hat[0]*wb_rad[0]*wb_rad[2] - BASCAtti.J_hat[8]*wb_rad[0]*wb_rad[2];
     x2_J_hat_x2[2] = BASCAtti.J_hat[4]*wb_rad[0]*wb_rad[1] - BASCAtti.J_hat[0]*wb_rad[0]*wb_rad[1];
 
-    for(int i=0; i<3; i++)
+    for(int i=0; i<3; i++){
         BASCAtti.Torque[i] =  A3_delta1[i] + A2_delta2[i] + J_hat_x2d_dot[i] + x2_J_hat_x2[i] - BASCAtti.Tao0[i];
-
+        control->Tao_Fz[i] = BASCAtti.Torque[i];
+    }
+        
 }
 
-void Fz_Cal(const float posZ, const float velZ)
+void Fz_Cal(control_t* control,const float posZ, const float velZ)
 {
     float delta1_dot = 0;
     BASCPos.delta1 = posZ_TD.x1 - posZ;
-    BASCPos.x2d = BASCPos.A1 * BASCPos.delta1 + posZ_TD.x2;
+    BASCPos.x2d = BASCPos.A2 * BASCPos.delta1 + posZ_TD.x2;
     BASCPos.delta2 = BASCPos.x2d - velZ;
     delta1_dot = posZ_TD.x2 - velZ;
-    BASCPos.x2d_dot = BASCPos.A1 * delta1_dot + posZ_TD.fh;
+    BASCPos.x2d_dot = BASCPos.A2 * delta1_dot + posZ_TD.fh;
 
     BASCPos.Y_transpose = BASCPos.x2d_dot + G;
-    BASCPos.
+    BASCPos.Fz = BASCPos.A1 * BASCPos.delta1 + BASCPos.m_hat * BASCPos.x2d_dot + BASCPos.m_hat * G + BASCPos.A3 * BASCPos.delta2;
+    control->Tao_Fz[3] = BASCPos.Fz;
+}
+
+//将遥控指令转换成Fz g*cm/s^2  Fzmax  = 34220 g*cm/s^2 
+void Thrustcommand2Fz(control_t* control,float command)
+{
+    float Fzmax = MASS * ( G + 200 );
+    float Fz = command * Fzmax / 65000;
+    BASCPos.Fz = (Fz >= Fzmax ? Fzmax : Fz);
+    control->Tao_Fz[3] = BASCPos.Fz;
 }

@@ -265,8 +265,7 @@ typedef struct
 	float thrust;
 	thrust_t thrust_part;
 	enum dir_e flipDir;		/*��������*/
-	float32_t ADRC_u0[4];
-	float32_t ADRC_u[4];
+	float32_t Tao_Fz[4];
 	float actuator[4];  //T_l  T_r  beta_l  beta_r
 } control_t;
 #else
