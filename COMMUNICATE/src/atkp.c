@@ -789,7 +789,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
             sendPid(1, BASCAtti.A3[0], BASCAtti.A1[0], BASCAtti.A2[0], BASCAtti.A3[1], BASCAtti.A1[1], BASCAtti.A2[1],
                 BASCAtti.A3[2], BASCAtti.A1[2], BASCAtti.A2[2], Roll_td.r, Pitch_td.r, Yaw_td.r);
             sendPid(2, BASCAtti.J_gamma[0], BASCAtti.J_gamma[1], BASCAtti.J_gamma[2], BASCAtti.Tao0_gamma[0],
-                BASCAtti.Tao0_gamma[1], BASCAtti.Tao0_gamma[2], pidAngleYaw.kp, 0, 0, 0, 0, 0);
+                BASCAtti.Tao0_gamma[1], BASCAtti.Tao0_gamma[2], 0, 0, 0, 0, 0, 0);
             sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0, 0, 0, 0);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);

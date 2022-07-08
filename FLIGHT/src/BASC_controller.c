@@ -8,6 +8,9 @@
 #include "model.h"
 #include "BASC_controller.h"
 
+// Mass * (G + 200 ) = 29 * 1180 = 34220
+#define FZMAX 34220
+
 
 arm_matrix_instance_f32 mat_A1;
 arm_matrix_instance_f32 mat_A2;
@@ -65,13 +68,9 @@ float x2_J_hat_x2[3] = {0};
 
 void BASCAttitudeInit(void)
 {
-//    BASCAtti.J_hat = {364,0,0,0,294,0,0,0,343};
-//    BASCAtti.tao0_hat = {0};
-//    BASCAtti.A1 = {0};
-//    BASCAtti.A2 = {0};
-//    BASCAtti.A3 = {0};
-//    BASCAtti.J_gamma = {0};
-//    BASCAtti.Tao0_gamma = {0};
+    BASCAtti.J_hat[0] = 364;
+    BASCAtti.J_hat[4] = 294;
+    BASCAtti.J_hat[8] = 343;
 
     BASCAtti.A1[0] = configParam.BASCAtti.A1[0];
     BASCAtti.A1[3] = configParam.BASCAtti.A1[1];  
@@ -122,6 +121,17 @@ void BASCAttitudeInit(void)
     arm_mat_init_f32(&mat_desiredangle, 3,1, desiredangle_rad);
 
 }
+
+void BASCPositionInit(void)
+{
+    BASCPos.A1 = configParam.BASCPos.A1;
+    BASCPos.A2 = configParam.BASCPos.A2;
+    BASCPos.A2 = configParam.BASCPos.A2;
+
+    BASCPos.M_gamma = configParam.BASCPos.M_gamma;
+    BASCPos.m_hat = MASS;
+}
+
 
 void Torque_Cal(control_t* control,Axis3f *Wb, attitude_t *actualAngle)
 {
@@ -187,19 +197,49 @@ void Fz_Cal(control_t* control,const float posZ, const float velZ)
 }
 
 //将遥控指令转换成Fz g*cm/s^2  Fzmax  = 34220 g*cm/s^2 
-void Thrustcommand2Fz(control_t* control,float command)
+float Thrustcommand2Fz(float command)
 {
-    float Fzmax = MASS * ( G + 200 );
-    float Fz = command * Fzmax / 65000;
-    BASCPos.Fz = (Fz >= Fzmax ? Fzmax : Fz);
-    control->Tao_Fz[3] = BASCPos.Fz;
+    float Fz = command * FZMAX / 65000;
+    BASCPos.Fz = (Fz >= FZMAX ? FZMAX : Fz);
+
+    return BASCPos.Fz;
 }
 
-// BASC_Attitude_Object getBASCAtti_controller(void)
-// {
-//     return BASCAtti;
-// }
-// BASC_Pos_Object getBASCPos_controller(void)
-// {
-//     return BASCPos;
-// }
+void resetBASCAttitudecontroller(void)
+{
+    BASCAtti.A1[0] = configParam.BASCAtti.A1[0];
+    BASCAtti.A1[3] = configParam.BASCAtti.A1[1];  
+    BASCAtti.A1[6] = configParam.BASCAtti.A1[2];
+
+    BASCAtti.A2[0] = configParam.BASCAtti.A2[0];
+    BASCAtti.A2[3] = configParam.BASCAtti.A2[1];  
+    BASCAtti.A2[6] = configParam.BASCAtti.A2[2];
+
+    BASCAtti.A3[0] = configParam.BASCAtti.A3[0];
+    BASCAtti.A3[3] = configParam.BASCAtti.A3[1];  
+    BASCAtti.A3[6] = configParam.BASCAtti.A3[2];  
+
+    BASCAtti.J_gamma[0] = configParam.BASCAtti.J_gamma[0];
+    BASCAtti.J_gamma[3] = configParam.BASCAtti.J_gamma[1];  
+    BASCAtti.J_gamma[6] = configParam.BASCAtti.J_gamma[2];
+
+    BASCAtti.Tao0_gamma[0] = configParam.BASCAtti.Tao0_gamma[0];
+    BASCAtti.Tao0_gamma[3] = configParam.BASCAtti.Tao0_gamma[1];  
+    BASCAtti.Tao0_gamma[6] = configParam.BASCAtti.Tao0_gamma[2];      
+}
+
+void resetBASCPositioncontroller(void)
+{
+    BASCPos.A1 = configParam.BASCPos.A1;
+    BASCPos.A2 = configParam.BASCPos.A2;
+    BASCPos.A2 = configParam.BASCPos.A2;
+
+    BASCPos.M_gamma = configParam.BASCPos.M_gamma;
+}
+
+void Attitude_Adaptive_law(Axis3f *anglerate)
+{
+    Axis3f Wb = *anglerate
+    BASCAtti.Y_transpose[0] = BASCAtti.x2d_dot[0];
+    BASCAtti.Y_transpose[0] = BASCAtti.x2d_dot[0];
+}

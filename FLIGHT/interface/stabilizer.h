@@ -47,6 +47,9 @@
 #define RATE_BASC_RATE			RATE_500_HZ //角速度环（内环）PID速率
 #define RATE_BASC_DT			(1.0/RATE_PID_RATE)
 
+#define RATE_ADAPITVE_RATE      RATE_1000_HZ
+#define RATE_ADAPITVE_DT	    0.001f
+
 
 // #define MBD_RATE                RATE_250_HZ
 // #define MBD_DT                  (1.0/MBD_RATE)

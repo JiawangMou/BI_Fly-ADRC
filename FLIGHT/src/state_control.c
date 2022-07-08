@@ -16,7 +16,7 @@
 
 static attitude_t attitudeDesired;
 //static attitude_t atti_TD;
-// static float      actualThrust;
+static float      actualThrust;
 static attitude_t rateDesired;
 
 
@@ -147,23 +147,27 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         if (setpoint->mode.z != modeDisable) 
             Fz_Cal(control,state->position.z, state->velocity.z);
         else{
-            Thrustcommand2Fz(control,setpoint->thrust);
-            if(control->Tao_Fz[3] < MASS * G)
+            actualThrust = Thrustcommand2Fz(setpoint->thrust);
+            if(actualThrust < MASS * G)
             {
                 control->Tao_Fz[3] = MASS * G;
                 U_cal(control, &state->attitude);
                 control_allocation(control);
                 diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
-                control->actuator[T_l] = constrainf(control->Tao_Fz[3] / 200.0f + diff_Thrust, 0.0f, 200.0f);
-                control->actuator[T_r] = constrainf(control->Tao_Fz[3] / 200.0f - diff_Thrust, 0.0f, 200.0f);
+                control->actuator[T_l] = constrainf(actualThrust / 200.0f + diff_Thrust, 0.0f, 200.0f);
+                control->actuator[T_r] = constrainf(actualThrust / 200.0f - diff_Thrust, 0.0f, 200.0f);
             }else{
+                control->Tao_Fz[3] = actualThrust;
                 U_cal(control, &state->attitude);
                 control_allocation(control);
             }
-                
         }
         
     }
+    if (RATE_DO_EXECUTE(RATE_ADAPITVE_RATE, tick)) {
+        
+    }
+
 //     //角速度环
 //     if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {
 //         if (setpoint->mode.roll == modeVelocity) {
