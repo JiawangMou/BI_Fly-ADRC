@@ -25,11 +25,13 @@
 #include "axis.h"
 #include "state_control.h"
 #include "sensors.h"
+#include "BASC_controller.h"
 #include "config_param.h"
 #include "attitude_adrc.h"
 #include "dyn_notch_filter.h"
 #include "position_adrc.h"
 #include "config.h"
+
 
 /*FeeRTOS相关头文件*/
 #include "FreeRTOS.h"
@@ -547,116 +549,113 @@ static void atkpSendPeriod(void)
     }
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
-//#ifdef ADRC_CONTROL
-//		sensorData_t sensordata;
-////		float thrustBase = 0.1f * configParam.thrustBase;
-//		attitude_t rateDesired;
-//		attitude_t attitude;
-//		attitude_t attitudeDesired;
-//        control_t control;
-//		getAttitudeData(&attitude);
-//		getAngleDesired(&attitudeDesired);
-//        getSensorData(&sensordata);
-//		getRateDesired( &rateDesired );
-//        control  = getControlData();
-//        u32 timestamp = getSysTickCnt();
-////        sendUserData(1, attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,  ADRCAngleRoll.td.x1, ADRCAnglePitch.td.x1, ADRCAngleYaw.td.x1,  ADRCRateRoll.td.x1, rateDesired.roll,rateDesired.pitch );
-////		sendUserData(2, rateDesired.yaw, control.ADRC_u0[0],control.ADRC_u0[1], control.ADRC_u0[2], control.ADRC_u0[3], control.ADRC_u[0],  control.ADRC_u[1],control.ADRC_u[2], control.ADRC_u[3]);
-//        // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
-//		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
-//#endif    
+        sensorData_t sensordata;
+        attitude_t   attitude;
+        control_t    control;
+        getAttitudeData(&attitude);
+        setpoint_t setpoint = getSetpoint();
+        control             = getControlData();
+        u32 timestamp       = getSysTickCnt();
+        sendUserData(1, setpoint.attitude.roll, setpoint.attitude.pitch, setpoint.attitude.yaw,
+            setpoint.attitudeDesired.roll, setpoint.attitudeDesired.pitch, setpoint.attitudeDesired.yaw,
+            100.0f * BASCAtti.x2d[0], 100.0f * BASCAtti.x2d[1], 100.0f * BASCAtti.x2d[2]);
+        sendUserData(2, sensordata.gyro.x, sensordata.gyro.y, sensordata.gyro.z, attitude.roll, attitude.pitch,
+            attitude.yaw, 0, 0, 0);
 
-//#ifdef PID_CONTROL
-//        // float  thrustBase = 0.1f * configParam.thrustBase;
-//        // sensorData_t sensor;
-//        // control_t control;
-//        // getSensorData(&sensor);
-//        // getRateDesired(&rateDesired);
-//        // getAngleDesired(&angleDesired);
-//        // getAttitudeData(&attitude);
-////         Axis3i16 acc;
-////         Axis3i16 gyro;
-////         Axis3i16 mag;
-////        Acc_Send acc_send;
-////         getSensorRawData(&acc, &gyro, &mag);
-//        // control  = getControlData();
-//        // sendUserData(1, angleDesired.roll, attitude.roll, rateDesired.roll, sensor.gyro.x, pidAngleRoll.outP, pidAngleRoll.outI, pidRateRoll.outP,
-//        //     pidRateRoll.outI, pidRateRoll.outD);
-//        // sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
-//        //     sensor.gyro.z, control.pitch, control.yaw, control.roll);
+        //#ifdef ADRC_CONTROL
+        //		sensorData_t sensordata;
+        ////		float thrustBase = 0.1f * configParam.thrustBase;
+        //		attitude_t rateDesired;
+        //		attitude_t attitude;
+        //		attitude_t attitudeDesired;
+        //        control_t control;
+        //		getAttitudeData(&attitude);
+        //		getAngleDesired(&attitudeDesired);
+        //        getSensorData(&sensordata);
+        //		getRateDesired( &rateDesired );
+        //        control  = getControlData();
+        //        u32 timestamp = getSysTickCnt();
+        ////        sendUserData(1, attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,
+        ///ADRCAngleRoll.td.x1, ADRCAnglePitch.td.x1, ADRCAngleYaw.td.x1,  ADRCRateRoll.td.x1,
+        ///rateDesired.roll,rateDesired.pitch ); /		sendUserData(2, rateDesired.yaw,
+        ///control.ADRC_u0[0],control.ADRC_u0[1], control.ADRC_u0[2], control.ADRC_u0[3], control.ADRC_u[0],
+        ///control.ADRC_u[1],control.ADRC_u[2], control.ADRC_u[3]);
+        //        // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
+        //		//
+        //0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase); #endif
 
-//		sensorData_t sensordata;
-//// 		// attitude_t rateDesired;
-//		attitude_t attitude;
-//		attitude_t attitudeDesired;
-//        control_t control = getControlData();
+        //#ifdef PID_CONTROL
+        //        // float  thrustBase = 0.1f * configParam.thrustBase;
+        //        // sensorData_t sensor;
+        //        // control_t control;
+        //        // getSensorData(&sensor);
+        //        // getRateDesired(&rateDesired);
+        //        // getAngleDesired(&angleDesired);
+        //        // getAttitudeData(&attitude);
+        ////         Axis3i16 acc;
+        ////         Axis3i16 gyro;
+        ////         Axis3i16 mag;
+        ////        Acc_Send acc_send;
+        ////         getSensorRawData(&acc, &gyro, &mag);
+        //        // control  = getControlData();
+        //        // sendUserData(1, angleDesired.roll, attitude.roll, rateDesired.roll, sensor.gyro.x,
+        //        pidAngleRoll.outP, pidAngleRoll.outI, pidRateRoll.outP,
+        //        //     pidRateRoll.outI, pidRateRoll.outD);
+        //        // sendUserData(2, angleDesired.pitch, attitude.pitch, angleDesired.yaw, attitude.yaw, sensor.gyro.y,
+        //        //     sensor.gyro.z, control.pitch, control.yaw, control.roll);
 
-////     //   Axis3f gyro_LPF;
-////     //     Axis3f gyro_UnLPF;
-//        state_t state = getState(); /*四轴姿态*/
-////         float laser_height = getFusedHeight();
-//        // Axis3i16 acc;
-//        // Axis3i16 gyro;
-//        // Axis3i16 mag;
-////         float      q0;
-////         float      q1;
-////         float      q2;
-////         float      q3;
-//        setpoint_t setpoint = getSetpoint();
-//        // getSensorRawData(&acc, &gyro, &mag);
-//		getAttitudeData(&attitude);
-//		getAngleDesired(&attitudeDesired);
-//        getSensorData(&sensordata);
-////        getgyro_UnLPFData(&gyro_UnLPF);
-//        // getgyro_LPFData( &gyro_LPF);
-//		// getRateDesired( &rateDesired );
-////        Axis3f acc_Notched_LPF;
-//        // Axis3f acc_SF;
-////        getacc_NotchedData( &acc_Notched_LPF);
-//        // getacc_SFData(&acc_SF);
-//        u32 timestamp = getSysTickCnt();
-//        // estimator_t estimator;
-//        // getestimator(&estimator);
-//        // motorPWM_t motorPWM;
-//        // getMotorPWM(&motorPWM);
-//        // getQ(&q0 ,&q1,&q2,&q3);
-//#ifdef USE_MBD        
-//        // float(* Notchcenterfreq)[DYN_NOTCH_COUNT_MAX] =  getdynNotchcenterfreq();
-//        // peak_t *peaks =  getdynNotchpeak();
-//        // float roll_unNotchData = getgyro_unNotchData();
-//        // float roll_SFdata = getgyro_smoothfilterData();
-//        // sendUserData(1, gyro_UnLPF.x, gyro_UnLPF.y, gyro_UnLPF.z,roll_SFdata,gyro_LPF.x,sensordata.gyro.x,control.roll,roll_Notchdata,(s16)(timestamp & 0x00ffff));
-//        // sendUserData(2, peaks[0].bin ,peaks[0].value,peaks[1].bin,peaks[1].value, peaks[2].bin,peaks[2].value, 
-//        //                 (s16)(Notchcenterfreq[X][0]*10),(s16)(Notchcenterfreq[X][1]*10),(s16)(Notchcenterfreq[X][2]*10));
+        //        //定高测试用通讯协议
+        //        // sendUserData(1, 10*state.position.z,10* setpoint.position.z,
+        //        10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,10*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp
+        //        & 0x00ffff));
+        //        // sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD
+        //        /10,rateDesired.roll
+        //        ,rateDesired.pitch,rateDesired.yaw,attitudeDesired.roll,attitudeDesired.pitch,attitudeDesired.yaw);
+        //        //定高加速度计滤波测试用协议
+        //        // sendUserData(1,
+        //        10*state.position.z,10*state.velocity.z,10*state.acc.z,10*setpoint.position.z,10*setpoint.velocity.z,10*velZ_TD.x1,10*velZ_TD.x2,10*posZ_TD.x1,10*posZ_TD.x2);
+        //        // sendUserData(2, velZ_nlsef.e1_out/10,velZ_nlsef.e2_out/10,velZ_nlsef.u0/10,control.thrust_part.MBD
+        //        /10,control.thrust/10,10*laser_height,motorPWM.f1/10,motorPWM.f2/10,(s16)(timestamp & 0x00ffff));
+        //        // sendUserData(1,
+        //        10*laser_height,100*sensordata.acc.x,100*sensordata.acc.y,100*sensordata.acc.z,100*state.velocity.x,100*state.velocity.y,100*state.velocity.z,100*state.position.z,(s16)(timestamp
+        //        & 0x00ffff));
+        //        // sendUserData(2,
+        //        q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
+        //        //测试stabilizer中的函数运行调度是否正常
+        //        // sendUserData(1,
+        //        stabi_tick.sensorsAcquire_tick,stabi_tick.imuUpdate_tick,stabi_tick.positionEstimate_tick,stabi_tick.commanderGetSetpoint_tick,stabi_tick.getOpFlowData_tick,stabi_tick.flyerFlipCheck_tick,stabi_tick.stateControl_tick,stabi_tick.motorControl_tick,(s16)(timestamp
+        //        & 0x00ffff));
+        //        // 光流数据测试
+        //        // sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch,
+        //        10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X],
+        //        opFlow.posSum[Y],sensordata.zrange.distance);
+        //        // sendUserData(2, sensordata.zrange.distance_uncomp,opFlow.pixDelta[X],opFlow.pixDelta[Y],
+        //        opFlow.deltaVel[X],
+        //        opFlow.deltaVel[Y],opFlow.pixdeltaveluncopm[X],opFlow.pixdeltaveluncopm[Y],opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y]);
+        //        // //带模型控制器和ESO测试
+        //        sendUserData(1,
+        //        setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1,velZ_LESO.disturb,control.u);
+        //        sendUserData(2,
+        //        velZ_TD.x1,velZ_TD.x2,velZ_nlsef.e1_out,control.a,control.b,velZ_nlsef.u0,state.velocity.x,opFlow.velLpf[X],opFlow.velLpf[Y]);
 
-//        //定高测试用通讯协议
-//        // sendUserData(1, 10*state.position.z,10* setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*setpoint.acc.z,10*state.acc.z,control.thrust/10,10*laser_height,(s16)(timestamp & 0x00ffff));
-//        // sendUserData(2, control.thrust_part.pos /10 ,control.thrust_part.vel /10 ,control.thrust_part.MBD /10,rateDesired.roll ,rateDesired.pitch,rateDesired.yaw,attitudeDesired.roll,attitudeDesired.pitch,attitudeDesired.yaw);
-//        //定高加速度计滤波测试用协议
-//        // sendUserData(1, 10*state.position.z,10*state.velocity.z,10*state.acc.z,10*setpoint.position.z,10*setpoint.velocity.z,10*velZ_TD.x1,10*velZ_TD.x2,10*posZ_TD.x1,10*posZ_TD.x2);
-//        // sendUserData(2, velZ_nlsef.e1_out/10,velZ_nlsef.e2_out/10,velZ_nlsef.u0/10,control.thrust_part.MBD /10,control.thrust/10,10*laser_height,motorPWM.f1/10,motorPWM.f2/10,(s16)(timestamp & 0x00ffff));
-//        // sendUserData(1, 10*laser_height,100*sensordata.acc.x,100*sensordata.acc.y,100*sensordata.acc.z,100*state.velocity.x,100*state.velocity.y,100*state.velocity.z,100*state.position.z,(s16)(timestamp & 0x00ffff));
-//        // sendUserData(2, q0*1000,q1*1000,q2*1000,q3*1000,100*state.attitude.pitch,100*state.attitude.roll,100*state.attitude.yaw,motorPWM.f1/10,motorPWM.f2/10);
-//        //测试stabilizer中的函数运行调度是否正常
-//        // sendUserData(1, stabi_tick.sensorsAcquire_tick,stabi_tick.imuUpdate_tick,stabi_tick.positionEstimate_tick,stabi_tick.commanderGetSetpoint_tick,stabi_tick.getOpFlowData_tick,stabi_tick.flyerFlipCheck_tick,stabi_tick.stateControl_tick,stabi_tick.motorControl_tick,(s16)(timestamp & 0x00ffff));
-//        // 光流数据测试
-//        // sendUserData(1, 10*attitudeDesired.roll,10*state.attitude.roll,10*attitudeDesired.pitch, 10*state.attitude.pitch,opFlow.velLpf[X],opFlow.velLpf[Y], opFlow.posSum[X], opFlow.posSum[Y],sensordata.zrange.distance);
-//        // sendUserData(2, sensordata.zrange.distance_uncomp,opFlow.pixDelta[X],opFlow.pixDelta[Y], opFlow.deltaVel[X], opFlow.deltaVel[Y],opFlow.pixdeltaveluncopm[X],opFlow.pixdeltaveluncopm[Y],opFlow.deltaVelComp[X],opFlow.deltaVelComp[Y]);
-//        // //带模型控制器和ESO测试
-//        sendUserData(1, setpoint.position.z,posZ_TD.x1,state.position.z,posZ_TD.x2,state.velocity.z,setpoint.velocity.z,velZ_LESO.z1,velZ_LESO.disturb,control.u);
-//        sendUserData(2, velZ_TD.x1,velZ_TD.x2,velZ_nlsef.e1_out,control.a,control.b,velZ_nlsef.u0,state.velocity.x,opFlow.velLpf[X],opFlow.velLpf[Y]);        
+        //#else
+        //        sendUserData(1, 10*state.position.z, 10*setpoint.position.z,
+        //        10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp
+        //        & 0x00ffff)); sendUserData(2, acc.x
+        //        ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,(s16)(opFlow.timestamp &
+        //        0x00ffff),0);
 
-//#else
-//        sendUserData(1, 10*state.position.z, 10*setpoint.position.z, 10*state.velocity.z,10*setpoint.velocity.z,10*laser_height,10*state.acc.z,control.thrust,0,(s16)(timestamp & 0x00ffff));
-//        sendUserData(2, acc.x ,acc.y,acc.z,gyro_UnLPF.x,gyro_UnLPF.y,gyro_UnLPF.z,10*sensordata.acc.z,(s16)(opFlow.timestamp & 0x00ffff),0);
-
-//        // sendUserData(1, gyro.x, gyro_LPF.x, sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp & 0x00ffff));
-//        // sendUserData(2, gyro.y, gyro_LPF.y, sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);        
-//#endif
-//		// sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,  attitude.pitch,rateDesired.pitch, sensordata.gyro.y, attitude.yaw,rateDesired.yaw, sensordata.gyro.z);
-//        // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
-//		// 				0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase);
-//#endif
+        //        // sendUserData(1, gyro.x, gyro_LPF.x,
+        //        sensordata.gyro.x,attitudeDesired.roll,attitude.roll,rateDesired.roll,control.roll,0,(s16)(timestamp &
+        //        0x00ffff));
+        //        // sendUserData(2, gyro.y, gyro_LPF.y,
+        //        sensordata.gyro.y,attitudeDesired.pitch,attitude.pitch,rateDesired.pitch,control.pitch,0,0);
+        //#endif
+        //		// sendUserData(2, attitudeDesired.roll, attitude.roll, attitudeDesired.pitch,
+        //attitude.pitch,rateDesired.pitch, sensordata.gyro.y, attitude.yaw,rateDesired.yaw, sensordata.gyro.z);
+        //        // sendUserData(2, opFlow.velLpf[X],opFlow.velLpf[Y],opFlow.posSum[X],opFlow.posSum[Y],
+        //		//
+        //0,getFusedHeight(),vl53lxx.distance,100.f*vl53lxx.quality,thrustBase); #endif
 
     }
     // if (!(count_ms % PERIOD_RCDATA)) {
@@ -787,45 +786,14 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
             //     pidX.outputLimit, pidY.outputLimit, pidZ.outputLimit);
             // sendPid(5,getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE),0,0,0,0,0,0,0,0,0,0);
 
-//			sendPid(1, ADRCRateRoll.nlsef.beta_1, ADRCRateRoll.nlsef.alpha1, ADRCRateRoll.nlsef.zeta,
-//					   ADRCRatePitch.nlsef.beta_1, ADRCRatePitch.nlsef.alpha1, ADRCRatePitch.nlsef.zeta,
-//					   ADRCRateYaw.nlsef.beta_1, ADRCRateYaw.nlsef.alpha1, ADRCRateYaw.nlsef.zeta
-//				   );
-//			sendPid(2, pidAngleRoll.kp, pidAngleRoll.ki, pidAngleRoll.kd,
-//					   pidAnglePitch.kp, pidAnglePitch.ki, pidAnglePitch.kd,
-//					   pidAngleYaw.kp, pidAngleYaw.ki, pidAngleYaw.kd 
-//				   );
-//			sendPid(3, velZ_nlsef.beta_1, velZ_nlsef.beta_I, velZ_nlsef.beta_2,
-//					   pidZ.kp, pidZ.ki, pidZ.kd,
-//					   pidVX.kp, pidVX.ki, pidVX.kd
-//				   );
-//#ifdef FOUR_WING
-//    #ifdef ADRC_CONTROL 
-//			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
-//					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),  getservoinitpos_configParam(PWM_MIDDLE)/10,
-//                       ADRCAngleRoll.td.r / 100,ADRCAnglePitch.td.r / 100,ADRCAngleYaw.td.r / 100
-//				   );
-//            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
-//					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
-//                       ADRCRateRoll.nlsef.N1, 0, 0
-//				   );
-//    #elif defined PID_CONTROL
-//            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
-//    #endif
-//#elif defined DOUBLE_WING
-//    #ifdef ADRC_CONTROL
-//			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
-//					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10,
-//                       ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.alpha1
-//				   );
-//            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
-//					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
-//                       ADRCRateRoll.nlsef.N1, 0, 0
-//				   );
-//    #elif defined PID_CONTROL
-//            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
-//    #endif
-//#endif         
+            sendPid(1, BASCAtti.A3[0], BASCAtti.A1[0], BASCAtti.A2[0], BASCAtti.A3[1], BASCAtti.A1[1], BASCAtti.A2[1],
+                BASCAtti.A3[2], BASCAtti.A1[2], BASCAtti.A2[2], Roll_td.r, Pitch_td.r, Yaw_td.r);
+            sendPid(2, BASCAtti.J_gamma[0], BASCAtti.J_gamma[1], BASCAtti.J_gamma[2], BASCAtti.Tao0_gamma[0],
+                BASCAtti.Tao0_gamma[1], BASCAtti.Tao0_gamma[2], pidAngleYaw.kp, 0, 0, 0, 0, 0);
+            sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0, 0, 0, 0);
+            sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
+                getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
+            sendPid(5, 0, GPIO_Pin_0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
         if (anlPacket->data[0] == D_ACK_RESET_PARAM) /*恢复默认参数*/
         {

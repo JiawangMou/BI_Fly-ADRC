@@ -16,13 +16,12 @@
 
 static attitude_t attitudeDesired;
 //static attitude_t atti_TD;
-static float      actualThrust;
+// static float      actualThrust;
 static attitude_t rateDesired;
 
 
 static float thrustLpf        = 35000; /*基础油门*/
-
-
+float diff_Thrust = 0.0f;
 
 #ifdef TEST
 
@@ -144,12 +143,23 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 //     }
 
     if (RATE_DO_EXECUTE(RATE_BASC_RATE, tick)) {
-        Torque_Cal(&sensors->gyro, &state->attitude);
+        Torque_Cal(control,&sensors->gyro, &state->attitude);
         if (setpoint->mode.z != modeDisable) 
             Fz_Cal(control,state->position.z, state->velocity.z);
         else{
             Thrustcommand2Fz(control,setpoint->thrust);
             if(control->Tao_Fz[3] < MASS * G)
+            {
+                control->Tao_Fz[3] = MASS * G;
+                U_cal(control, &state->attitude);
+                control_allocation(control);
+                diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
+                control->actuator[T_l] = constrainf(control->Tao_Fz[3] / 200.0f + diff_Thrust, 0.0f, 200.0f);
+                control->actuator[T_r] = constrainf(control->Tao_Fz[3] / 200.0f - diff_Thrust, 0.0f, 200.0f);
+            }else{
+                U_cal(control, &state->attitude);
+                control_allocation(control);
+            }
                 
         }
         
@@ -190,7 +200,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     
     // control->thrust = actualThrust;
 
-    if (actualThrust < 5.f) {
+    if (control->Tao_Fz[3] < 500.f) {
 #ifdef FOUR_WING
         // control->roll = 0;
 #endif
@@ -198,9 +208,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // control->yaw = 0;
 
         // attitudeResetAllPID_TEST();
-        // attitudeResetAllPID();	/*��λ��̬PID*/
-        // /*����ȡ����λ��ԭ���ǣ��÷���������Ķ���ʱ�򣬻��ܿ�������ķ�Ӧ���Ӷ�ȷ��PID�������Ƿ������������ǽ����Ƿ�������*/
-        // positionResetAllPID();                     /*��λλ��PID*/
+        // attitudeResetAllPID();	/*复位姿态PID*/	
+        // positionResetAllPID();   /*复位位置PID*/
         // velZ_LESO.z2 = 0;
         control->actuator[T_l] = 0;
         control->actuator[T_r] = 0;
@@ -209,7 +218,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 #ifdef ADRC_CONTROL
 		// adrc_reset(&ADRCRateRoll);
 #endif
-        attitudeDesired.yaw = state->attitude.yaw; /*��λ���������yawֵ*/
+        attitudeDesired.yaw = state->attitude.yaw; /*复位计算的期望yaw值*/
 
         if (cnt++ > 1500) {
             cnt = 0;

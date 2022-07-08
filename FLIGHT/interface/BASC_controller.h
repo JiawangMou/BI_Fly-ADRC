@@ -40,11 +40,15 @@ typedef struct
     float Fz;
 } BASC_Pos_Object;
 
+extern BASC_Attitude_Object BASCAtti;
+extern BASC_Pos_Object BASCPos;
+
 void BASCAttitudeInit(void);
 
 void Torque_Cal(control_t *control, Axis3f *Wb, attitude_t *actualAngle);
 void Fz_Cal(control_t *control, const float posZ, const float velZ);
 void Thrustcommand2Fz(control_t* control,float command);
-
+// BASC_Attitude_Object getBASCAtti_controller(void);
+// BASC_Pos_Object getBASCPos_controller(void);
 
 #endif

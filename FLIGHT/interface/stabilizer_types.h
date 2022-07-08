@@ -264,9 +264,12 @@ typedef struct
 	s16 yaw;
 	float thrust;
 	thrust_t thrust_part;
-	enum dir_e flipDir;		/*��������*/
-	float32_t Tao_Fz[4];
-	float actuator[4];  //T_l  T_r  beta_l  beta_r
+	enum dir_e flipDir;		/*翻滚方向*/
+	float32_t Tao_Fz[4];    //Tao_Fz[0]~Tao_Fz[2]： Tao, unit: g*cm^2/s^2;   Tao_Fz[3] ：Fz,  unit: g*cm/s^2; 
+	float U[4];				//U[0]~U[3]: T_lcos(beta_l), T_lsin(beta_l),T_rcos(beta_r),T_rsin(beta_r)
+	float actuator[4];  	//T_l  T_r  beta_l  beta_r
+	arm_matrix_instance_f32 mat_Tao_Fz_41;
+	arm_matrix_instance_f32 mat_actuator_41;
 } control_t;
 #else
 

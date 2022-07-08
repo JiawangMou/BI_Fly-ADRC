@@ -160,8 +160,8 @@ float TfApply(Tf_t *tf,const float input);
 float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle);
 float Ffz_coffe_cal(const attitude_t *atti,float servoangle);
 
-arm_status U_cal(Axis3f *anglerate,attitude_t *angle, float32_t *u0, float32_t *u);
-void D_coffe_cal(float32_t *D, Axis3f *anglerate);
+arm_status U_cal(control_t *control, attitude_t *angle);
+// void D_coffe_cal(float32_t *D, Axis3f *anglerate);
 void C_coffe_cal(float32_t *C, attitude_t *angle);
 void Thrust2motorPWM(Motorstatus_t *motorstatus,float32_t u );
 void ServoAngle2ServoPWM(Servostatus_t *servo_l,Servostatus_t *servo_r, float32_t *u );

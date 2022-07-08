@@ -40,7 +40,7 @@ arm_matrix_instance_f32 mat_ADRC_u0_41;
 arm_matrix_instance_f32 mat_ADRC_u_41;
 
 
-float32_t model_C[16] = {2.0025,0,-2.0025,0,0,2.0408,0,2.0408,0,-2.1251,0,2.1251,0,0,0,0};
+float32_t model_C[16] = {2.0025f,0.000001f,-2.0025f,0.000001f,0.000001f,2.0408f,0.000001f,2.0408f,0.000001f,-2.1251f,0.000001f,2.1251f,0,0,0,0};
 // float32_t model_C[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 float32_t model_C_inv[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 float32_t model_B[9] = {0};
@@ -386,44 +386,34 @@ float Ffz_coffe_cal(const attitude_t *atti,float servoangle)
 // }
 
 /*
-U = C_inv ( u0 - D - disturb )
+U = C_inv * Tao_Fz
 */
-arm_status U_cal(Axis3f *anglerate, attitude_t *angle,float32_t *u0, float32_t *u)
+arm_status U_cal(control_t *control, attitude_t *angle)
 {
-    float temp[4] = {0};
-    arm_matrix_instance_f32 mat_temp_41;
-    arm_matrix_instance_f32 mat_u_41;
-    arm_matrix_instance_f32 mat_u0_41;
-
-    arm_mat_init_f32(&mat_temp_41, 4,1, temp);
-    arm_mat_init_f32(&mat_u_41, 4,1, u);
-    arm_mat_init_f32(&mat_u0_41, 4,1,u0);
-	arm_status status = ARM_MATH_SUCCESS;
-    Axis3f Wb = {0};
-    for(int i=0; i < 3; i++)
-        Wb.axis[i] =  DEGREES_TO_RADIANS(anglerate->axis[i]);
-
-    D_coffe_cal(model_D, &Wb);
-    arm_mat_sub_f32(&mat_u0_41,&mat_model_D_41,&mat_temp_41);
+    float U_temp[4] = {0};
+    arm_status status;
+    arm_matrix_instance_f32 mat_U_temp_41;
+    arm_mat_init_f32(&mat_U_temp_41, 4,1, U_temp);
     // for(int i = 0; i < 4; i++)
     //     temp[i] = *(u0 + i) - model_D[i];
     C_coffe_cal(model_C, angle);
 
     status = arm_mat_inverse_f32(&mat_model_C_44, &mat_model_C_inv_44);
     if(status == ARM_MATH_SUCCESS ){
-        arm_mat_mult_f32(&mat_model_C_inv_44, &mat_temp_41, &mat_u_41);
+        arm_mat_mult_f32(&mat_model_C_inv_44, &control->mat_Tao_Fz_41, &mat_U_temp_41);
+        arm_scale_f32 (U_temp, 0.01f, control->U, 4);
         // arm_mat_vec_mult_f32( &mat_model_C_inv_44, temp, u);
     }	
     return status;
 }
 
-void D_coffe_cal(float32_t *D, Axis3f *wb)
-{
-    *D = (Jzz * wb->y * wb->z - Jyy * wb->y * wb->z)/Jxx;
-    *(D+1) = (-Jzz * wb->x * wb->z + Jxx * wb->x * wb->z)/Jyy;
-    *(D+2) = ( Jyy * wb->x * wb->y - Jxx * wb->x * wb->y)/Jzz;
-    *(D+3) = -G;
-}
+// void D_coffe_cal(float32_t *D, Axis3f *wb)
+// {
+//     *D = (Jzz * wb->y * wb->z - Jyy * wb->y * wb->z)/Jxx;
+//     *(D+1) = (-Jzz * wb->x * wb->z + Jxx * wb->x * wb->z)/Jyy;
+//     *(D+2) = ( Jyy * wb->x * wb->y - Jxx * wb->x * wb->y)/Jzz;
+//     *(D+3) = -G;
+// }
 
 void C_coffe_cal(float32_t *C, attitude_t *angle)
 {
@@ -431,31 +421,18 @@ void C_coffe_cal(float32_t *C, attitude_t *angle)
     float Cp = arm_cos_f32(DEGREES_TO_RADIANS(angle->pitch));
     float Sp = arm_sin_f32(DEGREES_TO_RADIANS(angle->pitch));
 
-    *C        = 2.0025f;
-    *(C + 1)  = 0.000001f;
-    *(C + 2)  = -2.0025f;
-    *(C + 3)  = 0.000001f;
-    *(C + 4)  = 0.000001f;
-    *(C + 5)  = 2.0408f;
-    *(C + 6)  = 0.000001f;
-    *(C + 7)  = 2.0408f;
-    *(C + 8)  = 0.000001f;
-    *(C + 9)  = -2.1251f;
-    *(C + 10) = 0.000001f;
-    *(C + 11) = 2.1251f;
-
-    *(C + 12) = Cr * Cp * 3.448f;  //100 / mass(29g) = 3.448f 
-    *(C + 13) = -Sp * 3.448f;
-    *(C + 14) = Cr * Cp * 3.448f;
-    *(C + 15) = -Sp * 3.448f;
+    *(C + 12) = Cr * Cp ;
+    *(C + 13) = -Sp;
+    *(C + 14) = Cr * Cp;
+    *(C + 15) = -Sp;
 }
 
 void control_allocation(control_t *control)
 {
-    arm_sqrt_f32(((control->ADRC_u[0] * control->ADRC_u[0]) + (control->ADRC_u[1] * control->ADRC_u[1])), &(control->actuator[T_l]));
-    arm_sqrt_f32(((control->ADRC_u[2] * control->ADRC_u[2]) + (control->ADRC_u[3] * control->ADRC_u[3])), &(control->actuator[T_r]));
-    control->actuator[beta_l] = atan2_approx(control->ADRC_u[1], control->ADRC_u[0]);
-    control->actuator[beta_r] = atan2_approx(control->ADRC_u[3], control->ADRC_u[2]);
+    arm_sqrt_f32(((control->U[0] * control->U[0]) + (control->U[1] * control->U[1])), &(control->actuator[T_l]));
+    arm_sqrt_f32(((control->U[2] * control->U[2]) + (control->U[3] * control->U[3])), &(control->actuator[T_r]));
+    control->actuator[beta_l] = atan2_approx(control->U[1], control->U[0]);
+    control->actuator[beta_r] = atan2_approx(control->U[3], control->U[2]);
 
     control->actuator[T_l] = constrainf(control->actuator[T_l], 0.0f, 200.0f);
     control->actuator[T_r] = constrainf(control->actuator[T_r], 0.0f, 200.0f); //200 对应于200mN

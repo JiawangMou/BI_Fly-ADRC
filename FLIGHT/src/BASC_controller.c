@@ -194,3 +194,12 @@ void Thrustcommand2Fz(control_t* control,float command)
     BASCPos.Fz = (Fz >= Fzmax ? Fzmax : Fz);
     control->Tao_Fz[3] = BASCPos.Fz;
 }
+
+// BASC_Attitude_Object getBASCAtti_controller(void)
+// {
+//     return BASCAtti;
+// }
+// BASC_Pos_Object getBASCPos_controller(void)
+// {
+//     return BASCPos;
+// }

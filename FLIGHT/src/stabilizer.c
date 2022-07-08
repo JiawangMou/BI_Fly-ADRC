@@ -60,7 +60,8 @@ void stabilizerInit(void)
     powerControlInit(); /*电机初始化*/
 
     model_initialize();
-
+    arm_mat_init_f32(&control.mat_Tao_Fz_41, 4,1, control.Tao_Fz);
+    arm_mat_init_f32(&control.mat_actuator_41, 4,1, control.actuator);
     isInit = true;
 }
 
