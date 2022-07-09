@@ -3,6 +3,7 @@
 #include "config.h"
 #include "ledseq.h"
 #include "maths.h"
+#include "arm_math.h"
 
 /********************************************************************************	 
  * 本程序只供学习使用，未经作者许可，不得用于其它任何用途
@@ -122,17 +123,21 @@ static bool imuIsAccelerometerHealthy(Axis3f *accAverage)
 }
 
 //IMU 融合算法 改！ 无磁力计数据融合
-void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互补滤波*/
+void imuUpdate(sensorData_t *sensors, state_t *state , float dt)	/*数据融合 互补滤波*/
 {
 	float normalise;
 	float ex = 0, ey = 0, ez = 0;
 	float halfT = 0.5f * dt;
 	float accBuf[3] = {0.f};
-	Axis3f tempacc = acc;
-	
-	gyro.x = gyro.x * DEG2RAD;	/* 度转弧度 */
-	gyro.y = gyro.y * DEG2RAD;
-	gyro.z = gyro.z * DEG2RAD;
+	Axis3f tempacc = sensors->acc;
+	Axis3f acc = sensors->acc;
+	Axis3f gyro;
+
+	arm_scale_f32(sensors->gyro.axis, DEG2RAD, sensors->gyro_R.axis, 3);
+	gyro = sensors->gyro_R;
+	// gyro.x = gyro.x * DEG2RAD;	/* 度转弧度 */
+	// gyro.y = gyro.y * DEG2RAD;
+	// gyro.z = gyro.z * DEG2RAD;
 
 	acc_send.acc_beforefusion.x = acc.x;
 	acc_send.acc_beforefusion.y = acc.y;
@@ -183,14 +188,12 @@ void imuUpdate(Axis3f acc, Axis3f gyro, state_t *state , float dt)	/*数据融合 互
 	imuComputeRotationMatrix();	/*计算旋转矩阵*/
 	
 	/*计算roll pitch yaw 欧拉角*/
-    state->attitude.pitch = -asinf(rMat[2][0]) * RAD2DEG;
-    state->attitude.roll  = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
-    state->attitude.yaw   = atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
 
-        // /*计算roll pitch yaw 欧拉角*/
-    // state->attitude.pitch = asinf(rMat[2][0]) * RAD2DEG;
-    // state->attitude.roll  = atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
-    // state->attitude.yaw   = -atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
+    state->attitude_R.pitch = -asinf(rMat[2][0]);
+    state->attitude_R.roll  = atan2f(rMat[2][1], rMat[2][2]);
+    state->attitude_R.yaw   = atan2f(rMat[1][0], rMat[0][0]);
+
+	arm_scale_f32(state->attitude_R.axis, RAD2DEG, state->attitude.axis, 3);
 
     state->attitude.timestamp = getSysTickCnt();
 	if (!isGravityCalibrated)	/*未校准*/

@@ -144,7 +144,7 @@ void stabilizerTask(void* param)
         //四元数和欧拉角计算（250Hz）
         if (RATE_DO_EXECUTE(ATTITUDE_ESTIMAT_RATE, tick)) {
             //sensorsAcquire(&sensorData, tick); /*获取6轴和气压数据*/
-            imuUpdate(sensorData.acc, sensorData.gyro, &state, ATTITUDE_ESTIMAT_DT);
+            imuUpdate(&sensorData, &state, ATTITUDE_ESTIMAT_DT);
             stabi_tick.imuUpdate_tick = (s16)(getSysTickCnt()& 0x00ffff);
         }
 

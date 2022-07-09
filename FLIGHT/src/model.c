@@ -32,115 +32,67 @@
 
 arm_matrix_instance_f32 mat_model_C_44;
 arm_matrix_instance_f32 mat_model_C_inv_44;
-arm_matrix_instance_f32 mat_model_B_33;
-arm_matrix_instance_f32 mat_model_D_41;
-arm_matrix_instance_f32 mat_model_J_33;
-
-arm_matrix_instance_f32 mat_ADRC_u0_41;
-arm_matrix_instance_f32 mat_ADRC_u_41;
 
 
-float32_t model_C[16] = {2.0025f,0.000001f,-2.0025f,0.000001f,0.000001f,2.0408f,0.000001f,2.0408f,0.000001f,-2.1251f,0.000001f,2.1251f,0,0,0,0};
+float32_t model_C[16] = {7.289f,0.000001f,-7.289f,0.000001f,0.000001f,6.0f,0.000001f,6.0f,0.000001f,-7.289f,0.000001f,7.289f,0,0,0,0};
 // float32_t model_C[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 float32_t model_C_inv[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
-float32_t model_B[9] = {0};
-float32_t model_D[4] = {0};
-float32_t model_J[9] = {364,0,0,0,294,0,0,0,343};
 
 
-/* Invariant block signals (default storage) */
-const ConstB_model_T model_ConstB = {
-  { 0.0, 0.0, -27000.0 },              /* '<S1>/Product' */
 
-  { 0.0, -7.289, -1.5 },               /* '<S6>/Subtract' */
 
-  { 0.0, 7.289, -1.5 }                 /* '<S6>/Subtract1' */
-};
-
-/* Constant parameters (default storage) */
-const ConstP_model_T model_ConstP = {
-  /* Expression: param.ModelParam_Rb_CoR
-   * Referenced by: '<S1>/param.ModelParam_Rb_CoR'
-   */
-  { 0.0, 0.0, 6.0 }
-};
-
-/* Block states (default storage) */
-DW_model_T model_DW;
-
-/* External inputs (root inport signals with default storage) */
-ExtU_model_T model_U;
-
-/* External outputs (root outports fed by signals with default storage) */
-ExtY_model_T model_Y;
-
-/* Real-time model */
-static RT_MODEL_model_T model_M_;
-RT_MODEL_model_T *const model_M = &model_M_;
-
-/* Exported data definition */
-
-/* Definition for custom storage class: Global */
-real_T DCMbe[9];                       /* '<Root>/DCMbe' */
-real_T velE[3];                        /* '<Root>/velE' */
-
-arm_matrix_instance_f32  DCMbe_arm;
-arm_matrix_instance_f32  DCMeb_arm;
-float DCMeb[9];
-
-#define  MOTORTF_ORDER 2  // 这里的阶数是系统实际阶数+1
+// #define  MOTORTF_ORDER 2  // 这里的阶数是系统实际阶数+1
  
-float32_t motortf_x[MOTORTF_ORDER] = {0};
-float32_t motortf_y[MOTORTF_ORDER-1] = {0};
-float32_t motortf_num[MOTORTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
-float32_t motortf_dec[MOTORTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
+// float32_t motortf_x[MOTORTF_ORDER] = {0};
+// float32_t motortf_y[MOTORTF_ORDER-1] = {0};
+// float32_t motortf_num[MOTORTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
+// float32_t motortf_dec[MOTORTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
 
-#define  SERVOTF_ORDER 3  // 这里的阶数是系统实际阶数+1
-float servotf_x[SERVOTF_ORDER] = {0};
-float servotf_y[SERVOTF_ORDER-1] = {0};
-float servotf_num[SERVOTF_ORDER] = {0,0.0186,0.0186};//Fs = 250 这里的系数与采样率有关，一定注意！！
-float servotf_dec[SERVOTF_ORDER-1] = {-1.6455,0.6828};//Fs = 250 这里的系数与采样率有关，一定注意！！
-// static arm_matrix_instance_f32 pSrc_servotf_x; 
-// static arm_matrix_instance_f32 pSrc_servotf_y; 
-// static arm_matrix_instance_f32 pSrc_servotf_num; 
-// static arm_matrix_instance_f32 pSrc_servotf_dec; 
-Tf_t motortf;
-Tf_t servotf;
+// #define  SERVOTF_ORDER 3  // 这里的阶数是系统实际阶数+1
+// float servotf_x[SERVOTF_ORDER] = {0};
+// float servotf_y[SERVOTF_ORDER-1] = {0};
+// float servotf_num[SERVOTF_ORDER] = {0,0.0186,0.0186};//Fs = 250 这里的系数与采样率有关，一定注意！！
+// float servotf_dec[SERVOTF_ORDER-1] = {-1.6455,0.6828};//Fs = 250 这里的系数与采样率有关，一定注意！！
+// // static arm_matrix_instance_f32 pSrc_servotf_x; 
+// // static arm_matrix_instance_f32 pSrc_servotf_y; 
+// // static arm_matrix_instance_f32 pSrc_servotf_num; 
+// // static arm_matrix_instance_f32 pSrc_servotf_dec; 
+// Tf_t motortf;
+// Tf_t servotf;
 
 /* Model initialize function */
 void model_initialize(void)
 {
-  //init DCMbe_arm  DCMeb_arm
-  DCMbe_arm.numCols = 3;
-  DCMbe_arm.numRows = 3;
-  DCMbe_arm.pData = DCMbe;
+//   //init DCMbe_arm  DCMeb_arm
+//   DCMbe_arm.numCols = 3;
+//   DCMbe_arm.numRows = 3;
+//   DCMbe_arm.pData = DCMbe;
 
-  DCMeb_arm.numCols = 3;
-  DCMeb_arm.numRows = 3;
-  DCMeb_arm.pData = DCMeb;
-  /* Registration code */
+//   DCMeb_arm.numCols = 3;
+//   DCMeb_arm.numRows = 3;
+//   DCMeb_arm.pData = DCMeb;
+//   /* Registration code */
 
-  /* external inputs */
-  DCMbe[0] = 1.0;
-  DCMbe[4] = 1.0;
-  DCMbe[8] = 1.0;
+//   /* external inputs */
+//   DCMbe[0] = 1.0;
+//   DCMbe[4] = 1.0;
+//   DCMbe[8] = 1.0;
 
-  motortf.order = MOTORTF_ORDER;
-  motortf.decp  = motortf_dec;
-  motortf.nump  = motortf_num;
-  motortf.x     = motortf_x;
-  motortf.y     = motortf_y;
+//   motortf.order = MOTORTF_ORDER;
+//   motortf.decp  = motortf_dec;
+//   motortf.nump  = motortf_num;
+//   motortf.x     = motortf_x;
+//   motortf.y     = motortf_y;
 
-  servotf.order = SERVOTF_ORDER;
-  servotf.decp  = servotf_dec;
-  servotf.nump  = servotf_num;
-  servotf.x     = servotf_x;
-  servotf.y     = servotf_y;
+//   servotf.order = SERVOTF_ORDER;
+//   servotf.decp  = servotf_dec;
+//   servotf.nump  = servotf_num;
+//   servotf.x     = servotf_x;
+//   servotf.y     = servotf_y;
 
     arm_mat_init_f32(&mat_model_C_44, 4,4, model_C);
     arm_mat_init_f32(&mat_model_C_inv_44, 4,4, model_C_inv);
-    arm_mat_init_f32(&mat_model_B_33, 3,3, model_B);
-    arm_mat_init_f32(&mat_model_D_41, 4,1, model_D);
+
 
 
   // arm_mat_init_f32(&pSrc_motortf_x, MOTORTF_ORDER,1, motortf_x);
@@ -162,7 +114,7 @@ void model_terminate(void)
 
 void model_reset(void)
 {
-  model_Y.PWM_compensation = 0;
+//   model_Y.PWM_compensation = 0;
 }
 
 /*
@@ -180,14 +132,14 @@ void model_reset(void)
 * Others: f = motor_a * u   % unit : Hz
 
 */
-float motorPWM2FlappingHZ(Motorstatus_t *motorstatus_l,Motorstatus_t *motorstatus_r)
-{
-    u32 motor_PWM = motorstatus_l->PWM + motorstatus_r->PWM;
-    float f_hz = motor_PWM * MOTOR_PWM2F_A;
-    motorstatus_l->f_Hz = motorstatus_l->PWM * MOTOR_PWM2F_A;
-    motorstatus_r->f_Hz = motorstatus_r->PWM * MOTOR_PWM2F_A;
-    return f_hz;
-}
+// float motorPWM2FlappingHZ(Motorstatus_t *motorstatus_l,Motorstatus_t *motorstatus_r)
+// {
+//     u32 motor_PWM = motorstatus_l->PWM + motorstatus_r->PWM;
+//     float f_hz = motor_PWM * MOTOR_PWM2F_A;
+//     motorstatus_l->f_Hz = motorstatus_l->PWM * MOTOR_PWM2F_A;
+//     motorstatus_r->f_Hz = motorstatus_r->PWM * MOTOR_PWM2F_A;
+//     return f_hz;
+// }
 /*
 
 * Function: flappingHZ2Thrust
@@ -205,10 +157,10 @@ float motorPWM2FlappingHZ(Motorstatus_t *motorstatus_l,Motorstatus_t *motorstatu
 * Others: T = wing_a*f^2;% unit : mN
 
 */
-float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle)
-{
-    return MOTOR_F2T_A * f_hz * f_hz * arm_cos_f32(servoangle*DEG2RAD)*arm_cos_f32(pitchangle*DEG2RAD);
-}
+// float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle)
+// {
+//     return MOTOR_F2T_A * f_hz * f_hz * arm_cos_f32(servoangle*DEG2RAD)*arm_cos_f32(pitchangle*DEG2RAD);
+// }
 /*
 
 * Function: ServoPWM2Servoangle
@@ -400,8 +352,9 @@ arm_status U_cal(control_t *control, attitude_t *angle)
 
     status = arm_mat_inverse_f32(&mat_model_C_44, &mat_model_C_inv_44);
     if(status == ARM_MATH_SUCCESS ){
+//TODO: the version of DSP library is low, the function of arm_mat_vec_mult_f32 is not defined.
         arm_mat_mult_f32(&mat_model_C_inv_44, &control->mat_Tao_Fz_41, &mat_U_temp_41);
-        arm_scale_f32 (U_temp, 0.01f, control->U, 4);
+        arm_scale_f32 (U_temp, 0.01f, control->U, 4);  //unit change from g*cm/s^2 to mN
         // arm_mat_vec_mult_f32( &mat_model_C_inv_44, temp, u);
     }	
     return status;
@@ -415,11 +368,11 @@ arm_status U_cal(control_t *control, attitude_t *angle)
 //     *(D+3) = -G;
 // }
 
-void C_coffe_cal(float32_t *C, attitude_t *angle)
+void C_coffe_cal(float32_t *C, attitude_t *angle_R)
 {
-    float Cr = arm_cos_f32(DEGREES_TO_RADIANS(angle->roll));
-    float Cp = arm_cos_f32(DEGREES_TO_RADIANS(angle->pitch));
-    float Sp = arm_sin_f32(DEGREES_TO_RADIANS(angle->pitch));
+    float Cr = arm_cos_f32(angle_R->roll);
+    float Cp = arm_cos_f32(angle_R->pitch);
+    float Sp = arm_sin_f32(angle_R->pitch);
 
     *(C + 12) = Cr * Cp ;
     *(C + 13) = -Sp;

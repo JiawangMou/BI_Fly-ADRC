@@ -103,8 +103,8 @@ tdObject_t posZ_TD;
 // }
 void posZ_adrc_writeToConfigParam(void)
 {
-    configParam.PosZ_td.N0        = posZ_TD.N0;
-    configParam.PosZ_td.r         = posZ_TD.r;
+    configParam.PosZ_td_param.N0        = posZ_TD.N0;
+    configParam.PosZ_td_param.r         = posZ_TD.r;
 
     // configParam.adrcVelZ.td.N0        = velZ_TD.N0;
     // configParam.adrcVelZ.td.r         = velZ_TD.r;
@@ -139,7 +139,6 @@ void td_states_set(tdObject_t *td,const float x1,const float x2)
 void posZ_transient_process_update(setpoint_t *setpoint)
 {
     adrc_td(&posZ_TD, setpoint->position.z);
-    setpoint->positionDesired.z = posZ_TD.x1;
 }
 // void velZ_transient_process_update(setpoint_t *setpoint)
 // {
@@ -182,6 +181,6 @@ float getPosZ_TD_x1(void)
 }
 void positionADRCinit(void)
 {
-    td_init(&posZ_TD,&configParam.PosZ_td,POSZ_TD_DT);
+    td_init(&posZ_TD,&configParam.PosZ_td_param,POSZ_TD_DT);
     // nlsef_init(&velZ_nlsef,&configParam.adrcVelZ.nlsef,VELZ_LOOP_DT);
 }

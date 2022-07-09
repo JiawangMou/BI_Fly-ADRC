@@ -16,7 +16,7 @@
 
 static attitude_t attitudeDesired;
 //static attitude_t atti_TD;
-static float      actualThrust;
+static float      actualThrust;  // the actual value of the thrust controlled by the stick  unit: g*cm/s^2
 static attitude_t rateDesired;
 
 
@@ -30,10 +30,10 @@ float diff_Thrust = 0.0f;
 #define THRUST_ENDPOINT 50000
 #define THRUST_DELTA ((THRUST_ENDPOINT - THRUST_STARTPOINT) / THRUST_NUM )
 
-#define THRUST_WAIT_ACCEL_TIME 10000 // scan ģ���µļ���ʱ�� ��λ��ms
-#define THRUST_SCAN_TIME 5000 // scan ģ���µ�ɨ��ʱ�� ��λ��ms
-#define THRUST_SCAN_ACCEL_TIME 2000 // scan ģ���µļ���ʱ�� ��λ��ms
-#define THRUST_ACCEL_DIV_MS 10 // scanģʽ�£�����1s��ϸ�֣�10��ʾ10ms�ı�һ���ٶ�
+#define THRUST_WAIT_ACCEL_TIME 10000
+#define THRUST_SCAN_TIME 5000 
+#define THRUST_SCAN_ACCEL_TIME 2000 
+#define THRUST_ACCEL_DIV_MS 10 
 #define THRUST_WAIT_ACCEL_COUNT (THRUST_WAIT_ACCEL_TIME / THRUST_ACCEL_DIV_MS)
 #define THRUST_SCAN_ACCEL_COUNT (THRUST_SCAN_ACCEL_TIME / THRUST_ACCEL_DIV_MS)
 
@@ -57,11 +57,14 @@ void stateControlInit(void)
 {
 	// attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
 	// positionControlInit(VEL_PID_DT, POS_PID_DT); /*初始化位置PID*/
-    // attitudeADRCinit();
-    // positionADRCinit();
+    attitudeADRCinit();
+    positionADRCinit();
     //     // Filter the setpoint
     // lpf2pInit(&setpointFilter[0], ANGEL_PID_RATE, 20);
     // lpf2pInit(&setpointFilter[1], ANGEL_PID_RATE, 20);
+
+    BASCAttitudeInit();
+    BASCPositionInit();
 }
 
 bool stateControlTest(void)
@@ -76,7 +79,6 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     static u16 cnt = 0;
 #ifndef TEST
 
-#ifdef ADRC_CONTROL
     if (RATE_DO_EXECUTE(POSZ_TD_RATE, tick)) {
         if (setpoint->mode.z != modeDisable) 
             posZ_transient_process_update(setpoint);
@@ -84,7 +86,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     if (RATE_DO_EXECUTE(ATTITUDE_TD_RATE, tick)) { 
         attitudeTD(setpoint);
     }
-#endif
+
 
 //     if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
 //         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
@@ -143,7 +145,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 //     }
 
     if (RATE_DO_EXECUTE(RATE_BASC_RATE, tick)) {
-        Torque_Cal(control,&sensors->gyro, &state->attitude);
+        Torque_Cal(control,&sensors->gyro_R, &state->attitude_R);
         if (setpoint->mode.z != modeDisable) 
             Fz_Cal(control,state->position.z, state->velocity.z);
         else{
@@ -151,7 +153,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
             if(actualThrust < MASS * G)
             {
                 control->Tao_Fz[3] = MASS * G;
-                U_cal(control, &state->attitude);
+                U_cal(control, &state->attitude_R);
                 control_allocation(control);
                 diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
                 control->actuator[T_l] = constrainf(actualThrust / 200.0f + diff_Thrust, 0.0f, 200.0f);
@@ -165,7 +167,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         
     }
     if (RATE_DO_EXECUTE(RATE_ADAPITVE_RATE, tick)) {
-        
+        //update m_hat, J_hat, and Tao0_hat
+        Attitude_Adaptive_law(&sensors->gyro_R);
+        Position_Adaptive_law();
     }
 
 //     //角速度环
@@ -204,7 +208,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     
     // control->thrust = actualThrust;
 
-    if (control->Tao_Fz[3] < 500.f) {
+    if (actualThrust < 500.f) {
 #ifdef FOUR_WING
         // control->roll = 0;
 #endif

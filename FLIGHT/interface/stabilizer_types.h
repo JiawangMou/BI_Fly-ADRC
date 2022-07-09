@@ -171,17 +171,19 @@ typedef struct
 {
 	Axis3f acc;
 	Axis3f gyro;  // Unit: °/s
+	Axis3f gyro_R;  //rad  Unit: /s 
 	Axis3f mag;
 	baro_t baro;
 	point_t position;
 	zRange_t zrange;
 	mag_calib mag_calibration;
-	Axis3f velocity;   //ˮƽ�ٶ��ɹ����������õ����߶��ٶ��ɼ��⴫�����õ������ڹ�������������ϵ�µ��ٶȣ����ǻ����ٶ�
+	Axis3f velocity;   
 } sensorData_t;
 
 typedef struct
 {
 	attitude_t attitude;
+	attitude_t attitude_R;
 	quaternion_t attitudeQuaternion;
 	point_t position;
 	velocity_t velocity;
@@ -229,10 +231,8 @@ typedef struct
 typedef struct
 {
     attitude_t attitude;        // deg
-    attitude_t attitudeDesired; // deg  transient process  TD
     attitude_t attitudeRate;    // deg/s
     point_t    position;        // cm
-    point_t    positionDesired; // cm   transient process  TD
     velocity_t velocity;        // transient velocity setpoint cm/s
     Axis3f     acc;
     mode_t     mode;
@@ -266,7 +266,7 @@ typedef struct
 	thrust_t thrust_part;
 	enum dir_e flipDir;		/*翻滚方向*/
 	float32_t Tao_Fz[4];    //Tao_Fz[0]~Tao_Fz[2]： Tao, unit: g*cm^2/s^2;   Tao_Fz[3] ：Fz,  unit: g*cm/s^2; 
-	float U[4];				//U[0]~U[3]: T_lcos(beta_l), T_lsin(beta_l),T_rcos(beta_r),T_rsin(beta_r)
+	float U[4];				//U[0]~U[3]: T_lcos(beta_l), T_lsin(beta_l),T_rcos(beta_r),T_rsin(beta_r)  unit: mN; 
 	float actuator[4];  	//T_l  T_r  beta_l  beta_r
 	arm_matrix_instance_f32 mat_Tao_Fz_41;
 	arm_matrix_instance_f32 mat_actuator_41;

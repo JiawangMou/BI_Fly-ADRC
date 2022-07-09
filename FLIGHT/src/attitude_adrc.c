@@ -104,8 +104,8 @@ void attitudeADRCwriteToConfigParam(void)
     // configParam.adrcAngle.pitch.nlsef.beta_2 = ADRCAnglePitch.nlsef.beta_2;
     // configParam.adrcAngle.pitch.nlsef.N1     = ADRCAnglePitch.nlsef.N1;
     // configParam.adrcAngle.pitch.nlsef.zeta   = ADRCAnglePitch.nlsef.zeta;
-    configParam.Pitch_td.N0        = Pitch_td.N0;
-    configParam.Pitch_td.r         = Pitch_td.r;
+    configParam.Pitch_td_param.N0        = Pitch_td.N0;
+    configParam.Pitch_td_param.r         = Pitch_td.r;
 
     // configParam.adrcAngle.roll.leso.b0      = ADRCAngleRoll.leso.b0;
     // configParam.adrcAngle.roll.leso.w0      = ADRCAngleRoll.leso.w0;
@@ -115,8 +115,8 @@ void attitudeADRCwriteToConfigParam(void)
     // configParam.adrcAngle.roll.nlsef.beta_2 = ADRCAngleRoll.nlsef.beta_2;
     // configParam.adrcAngle.roll.nlsef.N1     = ADRCAngleRoll.nlsef.N1;
     // configParam.adrcAngle.roll.nlsef.zeta   = ADRCAngleRoll.nlsef.zeta;
-    configParam.Roll_td.N0        = Roll_td.N0;
-    configParam.Roll_td.r         = Roll_td.r;
+    configParam.Roll_td_param.N0        = Roll_td.N0;
+    configParam.Roll_td_param.r         = Roll_td.r;
 
     // configParam.adrcRate.pitch.leso.b0      = ADRCRatePitch.leso.b0;
     // configParam.adrcRate.pitch.leso.w0      = ADRCRatePitch.leso.w0;
@@ -126,8 +126,8 @@ void attitudeADRCwriteToConfigParam(void)
     // configParam.adrcRate.pitch.nlsef.beta_2 = ADRCRatePitch.nlsef.beta_2;
     // configParam.adrcRate.pitch.nlsef.N1     = ADRCRatePitch.nlsef.N1;
     // configParam.adrcRate.pitch.nlsef.zeta   = ADRCRatePitch.nlsef.zeta;
-    configParam.Yaw_td.N0        = Yaw_td.N0;
-    configParam.Yaw_td.r         = Yaw_td.r;
+    configParam.Yaw_td_param.N0        = Yaw_td.N0;
+    configParam.Yaw_td_param.r         = Yaw_td.r;
     // configParam.adrcRate.roll.leso.b0       = ADRCRateRoll.leso.b0;
     // configParam.adrcRate.roll.leso.w0       = ADRCRateRoll.leso.w0;
     // configParam.adrcRate.roll.nlsef.alpha1  = ADRCRateRoll.nlsef.alpha1;
@@ -159,16 +159,13 @@ void attitudeTD(setpoint_t *setpoint)
     adrc_td(&Roll_td, setpoint->attitude.roll);
     adrc_td(&Pitch_td, setpoint->attitude.pitch);
     adrc_td(&Yaw_td, setpoint->attitude.yaw);
-    setpoint->attitudeDesired.roll = Roll_td.x1;
-    setpoint->attitudeDesired.pitch = Pitch_td.x1;
-    setpoint->attitudeDesired.yaw = Yaw_td.x1;    
 }
 
 void attitudeADRCinit(void)
 {
-    td_init(&Roll_td,&configParam.Roll_td,ANGLE_TD_DT);
-    td_init(&Pitch_td,&configParam.Pitch_td,ANGLE_TD_DT);
-    td_init(&Yaw_td,&configParam.Yaw_td,ANGLE_TD_DT);
+    td_init(&Roll_td,&configParam.Roll_td_param,ANGLE_TD_DT);
+    td_init(&Pitch_td,&configParam.Pitch_td_param,ANGLE_TD_DT);
+    td_init(&Yaw_td,&configParam.Yaw_td_param,ANGLE_TD_DT);
 
     // nlsef_init(&ADRCRateRoll.nlsef,&configParam.adrcRate.roll.nlsef,RATE_LOOP_DT);
     // nlsef_init(&ADRCRatePitch.nlsef,&configParam.adrcRate.pitch.nlsef,RATE_LOOP_DT);

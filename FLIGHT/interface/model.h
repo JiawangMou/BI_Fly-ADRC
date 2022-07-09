@@ -98,67 +98,22 @@ typedef struct {
     float32_t *y;
 } Tf_t;
 /* Constant parameters (default storage) */
-typedef struct {
-  /* Expression: param.ModelParam_Rb_CoR
-   * Referenced by: '<S1>/param.ModelParam_Rb_CoR'
-   */
-  real_T paramModelParam_Rb_CoR_Value[3];
-} ConstP_model_T;
-
-/* External inputs (root inport signals with default storage) */
-typedef struct {
-  real_T angle_command[2];             /* '<Root>/angle_command' */
-  real_T Wb[3];                        /* '<Root>/Wb' */
-  real_T aZ_E_desired;                 /* '<Root>/aZ_E_desired' */
-} ExtU_model_T;
-
-/* External outputs (root outports fed by signals with default storage) */
-typedef struct {
-  u16 PWM_compensation;             /* '<Root>/PWM_compensation' */
-} ExtY_model_T;
-
-/* Real-time Model Data Structure */
-struct tag_RTM_model_T {
-  const char_T * volatile errorStatus;
-};
-
-/* Block states (default storage) */
-extern DW_model_T model_DW;
-
-/* External inputs (root inport signals with default storage) */
-extern ExtU_model_T model_U;
-
-/* External outputs (root outports fed by signals with default storage) */
-extern ExtY_model_T model_Y;
-extern const ConstB_model_T model_ConstB;/* constant block i/o */
-
-/* Constant parameters (default storage) */
-extern const ConstP_model_T model_ConstP;
 
 /* Model entry point functions */
-extern void model_initialize(void);
-extern u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro);
-extern void model_terminate(void);
+void model_initialize(void);
+// u16 MBD_update(float setpoint_Z, velocity_t state_velE,Axis3f gyro);
+// void model_terminate(void);
 void model_reset(void);
 
-/* Real-time Model object */
-extern RT_MODEL_model_T *const model_M;
-
-/* Exported data declaration */
-
-/* Declaration for custom storage class: Global */
-extern real_T DCMbe[9];                /* '<Root>/DCMbe' */
-extern real_T velE[3];                 /* '<Root>/velE' */
-
-extern Tf_t motortf;
-extern Tf_t servotf;
+// extern Tf_t motortf;
+// extern Tf_t servotf;
 
 float ServoPWM2Servoangle(u32 servoPWM);
-float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle);
-float TfApply(Tf_t *tf,const float input);
+// float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle);
+// float TfApply(Tf_t *tf,const float input);
 
-float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle);
-float Ffz_coffe_cal(const attitude_t *atti,float servoangle);
+// float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle);
+// float Ffz_coffe_cal(const attitude_t *atti,float servoangle);
 
 arm_status U_cal(control_t *control, attitude_t *angle);
 // void D_coffe_cal(float32_t *D, Axis3f *anglerate);

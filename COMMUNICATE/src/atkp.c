@@ -556,9 +556,8 @@ static void atkpSendPeriod(void)
         setpoint_t setpoint = getSetpoint();
         control             = getControlData();
         u32 timestamp       = getSysTickCnt();
-        sendUserData(1, setpoint.attitude.roll, setpoint.attitude.pitch, setpoint.attitude.yaw,
-            setpoint.attitudeDesired.roll, setpoint.attitudeDesired.pitch, setpoint.attitudeDesired.yaw,
-            100.0f * BASCAtti.x2d[0], 100.0f * BASCAtti.x2d[1], 100.0f * BASCAtti.x2d[2]);
+        sendUserData(1, setpoint.attitude.roll, setpoint.attitude.pitch, setpoint.attitude.yaw, Roll_td.x1, Pitch_td.x1,
+            Yaw_td.x1, 100.0f * BASCAtti.x2d[0], 100.0f * BASCAtti.x2d[1], 100.0f * BASCAtti.x2d[2]);
         sendUserData(2, sensordata.gyro.x, sensordata.gyro.y, sensordata.gyro.z, attitude.roll, attitude.pitch,
             attitude.yaw, 0, 0, 0);
 
@@ -787,55 +786,26 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
             // sendPid(5,getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_MIDDLE),0,0,0,0,0,0,0,0,0,0);
 
             sendPid(1, BASCAtti.A3[0], BASCAtti.A1[0], BASCAtti.A2[0], BASCAtti.A3[1], BASCAtti.A1[1], BASCAtti.A2[1],
-                BASCAtti.A3[2], BASCAtti.A1[2], BASCAtti.A2[2], Roll_td.r, Pitch_td.r, Yaw_td.r);
-            sendPid(2, BASCAtti.J_gamma[0], BASCAtti.J_gamma[1], BASCAtti.J_gamma[2], BASCAtti.Tao0_gamma[0],
-                BASCAtti.Tao0_gamma[1], BASCAtti.Tao0_gamma[2], 0, 0, 0, 0, 0, 0);
-            sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0, 0, 0, 0);
+                BASCAtti.A3[2], BASCAtti.A1[2], BASCAtti.A2[2]);
+            sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[1], BASCAtti.J_gamma[2], BASCAtti.Tao0_gamma[0],
+                BASCAtti.Tao0_gamma[1], BASCAtti.Tao0_gamma[2]);
+            sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
-            sendPid(5, 0, GPIO_Pin_0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            sendPid(5, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
         if (anlPacket->data[0] == D_ACK_RESET_PARAM) /*恢复默认参数*/
         {
-//            resetConfigParamPID();
-//            attitudeControlInit(RATE_PID_DT, ANGEL_PID_DT, MAIN_LOOP_DTS); /*初始化姿态PID*/	
-//            positionControlInit(VEL_PID_DT, POS_PID_DT); /*初始化位置PID*/
-//            sendPid(1,ADRCRateRoll.nlsef.beta_1, ADRCRateRoll.nlsef.alpha1, ADRCRateRoll.nlsef.zeta,
-//					  ADRCRatePitch.nlsef.beta_1, ADRCRatePitch.nlsef.alpha1, ADRCRatePitch.nlsef.zeta,
-//					  ADRCRateYaw.nlsef.beta_1, ADRCRateYaw.nlsef.alpha1, ADRCRateYaw.nlsef.zeta);
-//            sendPid(2, pidAngleRoll.kp, pidAngleRoll.ki, pidAngleRoll.kd, pidAnglePitch.kp, pidAnglePitch.ki,
-//                pidAnglePitch.kd, pidAngleYaw.kp, pidAngleYaw.ki, pidAngleYaw.kd);
-//            sendPid(3, velZ_nlsef.beta_1, velZ_nlsef.beta_I, velZ_nlsef.beta_2,
-//					   pidZ.kp, pidZ.ki, pidZ.kd,
-//					   pidVX.kp, pidVX.ki, pidVX.kd
-//				   );
-//#ifdef FOUR_WING
-//    #ifdef ADRC_CONTROL 
-//			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
-//					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, 
-//                       ADRCAngleRoll.td.r / 100,ADRCAnglePitch.td.r / 100,ADRCAngleYaw.td.r / 100
-//				   );
-//            sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
-//					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
-//                       ADRCRateRoll.nlsef.N1, 0, 0
-//				   );
-//    #elif defined PID_CONTROL
-//            sendPid(4, velZ_TD.r*0.01f,posZ_TD.r,velZ_nlsef.zeta, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10, posZ_nlsef.I_limit, velZ_LESO.w0, posZ_nlsef.zeta);
-//    #endif
-//#elif defined DOUBLE_WING
-//    #ifdef ADRC_CONTROL
-//			sendPid(4, pidX.kp, pidX.ki, pidX.kd,
-//					   getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT), getservoinitpos_configParam(PWM_MIDDLE)/10,
-//                       ADRCRateRoll.nlsef.beta_1,ADRCRateRoll.nlsef.beta_2,ADRCRateRoll.nlsef.alpha1
-//				   );
-//             sendPid(5, ADRCRateRoll.nlsef.alpha2,ADRCRateRoll.leso.w0, ADRCRateRoll.leso.b0, 
-//					   ADRCRateRoll.td.r / 10000, ADRCRateRoll.td.N0, ADRCRateRoll.nlsef.zeta,
-//                       ADRCRateRoll.nlsef.N1, 0, 0
-//				   );
-//    #elif defined PID_CONTROL
-//            sendPid(4, pidX.kp, pidX.ki, pidX.kd, getservoinitpos_configParam(PWM_LEFT),getservoinitpos_configParam(PWM_RIGHT),getservoinitpos_configParam(PWM_MIDDLE)/10, 0, 0, 0);
-//    #endif
-//#endif  
+            resetConfigParam_BASCcontriller();
+            stateControlInit();
+            sendPid(1, BASCAtti.A3[0], BASCAtti.A1[0], BASCAtti.A2[0], BASCAtti.A3[1], BASCAtti.A1[1], BASCAtti.A2[1],
+                BASCAtti.A3[2], BASCAtti.A1[2], BASCAtti.A2[2]);
+            sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[1], BASCAtti.J_gamma[2], BASCAtti.Tao0_gamma[0],
+                BASCAtti.Tao0_gamma[1], BASCAtti.Tao0_gamma[2]);
+            sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0);
+            sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
+                getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
+            sendPid(5, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     } else if (anlPacket->msgID == DOWN_RCDATA) {
         rcdata = *((joystickFlyui16_t*)anlPacket->data);
@@ -846,28 +816,16 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
     {
         remoterCtrlProcess(anlPacket);
     } else if (anlPacket->msgID == DOWN_PID1) {
-//        ADRCRateRoll.nlsef.beta_1  = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-//        ADRCRateRoll.nlsef.alpha1  = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-//        ADRCRateRoll.nlsef.zeta    = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
-//        ADRCRatePitch.nlsef.beta_1 = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
-//        ADRCRatePitch.nlsef.alpha1 = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
-//        ADRCRatePitch.nlsef.zeta   = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
-//        ADRCRateYaw.nlsef.beta_1   = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-//        ADRCRateYaw.nlsef.alpha1   = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-//        ADRCRateYaw.nlsef.zeta     = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
-        /*自己开发的地面站用通讯协议*/
-        // pidRateRoll.kp  = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-        // pidRateRoll.ki  = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-        // pidRateRoll.kd  = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
-        // pidRatePitch.kp = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
-        // pidRatePitch.ki = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
-        // pidRatePitch.kd = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
-        // pidRateYaw.kp   = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-        // pidRateYaw.ki   = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-        // pidRateYaw.kd   = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
-        // pidSetOutputLimit(&pidRateRoll, ((float)((*(anlPacket->data + 18) << 8) | *(anlPacket->data + 19))));
-        // pidSetOutputLimit(&pidRatePitch, ((float)((*(anlPacket->data + 20) << 8) | *(anlPacket->data + 21))));
-        // pidSetOutputLimit(&pidRateYaw, ((float)((*(anlPacket->data + 22) << 8) | *(anlPacket->data + 23))));
+        BASCAtti.A3[0] = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        BASCAtti.A1[0] = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        BASCAtti.A2[0] = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        BASCAtti.A3[1] = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
+        BASCAtti.A1[1] = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
+        BASCAtti.A2[1] = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
+        BASCAtti.A3[2] = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        BASCAtti.A1[2] = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        BASCAtti.A2[2] = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+
         // attitudePIDwriteToConfigParam();
         // configParamGiveSemaphore(); //将修改的configparamdefault写入flash
         u8 cksum = atkpCheckSum(anlPacket);
@@ -882,19 +840,6 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 //        pidAngleYaw.kp   = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
 //        pidAngleYaw.ki   = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
 //        pidAngleYaw.kd   = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
-/*自己开发的地面站用通讯协议*/
-        // pidAngleRoll.kp  = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-        // pidAngleRoll.ki  = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-        // pidAngleRoll.kd  = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
-        // pidAnglePitch.kp = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
-        // pidAnglePitch.ki = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
-        // pidAnglePitch.kd = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
-        // pidAngleYaw.kp   = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-        // pidAngleYaw.ki   = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-        // pidAngleYaw.kd   = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
-        // pidSetOutputLimit(&pidAngleRoll, ((float)((*(anlPacket->data + 18) << 8) | *(anlPacket->data + 19))));
-        // pidSetOutputLimit(&pidAnglePitch, ((float)((*(anlPacket->data + 20) << 8) | *(anlPacket->data + 21))));
-        // pidSetOutputLimit(&pidAngleYaw, ((float)((*(anlPacket->data + 22) << 8) | *(anlPacket->data + 23))));
 
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);

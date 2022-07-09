@@ -38,32 +38,32 @@ configParam_t configParam;
 static configParam_t configParamDefault =
 {
 	.version = VERSION, /*Èí¼þ°æ±¾ºÅ*/
-	.BASCAtti={
+	.BASCAtti_param={
 		.A1 = {100, 10, 10},
-		.A2 = {100, 10, 10},
-		.A3 = {100, 10, 10},
+		.A2 = {20000, 20000, 20000},
+		.A3 = {5000, 30000, 30000},
 		.J_gamma = {0.1, 0.1, 0.1},
 		.Tao0_gamma = {100, 100, 100},
 	},
-	.BASCPos={
+	.BASCPos_param={
 		.A1 = 100,
-		.A2 = 1,
-		.A3 = 1,
+		.A2 = 100,
+		.A3 = 100,
 		.M_gamma = 1,
 	},
-	.Roll_td={
+	.Roll_td_param={
 		.r = 200,
 		.N0 = 2,
 	},
-	.Pitch_td={
+	.Pitch_td_param={
 		.r = 50,
 		.N0 = 2,
 	},
-	.Yaw_td={
+	.Yaw_td_param={
 		.r = 50,
 		.N0 = 2,
 	},
-	.PosZ_td={
+	.PosZ_td_param={
 		.r = 50,
 		.N0 = 2,
 	},
@@ -736,6 +736,15 @@ void configParamGiveSemaphore(void)
 //    configParam.pidPos        = configParamDefault.pidPos;
 //    configParam.servo_initpos = configParamDefault.servo_initpos;
 //}
+
+void resetConfigParam_BASCcontriller(void)
+{
+    configParam.BASCAtti_param = configParamDefault.BASCAtti_param;
+    configParam.BASCPos_param  = configParamDefault.BASCPos_param;
+    configParam.Pitch_td_param = configParamDefault.Pitch_td_param;
+    configParam.Roll_td_param  = configParamDefault.Roll_td_param;
+    configParam.Yaw_td_param   = configParamDefault.Yaw_td_param;
+}
 
 
 void saveConfigAndNotify(void)

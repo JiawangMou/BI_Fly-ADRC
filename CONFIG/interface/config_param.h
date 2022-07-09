@@ -166,12 +166,12 @@ typedef struct
 typedef struct	
 {
     u8              version; /*软件版本号*/
-    BASCAttiParam_t BASCAtti;
-    BASCPosParam_t  BASCPos;
-    tdParam_t       Roll_td;
-    tdParam_t       Pitch_td;
-    tdParam_t       Yaw_td;
-    tdParam_t       PosZ_td;
+    BASCAttiParam_t BASCAtti_param;
+    BASCPosParam_t  BASCPos_param;
+    tdParam_t       Roll_td_param;
+    tdParam_t       Pitch_td_param;
+    tdParam_t       Yaw_td_param;
+    tdParam_t       PosZ_td_param;
     // pidParam_t pidAngle;	/*角度PID*/
     // pidParam_t pidRate;		/*角速度PID*/
     // pidParamPos_t pidPos;	/*位置PID*/
@@ -202,11 +202,13 @@ bool configParamTest(void);
 
 void configParamGiveSemaphore(void);
 //void resetConfigParamPID(void);
+void resetConfigParam_BASCcontriller(void);
 void saveConfigAndNotify(void);
 void changeServoinitpos_configParam(u16 s1,u16 s2,u16 s3);
 u16 getservoinitpos_configParam(u8 pwm_id);
 accBias_t getaccbias_configParam( void );
 void accbias_writeFlash(void);
+
 
 
 #endif /*__CONFIG_PARAM_H */

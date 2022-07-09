@@ -177,22 +177,22 @@ extern bool isExitFlip; /*是否退出空翻*/
 #ifdef USE_MBD
 void flyerAutoLand(setpoint_t* setpoint, const state_t* state)
 {
-    static u8    lowThrustCnt = 0;
+    // static u8    lowThrustCnt = 0;
 
     setpoint->mode.z = modeAbs;
 
-    if (getAltholdThrust() < 20000.f) /*定高油门值较低*/
-    {
-        lowThrustCnt++;
-        if (lowThrustCnt > 10) {
-            lowThrustCnt        = 0;
-            commander.keyLand   = false;
-            commander.keyFlight = false;
-            estRstAll(); /*复位估测*/
-        }
-    } else {
-        lowThrustCnt = 0;
-    }
+    // if (getAltholdThrust() < 20000.f) /*定高油门值较低*/
+    // {
+    //     lowThrustCnt++;
+    //     if (lowThrustCnt > 10) {
+    //         lowThrustCnt        = 0;
+    //         commander.keyLand   = false;
+    //         commander.keyFlight = false;
+    //         estRstAll(); /*复位估测*/
+    //     }
+    // } else {
+    //     lowThrustCnt = 0;
+    // }
 
     if (isExitFlip == true) /*退出空翻，再检测加速度*/
     {
