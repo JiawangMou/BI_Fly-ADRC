@@ -84,6 +84,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
             posZ_transient_process_update(setpoint);
     }
     if (RATE_DO_EXECUTE(ATTITUDE_TD_RATE, tick)) { 
+        setpoint->attitudedesired.roll = setpoint->attitude.roll;
+        setpoint->attitudedesired.pitch = setpoint->attitude.pitch;
+        setpoint->attitudedesired.yaw -= setpoint->attitude.yaw / ATTITUDE_TD_RATE;
         attitudeTD(setpoint);
     }
 
@@ -155,9 +158,9 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 control->Tao_Fz[3] = MASS * G;
                 U_cal(control, &state->attitude_R);
                 control_allocation(control);
-                diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
-                control->actuator[T_l] = constrainf(actualThrust / 200.0f + diff_Thrust, 0.0f, 200.0f);
-                control->actuator[T_r] = constrainf(actualThrust / 200.0f - diff_Thrust, 0.0f, 200.0f);
+                // diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
+                // control->actuator[T_l] = constrainf(actualThrust / 200.0f + diff_Thrust, 0.0f, 200.0f);
+                // control->actuator[T_r] = constrainf(actualThrust / 200.0f - diff_Thrust, 0.0f, 200.0f);
             }else{
                 control->Tao_Fz[3] = actualThrust;
                 U_cal(control, &state->attitude);
@@ -219,15 +222,17 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // attitudeResetAllPID();	/*复位姿态PID*/	
         // positionResetAllPID();   /*复位位置PID*/
         // velZ_LESO.z2 = 0;
-        control->actuator[T_l] = 0;
-        control->actuator[T_r] = 0;
+        // control->actuator[T_l] = 0;
+        // control->actuator[T_r] = 0;
 
         // adrc_reset(&ADRCRatePitch);
 #ifdef ADRC_CONTROL
 		// adrc_reset(&ADRCRateRoll);
 #endif
-        attitudeDesired.yaw = state->attitude.yaw; /*复位计算的期望yaw值*/
-
+        setpoint->attitudedesired.yaw = state->attitude.yaw; /*复位计算的期望yaw值*/
+        Yaw_td.x1 = setpoint->attitudedesired.yaw;
+        Yaw_td.x2 = 0;
+        Yaw_td.fh = 0;
         if (cnt++ > 1500) {
             cnt = 0;
             configParamGiveSemaphore();

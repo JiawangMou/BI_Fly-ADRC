@@ -70,6 +70,8 @@ void resetBASCAttitudecontroller(void);
 void resetBASCPositioncontroller(void);
 void Attitude_Adaptive_law(Axis3f *Wb);
 void Position_Adaptive_law(void);
+void BASCwriteToConfigParam(void);
+
 // BASC_Attitude_Object getBASCAtti_controller(void);
 // BASC_Pos_Object getBASCPos_controller(void);
 

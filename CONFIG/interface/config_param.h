@@ -149,11 +149,11 @@ typedef struct dynNotchConfig_s
 
 typedef struct 
 {
-	uint16_t A1[3];
-    uint16_t A2[3];
-    uint16_t A3[3];
-	uint16_t J_gamma[3];
-	uint16_t Tao0_gamma[3];
+	float A1[3];
+    float A2[3];
+    float A3[3];
+	float J_gamma[3];
+	float Tao0_gamma[3];
 } BASCAttiParam_t;
 
 typedef struct 

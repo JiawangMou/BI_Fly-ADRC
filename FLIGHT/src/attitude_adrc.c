@@ -156,9 +156,9 @@ void attitudeADRCwriteToConfigParam(void)
 
 void attitudeTD(setpoint_t *setpoint)
 {
-    adrc_td(&Roll_td, setpoint->attitude.roll);
-    adrc_td(&Pitch_td, setpoint->attitude.pitch);
-    adrc_td(&Yaw_td, setpoint->attitude.yaw);
+    adrc_td(&Roll_td, setpoint->attitudedesired.roll);
+    adrc_td(&Pitch_td, setpoint->attitudedesired.pitch);
+    adrc_td(&Yaw_td, setpoint->attitudedesired.yaw);
 }
 
 void attitudeADRCinit(void)

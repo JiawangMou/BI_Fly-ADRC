@@ -231,6 +231,7 @@ typedef struct
 typedef struct
 {
     attitude_t attitude;        // deg
+	attitude_t attitudedesired; // deg
     attitude_t attitudeRate;    // deg/s
     point_t    position;        // cm
     velocity_t velocity;        // transient velocity setpoint cm/s

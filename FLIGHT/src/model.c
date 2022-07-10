@@ -374,6 +374,18 @@ void C_coffe_cal(float32_t *C, attitude_t *angle_R)
     float Cp = arm_cos_f32(angle_R->pitch);
     float Sp = arm_sin_f32(angle_R->pitch);
 
+    *C        = 7.289f;
+    *(C + 1)  = 0.000001f;
+    *(C + 2)  = -7.289f;
+    *(C + 3)  = 0.000001f;
+    *(C + 4)  = 0.000001f;
+    *(C + 5)  = 6.0f;
+    *(C + 6)  = 0.000001f;
+    *(C + 7)  = 6.0f;
+    *(C + 8)  = 0.000001f;
+    *(C + 9)  = -7.289f;
+    *(C + 10) = 0.000001f;
+    *(C + 11) = 7.289f;
     *(C + 12) = Cr * Cp ;
     *(C + 13) = -Sp;
     *(C + 14) = Cr * Cp;

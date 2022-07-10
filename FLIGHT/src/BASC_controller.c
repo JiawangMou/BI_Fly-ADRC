@@ -88,24 +88,24 @@ void BASCAttitudeInit(void)
     BASCAtti.J_hat[8] = J_hat[2] = 343;
 
     BASCAtti.A1[0] = configParam.BASCAtti_param.A1[0];
-    BASCAtti.A1[3] = configParam.BASCAtti_param.A1[1];  
-    BASCAtti.A1[6] = configParam.BASCAtti_param.A1[2];
+    BASCAtti.A1[4] = configParam.BASCAtti_param.A1[1];  
+    BASCAtti.A1[8] = configParam.BASCAtti_param.A1[2];
 
     BASCAtti.A2[0] = configParam.BASCAtti_param.A2[0];
-    BASCAtti.A2[3] = configParam.BASCAtti_param.A2[1];  
-    BASCAtti.A2[6] = configParam.BASCAtti_param.A2[2];
+    BASCAtti.A2[4] = configParam.BASCAtti_param.A2[1];  
+    BASCAtti.A2[8] = configParam.BASCAtti_param.A2[2];
 
     BASCAtti.A3[0] = configParam.BASCAtti_param.A3[0];
-    BASCAtti.A3[3] = configParam.BASCAtti_param.A3[1];  
-    BASCAtti.A3[6] = configParam.BASCAtti_param.A3[2];  
+    BASCAtti.A3[4] = configParam.BASCAtti_param.A3[1];  
+    BASCAtti.A3[8] = configParam.BASCAtti_param.A3[2];  
 
     BASCAtti.J_gamma[0] = 1.0f / configParam.BASCAtti_param.J_gamma[0];
-    BASCAtti.J_gamma[3] = 1.0f / configParam.BASCAtti_param.J_gamma[1];  
-    BASCAtti.J_gamma[6] = 1.0f / configParam.BASCAtti_param.J_gamma[2];
+    BASCAtti.J_gamma[4] = 1.0f / configParam.BASCAtti_param.J_gamma[1];  
+    BASCAtti.J_gamma[8] = 1.0f / configParam.BASCAtti_param.J_gamma[2];
 
     BASCAtti.Tao0_gamma[0] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[0];
-    BASCAtti.Tao0_gamma[3] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[1];  
-    BASCAtti.Tao0_gamma[6] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[2];      
+    BASCAtti.Tao0_gamma[4] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[1];  
+    BASCAtti.Tao0_gamma[8] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[2];      
 
     arm_mat_init_f32(&mat_J_hat, 3,3, BASCAtti.J_hat);
     arm_mat_init_f32(&mat_A1, 3,3, BASCAtti.A1);
@@ -234,24 +234,24 @@ float Thrustcommand2Fz(float command)
 void resetBASCAttitudecontroller(void)
 {
     BASCAtti.A1[0] = configParam.BASCAtti_param.A1[0];
-    BASCAtti.A1[3] = configParam.BASCAtti_param.A1[1];  
-    BASCAtti.A1[6] = configParam.BASCAtti_param.A1[2];
+    BASCAtti.A1[4] = configParam.BASCAtti_param.A1[1];  
+    BASCAtti.A1[8] = configParam.BASCAtti_param.A1[2];
 
     BASCAtti.A2[0] = configParam.BASCAtti_param.A2[0];
-    BASCAtti.A2[3] = configParam.BASCAtti_param.A2[1];  
-    BASCAtti.A2[6] = configParam.BASCAtti_param.A2[2];
+    BASCAtti.A2[4] = configParam.BASCAtti_param.A2[1];  
+    BASCAtti.A2[8] = configParam.BASCAtti_param.A2[2];
 
     BASCAtti.A3[0] = configParam.BASCAtti_param.A3[0];
-    BASCAtti.A3[3] = configParam.BASCAtti_param.A3[1];  
-    BASCAtti.A3[6] = configParam.BASCAtti_param.A3[2];  
+    BASCAtti.A3[4] = configParam.BASCAtti_param.A3[1];  
+    BASCAtti.A3[8] = configParam.BASCAtti_param.A3[2];  
 
     BASCAtti.J_gamma[0] = configParam.BASCAtti_param.J_gamma[0];
-    BASCAtti.J_gamma[3] = configParam.BASCAtti_param.J_gamma[1];  
-    BASCAtti.J_gamma[6] = configParam.BASCAtti_param.J_gamma[2];
+    BASCAtti.J_gamma[4] = configParam.BASCAtti_param.J_gamma[1];  
+    BASCAtti.J_gamma[8] = configParam.BASCAtti_param.J_gamma[2];
 
     BASCAtti.Tao0_gamma[0] = configParam.BASCAtti_param.Tao0_gamma[0];
-    BASCAtti.Tao0_gamma[3] = configParam.BASCAtti_param.Tao0_gamma[1];  
-    BASCAtti.Tao0_gamma[6] = configParam.BASCAtti_param.Tao0_gamma[2];      
+    BASCAtti.Tao0_gamma[4] = configParam.BASCAtti_param.Tao0_gamma[1];  
+    BASCAtti.Tao0_gamma[8] = configParam.BASCAtti_param.Tao0_gamma[2];      
 }
 
 void resetBASCPositioncontroller(void)
@@ -307,5 +307,26 @@ void Position_Adaptive_law(void)
     BASCPos.m_hat = BASCPos.m_hat + BASCPos.M_gamma * BASCPos.Y_m_transpose * BASCPos.delta2 * RATE_ADAPITVE_DT;
 
     BASCPos.m_hat = constrainf(BASCPos.m_hat, M_HAT_MIN, M_HAT_MAX);
+}
+
+void BASCwriteToConfigParam(void)
+{
+    configParam.BASCAtti_param.A1[0] = BASCAtti.A1[0];
+    configParam.BASCAtti_param.A1[1] = BASCAtti.A1[4];  
+    configParam.BASCAtti_param.A1[2] = BASCAtti.A1[8];
+    configParam.BASCAtti_param.A2[0] = BASCAtti.A2[0];
+    configParam.BASCAtti_param.A2[1] = BASCAtti.A2[4];  
+    configParam.BASCAtti_param.A2[2] = BASCAtti.A2[8];
+    configParam.BASCAtti_param.A3[0] = BASCAtti.A3[0];
+    configParam.BASCAtti_param.A3[1] = BASCAtti.A3[4];  
+    configParam.BASCAtti_param.A3[2] = BASCAtti.A3[8];  
+
+    configParam.BASCAtti_param.J_gamma[0] = 1.0f / BASCAtti.J_gamma[0];
+    configParam.BASCAtti_param.J_gamma[1] = 1.0f / BASCAtti.J_gamma[4];  
+    configParam.BASCAtti_param.J_gamma[2] = 1.0f / BASCAtti.J_gamma[8];
+
+    configParam.BASCAtti_param.Tao0_gamma[0] = 1.0f / BASCAtti.Tao0_gamma[0];
+    configParam.BASCAtti_param.Tao0_gamma[1] = 1.0f / BASCAtti.Tao0_gamma[4];  
+    configParam.BASCAtti_param.Tao0_gamma[2] = 1.0f / BASCAtti.Tao0_gamma[8];
 }
 
