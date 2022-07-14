@@ -15,6 +15,8 @@ typedef struct
     float x2d[3];
     float x2d_dot[3];
     float disturb[3];
+    float A3_delta1[3];
+    float A2_delta2[3];
     float J_hat[9];
     float Y_J_transpose[9];
     float Y_tao0_transpose[9];
@@ -35,6 +37,8 @@ typedef struct
     float x2d;
     float x2d_dot;
     float disturb;
+    float A3_delta2;
+    float A1_delta1;
     float m_hat;
     float Y_m_transpose;
     float M_gamma;
@@ -57,14 +61,14 @@ extern BASC_Pos_Object BASCPos;
 #define J_HAT_MAX  500.0f
 #define J_HAT_MIN  200.0f
 
-#define TAO0_HAT_MAX  20000.0f
-#define TAO0_HAT_MIN  -20000.0f
+#define TAO0_HAT_MAX  50000.0f
+#define TAO0_HAT_MIN  -50000.0f
 
 void BASCAttitudeInit(void);
 void BASCPositionInit(void);
 
 void Torque_Cal(control_t *control, Axis3f *Wb, attitude_t *actualAngle);
-void Fz_Cal(control_t *control, const float posZ, const float velZ);
+void Fz_Cal(float *thrust,const float posZ, const float velZ);
 float Thrustcommand2Fz(float command);
 void resetBASCAttitudecontroller(void);
 void resetBASCPositioncontroller(void);

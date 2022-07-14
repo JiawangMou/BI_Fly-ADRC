@@ -70,8 +70,8 @@ BASC_Attitude_Object BASCAtti;
 BASC_Pos_Object BASCPos;
 
 float A1_delta1[3] = {0};
-float A3_delta1[3] = {0};
-float A2_delta2[3] = {0};
+// float A3_delta1[3] = {0};
+// float A2_delta2[3] = {0};
 float delta1_dot[3] = {0};
 float A1_delta1_dot[3] = {0};
 
@@ -99,13 +99,13 @@ void BASCAttitudeInit(void)
     BASCAtti.A3[4] = configParam.BASCAtti_param.A3[1];  
     BASCAtti.A3[8] = configParam.BASCAtti_param.A3[2];  
 
-    BASCAtti.J_gamma[0] = 1.0f / configParam.BASCAtti_param.J_gamma[0];
-    BASCAtti.J_gamma[4] = 1.0f / configParam.BASCAtti_param.J_gamma[1];  
-    BASCAtti.J_gamma[8] = 1.0f / configParam.BASCAtti_param.J_gamma[2];
+    BASCAtti.J_gamma[0] = configParam.BASCAtti_param.J_gamma[0];
+    BASCAtti.J_gamma[4] = configParam.BASCAtti_param.J_gamma[1];  
+    BASCAtti.J_gamma[8] = configParam.BASCAtti_param.J_gamma[2];
 
-    BASCAtti.Tao0_gamma[0] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[0];
-    BASCAtti.Tao0_gamma[4] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[1];  
-    BASCAtti.Tao0_gamma[8] = 1.0f / configParam.BASCAtti_param.Tao0_gamma[2];      
+    BASCAtti.Tao0_gamma[0] = configParam.BASCAtti_param.Tao0_gamma[0];
+    BASCAtti.Tao0_gamma[4] = configParam.BASCAtti_param.Tao0_gamma[1];  
+    BASCAtti.Tao0_gamma[8] = configParam.BASCAtti_param.Tao0_gamma[2];      
 
     arm_mat_init_f32(&mat_J_hat, 3,3, BASCAtti.J_hat);
     arm_mat_init_f32(&mat_A1, 3,3, BASCAtti.A1);
@@ -123,8 +123,8 @@ void BASCAttitudeInit(void)
     arm_mat_init_f32(&mat_J_hat_x2d_dot, 3,1, J_hat_x2d_dot);
 
     arm_mat_init_f32(&mat_A1_delta1, 3,1, A1_delta1);
-    arm_mat_init_f32(&mat_A3_delta1, 3,1, A3_delta1);
-    arm_mat_init_f32(&mat_A2_delta2, 3,1, A2_delta2);
+    arm_mat_init_f32(&mat_A3_delta1, 3,1, BASCAtti.A3_delta1);
+    arm_mat_init_f32(&mat_A2_delta2, 3,1, BASCAtti.A2_delta2);
     arm_mat_init_f32(&mat_A1_delta1_dot, 3,1, A1_delta1_dot);
 
     arm_mat_init_f32(&mat_td_x1, 3,1, td_x1);
@@ -203,13 +203,13 @@ void Torque_Cal(control_t* control,Axis3f *Wb, attitude_t *actualAngle)
     x2_J_hat_x2[2] = BASCAtti.J_hat[4]*wb_rad[0]*wb_rad[1] - BASCAtti.J_hat[0]*wb_rad[0]*wb_rad[1];
 
     for(int i=0; i<3; i++){
-        BASCAtti.Torque[i] =  A3_delta1[i] + A2_delta2[i] + J_hat_x2d_dot[i] + x2_J_hat_x2[i] - BASCAtti.Tao0_hat[i];
+        BASCAtti.Torque[i] =  BASCAtti.A3_delta1[i] + BASCAtti.A2_delta2[i] + J_hat_x2d_dot[i] + x2_J_hat_x2[i] - BASCAtti.Tao0_hat[i];
         control->Tao_Fz[i] = BASCAtti.Torque[i];
     }
         
 }
 
-void Fz_Cal(control_t* control,const float posZ, const float velZ)
+void Fz_Cal(float *thrust,const float posZ, const float velZ)
 {
     float delta1_dot = 0;
     BASCPos.delta1 = posZ_TD.x1 - posZ;
@@ -217,9 +217,11 @@ void Fz_Cal(control_t* control,const float posZ, const float velZ)
     BASCPos.delta2 = BASCPos.x2d - velZ;
     delta1_dot = posZ_TD.x2 - velZ;
     BASCPos.x2d_dot = BASCPos.A2 * delta1_dot + posZ_TD.fh;
-	
-    BASCPos.Fz = BASCPos.A1 * BASCPos.delta1 + BASCPos.m_hat * BASCPos.x2d_dot + BASCPos.m_hat * G + BASCPos.A3 * BASCPos.delta2;
-    control->Tao_Fz[3] = BASCPos.Fz;
+    BASCPos.A3_delta2 = BASCPos.A3 * BASCPos.delta2;
+    BASCPos.A1_delta1 = BASCPos.A1 * BASCPos.delta1;
+    
+    BASCPos.Fz = BASCPos.A1_delta1 + BASCPos.m_hat * BASCPos.x2d_dot + BASCPos.m_hat * G + BASCPos.A3_delta2;
+    *thrust = BASCPos.Fz;
 }
 
 //将遥控指令转换成Fz g*cm/s^2  Fzmax  = 34220 g*cm/s^2 
@@ -321,12 +323,12 @@ void BASCwriteToConfigParam(void)
     configParam.BASCAtti_param.A3[1] = BASCAtti.A3[4];  
     configParam.BASCAtti_param.A3[2] = BASCAtti.A3[8];  
 
-    configParam.BASCAtti_param.J_gamma[0] = 1.0f / BASCAtti.J_gamma[0];
-    configParam.BASCAtti_param.J_gamma[1] = 1.0f / BASCAtti.J_gamma[4];  
-    configParam.BASCAtti_param.J_gamma[2] = 1.0f / BASCAtti.J_gamma[8];
+    configParam.BASCAtti_param.J_gamma[0] = BASCAtti.J_gamma[0];
+    configParam.BASCAtti_param.J_gamma[1] = BASCAtti.J_gamma[4];  
+    configParam.BASCAtti_param.J_gamma[2] = BASCAtti.J_gamma[8];
 
-    configParam.BASCAtti_param.Tao0_gamma[0] = 1.0f / BASCAtti.Tao0_gamma[0];
-    configParam.BASCAtti_param.Tao0_gamma[1] = 1.0f / BASCAtti.Tao0_gamma[4];  
-    configParam.BASCAtti_param.Tao0_gamma[2] = 1.0f / BASCAtti.Tao0_gamma[8];
+    configParam.BASCAtti_param.Tao0_gamma[0] = BASCAtti.Tao0_gamma[0];
+    configParam.BASCAtti_param.Tao0_gamma[1] = BASCAtti.Tao0_gamma[4];  
+    configParam.BASCAtti_param.Tao0_gamma[2] = BASCAtti.Tao0_gamma[8];
 }
 

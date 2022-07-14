@@ -118,6 +118,7 @@ float ServoPWM2Servoangle(u32 servoPWM);
 arm_status U_cal(control_t *control, attitude_t *angle);
 // void D_coffe_cal(float32_t *D, Axis3f *anglerate);
 void C_coffe_cal(float32_t *C, attitude_t *angle);
+void inv_C_coffe_cal(float32_t *inv_C, attitude_t *angle_R);
 void Thrust2motorPWM(Motorstatus_t *motorstatus,float32_t u );
 void ServoAngle2ServoPWM(Servostatus_t *servo_l,Servostatus_t *servo_r, float32_t *u );
 void control_allocation(control_t *control);

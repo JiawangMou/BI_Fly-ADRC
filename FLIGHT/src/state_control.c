@@ -86,7 +86,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
     if (RATE_DO_EXECUTE(ATTITUDE_TD_RATE, tick)) { 
         setpoint->attitudedesired.roll = setpoint->attitude.roll;
         setpoint->attitudedesired.pitch = setpoint->attitude.pitch;
-        setpoint->attitudedesired.yaw -= setpoint->attitude.yaw / ATTITUDE_TD_RATE;
+        setpoint->attitudedesired.yaw -= setpoint->attitude.yaw / 8 / ATTITUDE_TD_RATE;
         attitudeTD(setpoint);
     }
 
@@ -149,8 +149,10 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
 
     if (RATE_DO_EXECUTE(RATE_BASC_RATE, tick)) {
         Torque_Cal(control,&sensors->gyro_R, &state->attitude_R);
-        if (setpoint->mode.z != modeDisable) 
-            Fz_Cal(control,state->position.z, state->velocity.z);
+        if (setpoint->mode.z != modeDisable){
+            Fz_Cal(&actualThrust,state->position.z, state->velocity.z);
+            control->Tao_Fz[3] = actualThrust;
+        }
         else{
             actualThrust = Thrustcommand2Fz(setpoint->thrust);
             if(actualThrust < MASS * G)
@@ -158,18 +160,17 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
                 control->Tao_Fz[3] = MASS * G;
                 U_cal(control, &state->attitude_R);
                 control_allocation(control);
-                // diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
-                // control->actuator[T_l] = constrainf(actualThrust / 200.0f + diff_Thrust, 0.0f, 200.0f);
-                // control->actuator[T_r] = constrainf(actualThrust / 200.0f - diff_Thrust, 0.0f, 200.0f);
+                diff_Thrust = control->actuator[T_l] - control->actuator[T_r];
+                control->actuator[T_l] = constrainf(actualThrust / 200.0f + diff_Thrust, 0.0f, 200.0f);
+                control->actuator[T_r] = constrainf(actualThrust / 200.0f - diff_Thrust, 0.0f, 200.0f);
             }else{
                 control->Tao_Fz[3] = actualThrust;
-                U_cal(control, &state->attitude);
+                U_cal(control, &state->attitude_R);
                 control_allocation(control);
             }
         }
-        
     }
-    if (RATE_DO_EXECUTE(RATE_ADAPITVE_RATE, tick)) {
+    if ((RATE_DO_EXECUTE(RATE_ADAPITVE_RATE, tick)) && (actualThrust > 500.0f)) {
         //update m_hat, J_hat, and Tao0_hat
         Attitude_Adaptive_law(&sensors->gyro_R);
         Position_Adaptive_law();
@@ -222,8 +223,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         // attitudeResetAllPID();	/*复位姿态PID*/	
         // positionResetAllPID();   /*复位位置PID*/
         // velZ_LESO.z2 = 0;
-        // control->actuator[T_l] = 0;
-        // control->actuator[T_r] = 0;
+        control->actuator[T_l] = 0;
+        control->actuator[T_r] = 0;
 
         // adrc_reset(&ADRCRatePitch);
 #ifdef ADRC_CONTROL

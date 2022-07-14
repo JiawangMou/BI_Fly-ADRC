@@ -346,17 +346,17 @@ arm_status U_cal(control_t *control, attitude_t *angle)
     arm_status status;
     arm_matrix_instance_f32 mat_U_temp_41;
     arm_mat_init_f32(&mat_U_temp_41, 4,1, U_temp);
-    // for(int i = 0; i < 4; i++)
-    //     temp[i] = *(u0 + i) - model_D[i];
-    C_coffe_cal(model_C, angle);
 
-    status = arm_mat_inverse_f32(&mat_model_C_44, &mat_model_C_inv_44);
-    if(status == ARM_MATH_SUCCESS ){
-//TODO: the version of DSP library is low, the function of arm_mat_vec_mult_f32 is not defined.
-        arm_mat_mult_f32(&mat_model_C_inv_44, &control->mat_Tao_Fz_41, &mat_U_temp_41);
-        arm_scale_f32 (U_temp, 0.01f, control->U, 4);  //unit change from g*cm/s^2 to mN
+    // C_coffe_cal(model_C, angle);
+
+    // status = arm_mat_inverse_f32(&mat_model_C_44, &mat_model_C_inv_44);
+//     if(status == ARM_MATH_SUCCESS ){
+// //TODO: the version of DSP library is low, the function of arm_mat_vec_mult_f32 is not defined.
+    inv_C_coffe_cal(model_C_inv,angle);
+    arm_mat_mult_f32(&mat_model_C_inv_44, &control->mat_Tao_Fz_41, &mat_U_temp_41);
+    arm_scale_f32 (U_temp, 0.01f, control->U, 4);  //unit change from g*cm/s^2 to mN
         // arm_mat_vec_mult_f32( &mat_model_C_inv_44, temp, u);
-    }	
+    // }	
     return status;
 }
 
@@ -390,6 +390,34 @@ void C_coffe_cal(float32_t *C, attitude_t *angle_R)
     *(C + 13) = -Sp;
     *(C + 14) = Cr * Cp;
     *(C + 15) = -Sp;
+}
+
+void inv_C_coffe_cal(float32_t *inv_C, attitude_t *angle_R)
+{
+    float Cr = arm_cos_f32(angle_R->roll);
+    float Cp = arm_cos_f32(angle_R->pitch);
+    float Sp = arm_sin_f32(angle_R->pitch);
+    float CrCp = Cr * Cp;
+
+    float temp_1 = 0.08333f * Sp / CrCp;
+    float temp_2 = 0.5f * CrCp;
+
+    *inv_C        = 0.0686f;
+    *(inv_C + 1)  = temp_1;
+    *(inv_C + 2)  = 0.0f;
+    *(inv_C + 3)  = temp_2;
+    *(inv_C + 4)  = 0.0f;
+    *(inv_C + 5)  = 0.08333f;
+    *(inv_C + 6)  = -0.0686f;
+    *(inv_C + 7)  = 0.0f;
+    *(inv_C + 8)  = -0.0686f;
+    *(inv_C + 9)  = temp_1;
+    *(inv_C + 10) = 0.0f;
+    *(inv_C + 11) = temp_2;
+    *(inv_C + 12) = 0.0f ;
+    *(inv_C + 13) = 0.08333f;
+    *(inv_C + 14) = 0.0686f;
+    *(inv_C + 15) = 0.0f;
 }
 
 void control_allocation(control_t *control)

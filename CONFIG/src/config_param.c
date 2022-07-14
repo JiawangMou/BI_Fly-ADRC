@@ -10,7 +10,7 @@
 #include "motors.h"
 #include "ADRC.h"
 
-/*FreeRTOSÏà¹ØÍ·ÎÄ¼þ*/
+/*FreeRTOSï¿½ï¿½ï¿½Í·ï¿½Ä¼ï¿½*/
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -18,28 +18,28 @@
 
 
 /********************************************************************************	 
- * ±¾³ÌÐòÖ»¹©Ñ§Ï°Ê¹ÓÃ£¬Î´¾­×÷ÕßÐí¿É£¬²»µÃÓÃÓÚÆäËüÈÎºÎÓÃÍ¾
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½Ñ§Ï°Ê¹ï¿½Ã£ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îºï¿½ï¿½ï¿½Í¾
  * ALIENTEK MiniFly
- * ÅäÖÃ²ÎÊýÇý¶¯´úÂë	
- * ÕýµãÔ­×Ó@ALIENTEK
- * ¼¼ÊõÂÛÌ³:www.openedv.com
- * ´´½¨ÈÕÆÚ:2017/5/12
- * °æ±¾£ºV1.3
- * °æÈ¨ËùÓÐ£¬µÁ°æ±Ø¾¿¡£
- * Copyright(C) ¹ãÖÝÊÐÐÇÒíµç×Ó¿Æ¼¼ÓÐÏÞ¹«Ë¾ 2014-2024
+ * ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½	
+ * ï¿½ï¿½ï¿½ï¿½Ô­ï¿½ï¿½@ALIENTEK
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì³:www.openedv.com
+ * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½:2017/5/12
+ * ï¿½æ±¾ï¿½ï¿½V1.3
+ * ï¿½ï¿½È¨ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ï¿½ï¿½ï¿½
+ * Copyright(C) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿Æ¼ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾ 2014-2024
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 54 /*13 ±íÊ¾V1.3*/
+#define VERSION 14 /*13 ï¿½ï¿½Ê¾V1.3*/
 
 configParam_t configParam;
 
 #ifdef FOUR_WING
 static configParam_t configParamDefault =
 {
-	.version = VERSION, /*Èí¼þ°æ±¾ºÅ*/
+	.version = VERSION, /*version*/
 	.BASCAtti_param={
-		.A1 = {100, 10, 10},
+		.A1 = {10, 10, 10},
 		.A2 = {20000, 20000, 20000},
 		.A3 = {5000, 30000, 30000},
 		.J_gamma = {0.1, 0.1, 0.1},
@@ -67,7 +67,7 @@ static configParam_t configParamDefault =
 		.r = 50,
 		.N0 = 2,
 	},
-		// .pidAngle = /*½Ç¶ÈPID*/
+		// .pidAngle = /*ï¿½Ç¶ï¿½PID*/
 		// {
 		// 	.roll =
 		// 		{  
@@ -91,7 +91,7 @@ static configParam_t configParamDefault =
 		// 			.outputLimit = 0,
 		// 		},
 		// },
-		// .pidRate = /*½ÇËÙ¶ÈPID*/
+		// .pidRate = /*ï¿½ï¿½ï¿½Ù¶ï¿½PID*/
 		// {
 		// 	.roll =
 		// 		{
@@ -115,7 +115,7 @@ static configParam_t configParamDefault =
 		// 			.outputLimit = 0,
 		// 		},
 		// },
-		// .pidPos = /*Î»ÖÃPID*/
+		// .pidPos = /*Î»ï¿½ï¿½PID*/
 		// {
 		// 	.vx =
 		// 		{
@@ -373,12 +373,12 @@ static configParam_t configParamDefault =
 		// {
 		// 	.td = 
 		// 	{
-		// 		.r  = 25000, // ¼Ó¼ÓËÙ¶È max_aa = 1200cm/s^3
+		// 		.r  = 25000, // ï¿½Ó¼ï¿½ï¿½Ù¶ï¿½ max_aa = 1200cm/s^3
 		// 		.N0 = 2,
 		// 	},
 		// 	.nlsef =
 		// 	{
-		// 		.N1 = 2,//¸ú×ÙÎ¢·ÖÆ÷½â¾öËÙ¶È³¬µ÷h1=N1*h
+		// 		.N1 = 2,//ï¿½ï¿½ï¿½ï¿½Î¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶È³ï¿½ï¿½ï¿½h1=N1*h
 		// 		.beta_1 = 28.0,
 		// 		.beta_2 = 2.3,
 		// 		.beta_I = 0.0,
@@ -394,16 +394,16 @@ static configParam_t configParamDefault =
 		// 	},	
 		// },
 
-		.trimP = 0.f,		 /*pitchÎ¢µ÷*/
-		.trimR = 0.f,		 /*rollÎ¢µ÷*/
-		// .thrustBase = 40000.0, /*¶¨¸ßÓÍÃÅ»ù´¡Öµ*/
+		.trimP = 0.f,		 /*pitchÎ¢ï¿½ï¿½*/
+		.trimR = 0.f,		 /*rollÎ¢ï¿½ï¿½*/
+		// .thrustBase = 40000.0, /*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å»ï¿½ï¿½ï¿½Öµ*/
 };
 #elif defined DOUBLE_WING
 static configParam_t configParamDefault =
 	{
-		.version = VERSION, /*Èí¼þ°æ±¾ºÅ*/
+		.version = VERSION, /*ï¿½ï¿½ï¿½ï¿½ï¿½æ±¾ï¿½ï¿½*/
 
-		.pidAngle = /*½Ç¶ÈPID*/
+		.pidAngle = /*ï¿½Ç¶ï¿½PID*/
 		{
 			.roll =
 				{
@@ -427,7 +427,7 @@ static configParam_t configParamDefault =
 					.outputLimit = 0,
 				},
 		},
-		.pidRate = /*½ÇËÙ¶ÈPID*/
+		.pidRate = /*ï¿½ï¿½ï¿½Ù¶ï¿½PID*/
 		{
 			.roll =
 				{
@@ -451,7 +451,7 @@ static configParam_t configParamDefault =
 					.outputLimit = 0,
 				},
 		},
-		.pidPos = /*Î»ÖÃPID*/
+		.pidPos = /*Î»ï¿½ï¿½PID*/
 		{
 			.vx =
 				{
@@ -633,9 +633,9 @@ static configParam_t configParamDefault =
     		.dyn_notch_count = 1,
 		},
 #endif // USE_DYN_NOTCH_FILTER_GYRO
-		.trimP = 0.f,		 /*pitchÎ¢µ÷*/
-		.trimR = 0.f,		 /*rollÎ¢µ÷*/
-		.thrustBase = 40000.0, /*¶¨¸ßÓÍÃÅ»ù´¡Öµ*/
+		.trimP = 0.f,		 /*pitchÎ¢ï¿½ï¿½*/
+		.trimR = 0.f,		 /*rollÎ¢ï¿½ï¿½*/
+		.thrustBase = 40000.0, /*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å»ï¿½ï¿½ï¿½Öµ*/
 };
 #endif
 
@@ -659,7 +659,7 @@ static u8 configParamCksum(configParam_t *data)
 	return cksum;
 }
 
-void configParamInit(void) /*²ÎÊýÅäÖÃ³õÊ¼»¯*/
+void configParamInit(void) /*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã³ï¿½Ê¼ï¿½ï¿½*/
 {
 	if (isInit)
 		return;
@@ -669,9 +669,9 @@ void configParamInit(void) /*²ÎÊýÅäÖÃ³õÊ¼»¯*/
 
 	STMFLASH_Read(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth);
 
-	if (configParam.version == VERSION) /*°æ±¾ÕýÈ·*/
+	if (configParam.version == VERSION) /*ï¿½æ±¾ï¿½ï¿½È·*/
 	{
-		if (configParamCksum(&configParam) == configParam.cksum) /*Ð£ÑéÕýÈ·*/
+		if (configParamCksum(&configParam) == configParam.cksum) /*Ð£ï¿½ï¿½ï¿½ï¿½È·*/
 		{
 			//			printf("Version V%1.1f check [OK]\r\n", configParam.version / 10.0f);
 			isConfigParamOK = true;
@@ -682,16 +682,16 @@ void configParamInit(void) /*²ÎÊýÅäÖÃ³õÊ¼»¯*/
 			isConfigParamOK = false;
 		}
 	}
-	else /*°æ±¾¸üÐÂ*/
+	else /*ï¿½æ±¾ï¿½ï¿½ï¿½ï¿½*/
 	{
 		isConfigParamOK = false;
 	}
 
-	if (isConfigParamOK == false) /*ÅäÖÃ²ÎÊý´íÎó£¬Ð´ÈëÄ¬ÈÏ²ÎÊý*/
+	if (isConfigParamOK == false) /*ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½Ä¬ï¿½Ï²ï¿½ï¿½ï¿½*/
 	{
 		memcpy((u8 *)&configParam, (u8 *)&configParamDefault, sizeof(configParam));
-		configParam.cksum = configParamCksum(&configParam);			   /*¼ÆËãÐ£ÑéÖµ*/
-		STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*Ð´Èëstm32 flash*/
+		configParam.cksum = configParamCksum(&configParam);			   /*ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Öµ*/
+		STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*Ð´ï¿½ï¿½stm32 flash*/
 		isConfigParamOK = true;
 	}
 
@@ -707,14 +707,14 @@ void configParamTask(void *param)
 	while (1)
 	{
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-		cksum = configParamCksum(&configParam); /*Êý¾ÝÐ£Ñé*/
+		cksum = configParamCksum(&configParam); /*ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½*/
 
 		if (configParam.cksum != cksum)
 		{
-			configParam.cksum = cksum;				/*Êý¾ÝÐ£Ñé*/
-			//watchdogInit(500);					/*²Á³ýÊ±¼ä±È½Ï³¤£¬¿´ÃÅ¹·Ê±¼äÉèÖÃ´óÒ»Ð©*/
-			STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*Ð´Èëstm32 flash*/
-			//watchdogInit(WATCHDOG_RESET_MS);		/*ÖØÐÂÉèÖÃ¿´ÃÅ¹·*/
+			configParam.cksum = cksum;				/*ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½*/
+			//watchdogInit(500);					/*ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½È½Ï³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å¹ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ã´ï¿½Ò»Ð©*/
+			STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*Ð´ï¿½ï¿½stm32 flash*/
+			//watchdogInit(WATCHDOG_RESET_MS);		/*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½Å¹ï¿½*/
 		}
 	}
 }
@@ -749,11 +749,11 @@ void resetConfigParam_BASCcontriller(void)
 
 void saveConfigAndNotify(void)
 {
-	u8 cksum = configParamCksum(&configParam); /*Êý¾ÝÐ£Ñé*/
+	u8 cksum = configParamCksum(&configParam); /*ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½*/
 	if (configParam.cksum != cksum)
 	{
-		configParam.cksum = cksum;									   /*Êý¾ÝÐ£Ñé*/
-		STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*Ð´Èëstm32 flash*/
+		configParam.cksum = cksum;									   /*ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½*/
+		STMFLASH_Write(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth); /*Ð´ï¿½ï¿½stm32 flash*/
 	}
 }
 

@@ -557,10 +557,13 @@ static void atkpSendPeriod(void)
         setpoint_t setpoint = getSetpoint();
         control             = getControlData();
         u32 timestamp       = getSysTickCnt();
-        sendUserData(1, setpoint.attitude.roll, setpoint.attitude.pitch, setpoint.attitude.yaw, Roll_td.x1, Pitch_td.x1,
-            Yaw_td.x1, 100.0f * BASCAtti.x2d[0], 100.0f * BASCAtti.x2d[1], 100.0f * BASCAtti.x2d[2]);
-        sendUserData(2, sensordata.gyro.x, sensordata.gyro.y, sensordata.gyro.z, attitude.roll, attitude.pitch,
-            attitude.yaw, 0.01f * control.Tao_Fz[0], 0.01f * control.Tao_Fz[1], 0.01f * control.Tao_Fz[2]);
+        getSensorData(&sensordata);
+        sendUserData(1, 100.0f * BASCAtti.delta1[0], 100.0f * BASCAtti.delta2[0], 0.01f * BASCAtti.Tao0_hat[0],
+            100.0f * BASCAtti.x2d[0], 10.0f * setpoint.attitudedesired.roll, 0.01f * BASCAtti.Torque[0], 10.0f * Roll_td.x1,
+            10.0f * attitude.roll, 100.0f * sensordata.gyro_R.x);
+        sendUserData(2, 100.0f * BASCAtti.delta1[2], 100.0f * BASCAtti.delta2[2], 0.01f * BASCAtti.Tao0_hat[2],
+            100.0f * BASCAtti.x2d[2], 10.0f * setpoint.attitudedesired.yaw, 0.01f * BASCAtti.Torque[2], 10.0f * Yaw_td.x1,
+            10.0f * attitude.yaw, 100.0f * sensordata.gyro_R.z);
 
         //#ifdef ADRC_CONTROL
         //		sensorData_t sensordata;
@@ -777,7 +780,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                 BASCAtti.A1[4], 0.001f * BASCAtti.A2[4], 0.01f * BASCAtti.A3[8], BASCAtti.A1[8],
                 0.001f * BASCAtti.A2[8]);
             sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[4], BASCAtti.J_gamma[8],
-                BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], BASCAtti.Tao0_gamma[8]);
+                0.01f * BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], 0.001f * BASCAtti.Tao0_gamma[8]);
             sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
@@ -791,7 +794,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                 BASCAtti.A1[4], 0.001f * BASCAtti.A2[4], 0.01f * BASCAtti.A3[8], BASCAtti.A1[8],
                 0.001f * BASCAtti.A2[8]);
             sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[4], BASCAtti.J_gamma[8],
-                BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], BASCAtti.Tao0_gamma[8]);
+                0.01f * BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], 0.001f * BASCAtti.Tao0_gamma[8]);
             sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
@@ -827,9 +830,9 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         BASCAtti.J_gamma[0]    = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
         BASCAtti.J_gamma[4]    = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
         BASCAtti.J_gamma[8]    = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
-        BASCAtti.Tao0_gamma[0] = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        BASCAtti.Tao0_gamma[0] = 10.0f * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
         BASCAtti.Tao0_gamma[4] = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-        BASCAtti.Tao0_gamma[8] = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+        BASCAtti.Tao0_gamma[8] = 10.0f * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
 
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
@@ -880,6 +883,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 
         // attitudePIDwriteToConfigParam();
 		// positionPIDwriteToConfigParam();
+        attitudeADRCwriteToConfigParam();
         BASCwriteToConfigParam();
 		u8 cksum = atkpCheckSum(anlPacket);
 		sendCheck(anlPacket->msgID,cksum);

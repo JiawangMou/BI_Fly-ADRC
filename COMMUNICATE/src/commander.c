@@ -38,6 +38,8 @@
 #define MIN_THRUST 5000
 #define MAX_THRUST 65500
 
+#define MIN_YAW 10
+
 static bool            isRCLocked;                /* 遥控锁定状态 */
 static ctrlValCache_t  remoteCache;               /* 遥控缓存数据 */
 static ctrlValCache_t  wifiCache;                 /* wifi缓存数据 */
@@ -113,6 +115,9 @@ static void ctrlDataUpdate(void)
 
         configParam.trimP = ctrlVal.trimPitch; /*更新微调值*/
         configParam.trimR = ctrlVal.trimRoll;
+
+        if (fabsf(ctrlValLpf.yaw )< MIN_YAW)
+            ctrlValLpf.yaw = 0;
 
         if (ctrlValLpf.thrust < MIN_THRUST)
             ctrlValLpf.thrust = 0;
@@ -370,7 +375,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
     }
 
     setpoint->attitude.roll  = ctrlValLpf.roll;
-    setpoint->attitude.pitch = ctrlValLpf.pitch;
+    setpoint->attitude.pitch = 0.5f * ctrlValLpf.pitch;
     setpoint->attitude.yaw = ctrlValLpf.yaw; /*摇杆方向和yaw方向相反*/
 
 
