@@ -551,19 +551,20 @@ static void atkpSendPeriod(void)
     if (!(count_ms % PERIOD_USERDATA)) /*用户数据*/
     {
         sensorData_t sensordata;
-        attitude_t   attitude;
+        // attitude_t   attitude;
         control_t    control;
-        getAttitudeData(&attitude);
+        // getAttitudeData(&attitude);
         setpoint_t setpoint = getSetpoint();
         control             = getControlData();
         u32 timestamp       = getSysTickCnt();
+        state_t state = getState();
         getSensorData(&sensordata);
         sendUserData(1, 100.0f * BASCAtti.delta1[0], 100.0f * BASCAtti.delta2[0], 0.01f * BASCAtti.Tao0_hat[0],
             100.0f * BASCAtti.x2d[0], 10.0f * setpoint.attitudedesired.roll, 0.01f * BASCAtti.Torque[0], 10.0f * Roll_td.x1,
-            10.0f * attitude.roll, 100.0f * sensordata.gyro_R.x);
-        sendUserData(2, 100.0f * BASCAtti.delta1[2], 100.0f * BASCAtti.delta2[2], 0.01f * BASCAtti.Tao0_hat[2],
-            100.0f * BASCAtti.x2d[2], 10.0f * setpoint.attitudedesired.yaw, 0.01f * BASCAtti.Torque[2], 10.0f * Yaw_td.x1,
-            10.0f * attitude.yaw, 100.0f * sensordata.gyro_R.z);
+            10.0f * state.attitude.roll, 100.0f * sensordata.gyro_R.x);
+        sendUserData(2, 10.0f * BASCPos.delta1, 10.0f * BASCPos.delta2, 10.0f * BASCPos.m_hat,
+            10.0f * BASCPos.x2d, 10.0f * setpoint.position.z, 0.01f * BASCPos.Fz, 10.0f * posZ_TD.x1,
+            10.0f * state.position.z, 10.0f * state.velocity.z);
 
         //#ifdef ADRC_CONTROL
         //		sensorData_t sensordata;
