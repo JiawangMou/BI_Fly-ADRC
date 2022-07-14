@@ -885,6 +885,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         // attitudePIDwriteToConfigParam();
 		// positionPIDwriteToConfigParam();
         attitudeADRCwriteToConfigParam();
+        posZ_adrc_writeToConfigParam();
         BASCwriteToConfigParam();
 		u8 cksum = atkpCheckSum(anlPacket);
 		sendCheck(anlPacket->msgID,cksum);

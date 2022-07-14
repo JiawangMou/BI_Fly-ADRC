@@ -313,6 +313,7 @@ void Position_Adaptive_law(void)
 
 void BASCwriteToConfigParam(void)
 {
+    //BASCAtti parameters
     configParam.BASCAtti_param.A1[0] = BASCAtti.A1[0];
     configParam.BASCAtti_param.A1[1] = BASCAtti.A1[4];  
     configParam.BASCAtti_param.A1[2] = BASCAtti.A1[8];
@@ -330,5 +331,14 @@ void BASCwriteToConfigParam(void)
     configParam.BASCAtti_param.Tao0_gamma[0] = BASCAtti.Tao0_gamma[0];
     configParam.BASCAtti_param.Tao0_gamma[1] = BASCAtti.Tao0_gamma[4];  
     configParam.BASCAtti_param.Tao0_gamma[2] = BASCAtti.Tao0_gamma[8];
+    
+    //BASCPos parameters
+    configParam.BASCPos_param.A1 = BASCPos.A1;
+    configParam.BASCPos_param.A2 = BASCPos.A2;
+    configParam.BASCPos_param.A3 = BASCPos.A3;  
+
+    configParam.BASCPos_param.M_gamma= BASCPos.M_gamma;
 }
+
+
 
