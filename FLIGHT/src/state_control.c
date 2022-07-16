@@ -152,6 +152,8 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         if (setpoint->mode.z != modeDisable){
             Fz_Cal(&actualThrust,state->position.z, state->velocity.z);
             control->Tao_Fz[3] = actualThrust;
+            U_cal(control, &state->attitude_R);
+            control_allocation(control);
         }
         else{
             actualThrust = Thrustcommand2Fz(setpoint->thrust);

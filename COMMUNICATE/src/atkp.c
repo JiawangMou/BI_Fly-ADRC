@@ -562,7 +562,7 @@ static void atkpSendPeriod(void)
         sendUserData(1, 100.0f * BASCAtti.delta1[0], 100.0f * BASCAtti.delta2[0], 0.01f * BASCAtti.Tao0_hat[0],
             100.0f * BASCAtti.x2d[0], 10.0f * setpoint.attitudedesired.roll, 0.01f * BASCAtti.Torque[0], 10.0f * Roll_td.x1,
             10.0f * state.attitude.roll, 100.0f * sensordata.gyro_R.x);
-        sendUserData(2, 10.0f * BASCPos.delta1, 10.0f * BASCPos.delta2, 10.0f * BASCPos.m_hat,
+        sendUserData(2, control.actuator[0], control.actuator[1], 10.0f * BASCPos.m_hat,
             10.0f * BASCPos.x2d, 10.0f * setpoint.position.z, 0.01f * BASCPos.Fz, 10.0f * posZ_TD.x1,
             10.0f * state.position.z, 10.0f * state.velocity.z);
 
@@ -782,7 +782,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                 0.001f * BASCAtti.A2[8]);
             sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[4], BASCAtti.J_gamma[8],
                 0.01f * BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], 0.001f * BASCAtti.Tao0_gamma[8]);
-            sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0);
+            sendPid(3, 0.1f * BASCPos.A1, BASCPos.A2, 0.01f *BASCPos.A3, posZ_TD.r, 1000.0f * BASCPos.M_gamma, 0, 0, 0, 0);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
             sendPid(5, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -796,7 +796,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                 0.001f * BASCAtti.A2[8]);
             sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[4], BASCAtti.J_gamma[8],
                 0.01f * BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], 0.001f * BASCAtti.Tao0_gamma[8]);
-            sendPid(3, BASCPos.A1, BASCPos.A2, BASCPos.A3, posZ_TD.r, BASCPos.M_gamma, 0, 0, 0, 0);
+            sendPid(3, 0.1f * BASCPos.A1, BASCPos.A2, 0.01f * BASCPos.A3, posZ_TD.r, 1000.0f * BASCPos.M_gamma, 0, 0, 0, 0);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
             sendPid(5, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -838,17 +838,20 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID3) {
-        BASCPos.A1 = 0.1 * ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
-        BASCPos.A2 = 0.1 * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
-        BASCPos.A3 = 0.01 * ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
+        BASCPos.A1 = ((s16)(*(anlPacket->data + 0) << 8) | *(anlPacket->data + 1));
+        BASCPos.A2 = 0.1f * ((s16)(*(anlPacket->data + 2) << 8) | *(anlPacket->data + 3));
+        BASCPos.A3 = ((s16)(*(anlPacket->data + 4) << 8) | *(anlPacket->data + 5));
 
         posZ_TD.r = 0.1 * ((s16)(*(anlPacket->data + 6) << 8) | *(anlPacket->data + 7));
-        BASCPos.M_gamma = 0.1 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
+        BASCPos.M_gamma = 0.0001 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
         // pidZ.kd = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
 
         // pidVX.kp = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
         // pidVX.ki = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
         // pidVX.kd = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+        attitudeADRCwriteToConfigParam();
+        posZ_adrc_writeToConfigParam();
+        BASCwriteToConfigParam();
         u8 cksum = atkpCheckSum(anlPacket);
         sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID4) {
@@ -864,17 +867,17 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
     //    ADRCAnglePitch.td.r = 10 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
     //    ADRCAngleYaw.td.r   = ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
 
-    //    posZ_nlsef.I_limit = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-    //    velZ_LESO.w0       = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-    //    posZ_nlsef.zeta    = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+       //    posZ_nlsef.I_limit = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+       //    velZ_LESO.w0       = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+       //    posZ_nlsef.zeta    = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
 
        changeServoinitpos_configParam(s_left_set, s_right_set, s_middle_set);
        servoSetPWM(PWM_LEFT, s_left_set);
        servoSetPWM(PWM_RIGHT, s_right_set);
        servoSetPWM(PWM_MIDDLE, s_middle_set);
-
-        u8 cksum = atkpCheckSum(anlPacket);
-        sendCheck(anlPacket->msgID, cksum);
+       configParamGiveSemaphore(); //将修改的configparamdefault写入flash
+       u8 cksum = atkpCheckSum(anlPacket);
+       sendCheck(anlPacket->msgID, cksum);
     } else if (anlPacket->msgID == DOWN_PID5) {
 
        u8 cksum = atkpCheckSum(anlPacket);
@@ -884,9 +887,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
 
         // attitudePIDwriteToConfigParam();
 		// positionPIDwriteToConfigParam();
-        attitudeADRCwriteToConfigParam();
-        posZ_adrc_writeToConfigParam();
-        BASCwriteToConfigParam();
+
 		u8 cksum = atkpCheckSum(anlPacket);
 		sendCheck(anlPacket->msgID,cksum);
     } 

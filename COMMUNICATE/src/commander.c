@@ -289,7 +289,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
             if (initLand == false) {
                 // pidReset(&pidZ);
                 setpoint->position.z = 0;    /*设定高度为0 单位cm/s*/
-                // td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
                 // td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
                 commander.keyFlight = false;
                 initLand = true;
@@ -306,7 +306,7 @@ void commanderGetSetpoint(setpoint_t* setpoint, state_t* state)
                 errorPosY        = 0.f;
                 errorPosZ        = 0.f;
 #ifdef USE_MBD
-                // td_states_set(&posZ_TD,state->position.z,state->velocity.z);
+                td_states_set(&posZ_TD,state->position.z,state->velocity.z);
                 // td_states_set(&velZ_TD,state->velocity.z,state->acc.z);
 #endif
                 setFastAdjustPosParam(0, 1, 80.0f); /*一键起飞高度80cm*/

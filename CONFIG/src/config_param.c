@@ -39,28 +39,28 @@ static configParam_t configParamDefault =
 {
 	.version = VERSION, /*version*/
 	.BASCAtti_param={
-		.A1 = {10, 10, 10},
-		.A2 = {20000, 20000, 20000},
-		.A3 = {5000, 30000, 30000},
+		.A1 = {10, 15, 20},
+		.A2 = {20000, 10000, 10000},
+		.A3 = {5000, 20000, 30000},
 		.J_gamma = {0.1, 0.1, 0.1},
-		.Tao0_gamma = {100, 100, 100},
+		.Tao0_gamma = {2400, 1, 2400},
 	},
 	.BASCPos_param={
-		.A1 = 100,
-		.A2 = 100,
-		.A3 = 100,
-		.M_gamma = 1,
+		.A1 = 500,
+		.A2 = 10,
+		.A3 = 900,
+		.M_gamma = 0.001,
 	},
 	.Roll_td_param={
 		.r = 200,
 		.N0 = 2,
 	},
 	.Pitch_td_param={
-		.r = 50,
+		.r = 1000,
 		.N0 = 2,
 	},
 	.Yaw_td_param={
-		.r = 50,
+		.r = 300,
 		.N0 = 2,
 	},
 	.PosZ_td_param={
@@ -669,7 +669,7 @@ void configParamInit(void) /*�������ó�ʼ��*/
 
 	STMFLASH_Read(CONFIG_PARAM_ADDR, (u32 *)&configParam, lenth);
 
-	if (configParam.version == VERSION) /*�汾��ȷ*/
+	if (configParam.version == VERSION) /*version*/
 	{
 		if (configParamCksum(&configParam) == configParam.cksum) /*У����ȷ*/
 		{

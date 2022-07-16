@@ -149,7 +149,7 @@ void BASCPositionInit(void)
 {
     BASCPos.A1 = configParam.BASCPos_param.A1;
     BASCPos.A2 = configParam.BASCPos_param.A2;
-    BASCPos.A2 = configParam.BASCPos_param.A2;
+    BASCPos.A3 = configParam.BASCPos_param.A3;
 
     BASCPos.M_gamma = 1.0f / configParam.BASCPos_param.M_gamma;
     BASCPos.m_hat = MASS;
@@ -220,7 +220,7 @@ void Fz_Cal(float *thrust,const float posZ, const float velZ)
     BASCPos.A3_delta2 = BASCPos.A3 * BASCPos.delta2;
     BASCPos.A1_delta1 = BASCPos.A1 * BASCPos.delta1;
     
-    BASCPos.Fz = BASCPos.A1_delta1 + BASCPos.m_hat * BASCPos.x2d_dot + BASCPos.m_hat * G + BASCPos.A3_delta2;
+    BASCPos.Fz = constrainf(BASCPos.A1_delta1 + BASCPos.m_hat * BASCPos.x2d_dot + BASCPos.m_hat * G + BASCPos.A3_delta2, 0.0f,FZMAX);
     *thrust = BASCPos.Fz;
 }
 
@@ -260,7 +260,7 @@ void resetBASCPositioncontroller(void)
 {
     BASCPos.A1 = configParam.BASCPos_param.A1;
     BASCPos.A2 = configParam.BASCPos_param.A2;
-    BASCPos.A2 = configParam.BASCPos_param.A2;
+    BASCPos.A3 = configParam.BASCPos_param.A3;
 
     BASCPos.M_gamma = configParam.BASCPos_param.M_gamma;
 }
