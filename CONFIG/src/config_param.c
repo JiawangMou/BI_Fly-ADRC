@@ -30,7 +30,7 @@
  * All rights reserved
 ********************************************************************************/
 
-#define VERSION 14 /*13 ��ʾV1.3*/
+#define VERSION 24 /*13 ��ʾV1.3*/
 
 configParam_t configParam;
 
@@ -66,6 +66,9 @@ static configParam_t configParamDefault =
 	.PosZ_td_param={
 		.r = 50,
 		.N0 = 2,
+	},
+	.Axes_ESO_param={
+		.w0 = {50,50,50},
 	},
 		// .pidAngle = /*�Ƕ�PID*/
 		// {

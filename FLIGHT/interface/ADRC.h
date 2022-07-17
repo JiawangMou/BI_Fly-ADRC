@@ -72,6 +72,26 @@ typedef struct
 	float disturb;
 	lpf2pData uLpf;//ESO中考虑执行器的延迟
 }lesoObject_2rd_t;
+
+typedef struct 
+{
+	float z1[3];
+	float z2[3];
+	float e[3];//系统状态误差
+	float h;
+	float w0[3];
+	float disturb[3];
+	float beta1[3];
+	float beta2[3];
+	// arm_matrix_instance_f32 mat_z1_31;
+	// arm_matrix_instance_f32 mat_z2_31;
+	// arm_matrix_instance_f32 mat_e_31;
+	// arm_matrix_instance_f32 mat_disturb_31;
+	// arm_matrix_instance_f32 mat_beta1_31;
+	// arm_matrix_instance_f32 mat_beta2_31;
+}Axes_lesoObject_2rd_t;
+
+
 typedef struct 
 {
 	float z1;

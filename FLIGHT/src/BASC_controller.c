@@ -12,71 +12,68 @@
 #define FZMAX 34220
 
 
-arm_matrix_instance_f32 mat_A1;
-arm_matrix_instance_f32 mat_A2;
-arm_matrix_instance_f32 mat_A3;
-arm_matrix_instance_f32 mat_J_hat;
-arm_matrix_instance_f32 mat_Tao0_hat;
-arm_matrix_instance_f32 mat_J_gamma_33;
-arm_matrix_instance_f32 mat_Tao0_gamma;
+static arm_matrix_instance_f32 mat_A1;
+static arm_matrix_instance_f32 mat_A2;
+static arm_matrix_instance_f32 mat_A3;
+static arm_matrix_instance_f32 mat_J_hat;
+static arm_matrix_instance_f32 mat_Tao0_hat;
+static arm_matrix_instance_f32 mat_J_gamma_33;
+static arm_matrix_instance_f32 mat_Tao0_gamma;
 
-arm_matrix_instance_f32 mat_angle;
-arm_matrix_instance_f32 mat_desiredangle;
-arm_matrix_instance_f32 mat_x2;
+static arm_matrix_instance_f32 mat_angle;
+static arm_matrix_instance_f32 mat_desiredangle;
+static arm_matrix_instance_f32 mat_x2;
 
-arm_matrix_instance_f32 mat_delta1;
-arm_matrix_instance_f32 mat_delta2;
-arm_matrix_instance_f32 mat_x2d; 
-arm_matrix_instance_f32 mat_delta1_dot;
+static arm_matrix_instance_f32 mat_delta1;
+static arm_matrix_instance_f32 mat_delta2;
+static arm_matrix_instance_f32 mat_x2d; 
+static arm_matrix_instance_f32 mat_delta1_dot;
 
-arm_matrix_instance_f32 mat_A1_delta1;
-arm_matrix_instance_f32 mat_A1_delta1dot;
-arm_matrix_instance_f32 mat_J_hat_x2d_dot;
+static arm_matrix_instance_f32 mat_A1_delta1;
+static arm_matrix_instance_f32 mat_J_hat_x2d_dot;
 
-arm_matrix_instance_f32 mat_A3_delta1;
-arm_matrix_instance_f32 mat_A2_delta2;
-arm_matrix_instance_f32 mat_A1_delta1_dot;
+static arm_matrix_instance_f32 mat_A3_delta1;
+static arm_matrix_instance_f32 mat_A2_delta2;
+static arm_matrix_instance_f32 mat_A1_delta1_dot;
 
-arm_matrix_instance_f32 mat_x2d_dot;
+static arm_matrix_instance_f32 mat_x2d_dot;
 
-arm_matrix_instance_f32 mat_Y_J_T_33;
-arm_matrix_instance_f32 mat_Y_tao0_T;
-float temp_31[3];
-arm_matrix_instance_f32 mat_temp_31;
-float J_dot[3];
-arm_matrix_instance_f32 mat_J_dot_31;
-float J_hat[3];
-arm_matrix_instance_f32 mat_J_hat_31;
-
-
-float Tao0_dot[3];
-arm_matrix_instance_f32 mat_Tao0_dot_31;
+static arm_matrix_instance_f32 mat_Y_J_T_33;
+static arm_matrix_instance_f32 mat_Y_tao0_T;
+static float temp_31[3];
+static arm_matrix_instance_f32 mat_temp_31;
+static float J_dot[3];
+static arm_matrix_instance_f32 mat_J_dot_31;
+static float J_hat[3];
+static arm_matrix_instance_f32 mat_J_hat_31;
 
 
+static float Tao0_dot[3];
+static arm_matrix_instance_f32 mat_Tao0_dot_31;
 
-float td_x1[3]= {0};
-float td_x2[3]= {0};
-float td_x3[3]= {0};
 
-float wb_rad[3] = {0};
-float angle_rad[3] = {0};
-float desiredangle_rad[3] = {0};
 
-arm_matrix_instance_f32 mat_td_x1;
-arm_matrix_instance_f32 mat_td_x2;
-arm_matrix_instance_f32 mat_td_x3;
+static float td_x1[3]= {0};
+static float td_x2[3]= {0};
+static float td_x3[3]= {0};
+
+static float wb_rad[3] = {0};
+static float angle_rad[3] = {0};
+static float desiredangle_rad[3] = {0};
+
+static arm_matrix_instance_f32 mat_td_x1;
+static arm_matrix_instance_f32 mat_td_x2;
+static arm_matrix_instance_f32 mat_td_x3;
 
 BASC_Attitude_Object BASCAtti;
 BASC_Pos_Object BASCPos;
 
-float A1_delta1[3] = {0};
-// float A3_delta1[3] = {0};
-// float A2_delta2[3] = {0};
-float delta1_dot[3] = {0};
-float A1_delta1_dot[3] = {0};
+static float A1_delta1[3] = {0};
 
-float J_hat_x2d_dot[3] = {0};
-float x2_J_hat_x2[3] = {0};
+static float delta1_dot[3] = {0};
+static float A1_delta1_dot[3] = {0};
+
+static float J_hat_x2d_dot[3] = {0};
 
 
 void BASCAttitudeInit(void)
@@ -198,12 +195,12 @@ void Torque_Cal(control_t* control,Axis3f *Wb, attitude_t *actualAngle)
     //J_hat_x2d_dot
     arm_mat_mult_f32(&mat_J_hat, &mat_x2d_dot, &mat_J_hat_x2d_dot);
     //x2_J_hat_x2
-    x2_J_hat_x2[0] = BASCAtti.J_hat[8]*wb_rad[1]*wb_rad[2] - BASCAtti.J_hat[4]*wb_rad[1]*wb_rad[2];
-    x2_J_hat_x2[1] = BASCAtti.J_hat[0]*wb_rad[0]*wb_rad[2] - BASCAtti.J_hat[8]*wb_rad[0]*wb_rad[2];
-    x2_J_hat_x2[2] = BASCAtti.J_hat[4]*wb_rad[0]*wb_rad[1] - BASCAtti.J_hat[0]*wb_rad[0]*wb_rad[1];
+    BASCAtti.w_Jw[0] = BASCAtti.J_hat[8]*wb_rad[1]*wb_rad[2] - BASCAtti.J_hat[4]*wb_rad[1]*wb_rad[2];
+    BASCAtti.w_Jw[1] = BASCAtti.J_hat[0]*wb_rad[0]*wb_rad[2] - BASCAtti.J_hat[8]*wb_rad[0]*wb_rad[2];
+    BASCAtti.w_Jw[2] = BASCAtti.J_hat[4]*wb_rad[0]*wb_rad[1] - BASCAtti.J_hat[0]*wb_rad[0]*wb_rad[1];
 
     for(int i=0; i<3; i++){
-        BASCAtti.Torque[i] =  BASCAtti.A3_delta1[i] + BASCAtti.A2_delta2[i] + J_hat_x2d_dot[i] + x2_J_hat_x2[i] - BASCAtti.Tao0_hat[i];
+        BASCAtti.Torque[i] =  BASCAtti.A3_delta1[i] + BASCAtti.A2_delta2[i] + J_hat_x2d_dot[i] + BASCAtti.w_Jw[i] - BASCAtti.Tao0_hat[i];
         control->Tao_Fz[i] = BASCAtti.Torque[i];
     }
         
@@ -267,8 +264,6 @@ void resetBASCPositioncontroller(void)
 
 void Attitude_Adaptive_law(Axis3f *Wb)
 {
-    memcpy(wb_rad, Wb->axis, sizeof(float)*3);
-
     BASCAtti.Y_J_transpose[0]  = BASCAtti.x2d_dot[0];
     BASCAtti.Y_J_transpose[1]  = Wb->axis[0] * Wb->axis[2];
     BASCAtti.Y_J_transpose[2]  = -Wb->axis[0] * Wb->axis[1];
@@ -339,6 +334,5 @@ void BASCwriteToConfigParam(void)
 
     configParam.BASCPos_param.M_gamma= BASCPos.M_gamma;
 }
-
 
 

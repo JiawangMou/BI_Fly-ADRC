@@ -93,6 +93,11 @@ typedef struct
 
 typedef struct 
 {
+	float w0[3];
+}Axes_ESOParam_t;
+
+typedef struct 
+{
 	float N1;//跟踪微分器解决速度超调h1=N1*h
 	float beta_1;
 	float beta_2;
@@ -172,6 +177,7 @@ typedef struct
     tdParam_t       Pitch_td_param;
     tdParam_t       Yaw_td_param;
     tdParam_t       PosZ_td_param;
+	Axes_ESOParam_t Axes_ESO_param;
     // pidParam_t pidAngle;	/*角度PID*/
     // pidParam_t pidRate;		/*角速度PID*/
     // pidParamPos_t pidPos;	/*位置PID*/

@@ -2,6 +2,7 @@
 #include "config_param.h"
 #include "attitude_adrc.h"
 #include "arm_math.h"
+#include "BASC_controller.h"
 #include "axis.h"
 
 
@@ -12,6 +13,18 @@
 tdObject_t Roll_td;
 tdObject_t Pitch_td;
 tdObject_t Yaw_td;
+
+// Axis3f wb_rad;
+// arm_matrix_instance_f32 mat_wb_rad_31;
+
+
+Axes_lesoObject_2rd_t axes_ESO;
+
+static float temp[3];
+static arm_matrix_instance_f32 mat_temp_31;
+
+static float J_hat_inv[9];
+static arm_matrix_instance_f32 mat_J_hat_inv_33;
 
 // adrcObject_t ADRCRatePitch;
 // adrcObject_t ADRCRateRoll;
@@ -138,6 +151,8 @@ void attitudeADRCwriteToConfigParam(void)
     // configParam.adrcRate.roll.nlsef.zeta    = ADRCRateRoll.nlsef.zeta;
     // configParam.adrcRate.roll.td.N0         = ADRCRateRoll.td.N0;
     // configParam.adrcRate.roll.td.r          = ADRCRateRoll.td.r;
+    memcpy(configParam.Axes_ESO_param.w0, axes_ESO.w0,  sizeof(axes_ESO.w0));
+    Axes_Attitude_ESO_beta_update(); // when w0 was changed, updating the coefficient beta.
 }
 
 // void attitudeRateADRC(Axis3f *actualRate, attitude_t *desiredRate, float32_t *ADRC_u0)
@@ -166,8 +181,73 @@ void attitudeADRCinit(void)
     td_init(&Roll_td,&configParam.Roll_td_param,ANGLE_TD_DT);
     td_init(&Pitch_td,&configParam.Pitch_td_param,ANGLE_TD_DT);
     td_init(&Yaw_td,&configParam.Yaw_td_param,ANGLE_TD_DT);
-
+    Axes_Attitude_ESO_init(AXES_ESO_DT);
     // nlsef_init(&ADRCRateRoll.nlsef,&configParam.adrcRate.roll.nlsef,RATE_LOOP_DT);
     // nlsef_init(&ADRCRatePitch.nlsef,&configParam.adrcRate.pitch.nlsef,RATE_LOOP_DT);
     // nlsef_init(&ADRCRateYaw.nlsef,&configParam.adrcRate.yaw.nlsef,RATE_LOOP_DT);
+}
+
+void Axes_Attitude_ESO(control_Tf_t *control_Tf, Axis3f *wb)
+{
+    float Tao_temp[3];
+    memcpy(Tao_temp, control_Tf->Tao_Fz, sizeof(Tao_temp));
+
+    //update z1
+    arm_sub_f32(axes_ESO.z1, wb->axis, axes_ESO.e, 3);
+    arm_mult_f32 (axes_ESO.beta1, axes_ESO.e, temp, 3);
+    arm_sub_f32(axes_ESO.z2, temp, temp, 3);
+    arm_add_f32(temp, BASCAtti.Tao0_hat, temp, 3);
+    arm_add_f32(temp, Tao_temp, temp, 3);
+    arm_sub_f32(temp, BASCAtti.w_Jw, temp, 3);
+    arm_scale_f32(temp, axes_ESO.h, temp, 3);
+
+    J_hat_inv[0] = 1.0f / BASCAtti.J_hat[0];
+    J_hat_inv[4] = 1.0f / BASCAtti.J_hat[4];
+    J_hat_inv[8] = 1.0f / BASCAtti.J_hat[8];
+
+    arm_mat_mult_f32 (&mat_J_hat_inv_33, &mat_temp_31, &mat_temp_31);
+    arm_add_f32(temp, axes_ESO.z1, axes_ESO.z1, 3);
+
+    //update z2
+    arm_mult_f32 (axes_ESO.beta2, axes_ESO.e, temp, 3);
+    arm_scale_f32(temp, -1.0f * axes_ESO.h, temp, 3);
+    arm_add_f32(temp, axes_ESO.z2, axes_ESO.z2, 3);
+
+    memcpy(BASCAtti.disturb, axes_ESO.z2, sizeof(BASCAtti.disturb));
+
+    // adrcobject->z1 += (adrcobject->z2 - Beta_01 * adrcobject->e + adrcobject->b0 * lpf2pApply(&adrcobject->uLpf, u)) * adrcobject->h;
+    // // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
+    // adrcobject->z2 += -Beta_02 * adrcobject->e * adrcobject->h;
+}
+
+void Axes_Attitude_ESO_init(float tdDt)
+{
+    memset(&axes_ESO,0,sizeof(axes_ESO)); 
+    memcpy(axes_ESO.w0, configParam.Axes_ESO_param.w0, sizeof(axes_ESO.w0));
+    for(int i = 0; i < 3; i++){
+        axes_ESO.beta1[i] = 2 * axes_ESO.w0[i];
+        axes_ESO.beta2[i] = axes_ESO.w0[i] * axes_ESO.w0[i];
+    }
+    axes_ESO.h = tdDt;
+//TODO: Whether the initial states needs to be assigned to the ESO states to ensure fast convergence
+
+    arm_mat_init_f32(&mat_temp_31, 3, 1, temp);
+    arm_mat_init_f32(&mat_J_hat_inv_33, 3, 1, J_hat_inv);
+    // arm_mat_init_f32(&axes_ESO.mat_z1_31, 3, 1, axes_ESO.z1);
+    // arm_mat_init_f32(&axes_ESO.mat_z2_31, 3, 1, axes_ESO.z2);
+    // arm_mat_init_f32(&axes_ESO.mat_e_31, 3, 1, axes_ESO.e);
+    // arm_mat_init_f32(&axes_ESO.mat_disturb_31, 3, 1, axes_ESO.disturb);
+    // arm_mat_init_f32(&axes_ESO.mat_beta1_31, 3, 1, axes_ESO.beta1);
+    // arm_mat_init_f32(&axes_ESO.mat_beta2_31, 3, 1, axes_ESO.beta2);mat_wb_rad_31
+
+    // arm_mat_init_f32(&mat_wb_rad_31, 3, 1, wb_rad);
+
+}
+
+void Axes_Attitude_ESO_beta_update(void)
+{
+    for (int i = 0; i < 3; i++) {
+        axes_ESO.beta1[i] = 2 * axes_ESO.w0[i];
+        axes_ESO.beta2[i] = axes_ESO.w0[i] * axes_ESO.w0[i];
+    }
 }

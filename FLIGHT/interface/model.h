@@ -97,6 +97,21 @@ typedef struct {
     float32_t *x;
     float32_t *y;
 } Tf_t;
+
+
+/* Control state after transfer function*/
+typedef struct
+{
+	float32_t Tao_Fz[4];    //Tao_Fz[0]~Tao_Fz[2]： Tao, unit: g*cm^2/s^2;   Tao_Fz[3] ：Fz,  unit: g*cm/s^2; 
+	float U[4];				//U[0]~U[3]: T_lcos(beta_l), T_lsin(beta_l),T_rcos(beta_r),T_rsin(beta_r)  unit: mN; 
+	float actuator[4];  	//T_l  T_r  beta_l  beta_r	 unit: mN, rad 
+  arm_matrix_instance_f32 mat_Tao_Fz_41;
+  arm_matrix_instance_f32 mat_U_41;
+} control_Tf_t;
+
+
+extern control_Tf_t control_Tf;
+
 /* Constant parameters (default storage) */
 
 /* Model entry point functions */
@@ -110,18 +125,19 @@ void model_reset(void);
 
 float ServoPWM2Servoangle(u32 servoPWM);
 // float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle);
-// float TfApply(Tf_t *tf,const float input);
+float TfApply(Tf_t *tf,const float input, const float lowLimit, const float highLimit);
 
 // float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle);
 // float Ffz_coffe_cal(const attitude_t *atti,float servoangle);
 
 arm_status U_cal(control_t *control, attitude_t *angle);
 // void D_coffe_cal(float32_t *D, Axis3f *anglerate);
-void C_coffe_cal(float32_t *C, attitude_t *angle);
+void C_coffe_cal(float32_t *C, Axis3f *angle);
 void inv_C_coffe_cal(float32_t *inv_C, attitude_t *angle_R);
 void Thrust2motorPWM(Motorstatus_t *motorstatus,float32_t u );
 void ServoAngle2ServoPWM(Servostatus_t *servo_l,Servostatus_t *servo_r, float32_t *u );
 void control_allocation(control_t *control);
+void control_allocation_inv(Axis3f *angle);
 void actuator2PWM(control_t *control, actuatorStatus_t *actuatorStatus);
 
 #endif                                 /* RTW_HEADER_model_h_ */

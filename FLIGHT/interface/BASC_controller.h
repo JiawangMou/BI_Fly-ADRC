@@ -24,6 +24,7 @@ typedef struct
     float Tao0_gamma[9];
     float Tao0_hat[3];
     float Torque[3];
+    float w_Jw[3];
     float AL_Dt;  //Adaptive Law dt
 } BASC_Attitude_Object;
 

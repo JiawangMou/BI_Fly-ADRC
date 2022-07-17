@@ -41,24 +41,40 @@ float32_t model_C_inv[16] = {1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 
 
 
-// #define  MOTORTF_ORDER 2  // 这里的阶数是系统实际阶数+1
+#define  MOTORTF_ORDER 2  // 这里的阶数是系统实际阶数+1
  
-// float32_t motortf_x[MOTORTF_ORDER] = {0};
-// float32_t motortf_y[MOTORTF_ORDER-1] = {0};
-// float32_t motortf_num[MOTORTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
-// float32_t motortf_dec[MOTORTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
+float32_t left_motortf_x[MOTORTF_ORDER] = {0};
+float32_t left_motortf_y[MOTORTF_ORDER-1] = {0};
+float32_t left_motortf_num[MOTORTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
+float32_t left_motortf_dec[MOTORTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
 
-// #define  SERVOTF_ORDER 3  // 这里的阶数是系统实际阶数+1
-// float servotf_x[SERVOTF_ORDER] = {0};
-// float servotf_y[SERVOTF_ORDER-1] = {0};
-// float servotf_num[SERVOTF_ORDER] = {0,0.0186,0.0186};//Fs = 250 这里的系数与采样率有关，一定注意！！
-// float servotf_dec[SERVOTF_ORDER-1] = {-1.6455,0.6828};//Fs = 250 这里的系数与采样率有关，一定注意！！
+#define  SERVOTF_ORDER 3  // 这里的阶数是系统实际阶数+1
+float left_servotf_x[SERVOTF_ORDER] = {0};
+float left_servotf_y[SERVOTF_ORDER-1] = {0};
+float left_servotf_num[SERVOTF_ORDER] = {0,0.0186,0.0186};//Fs = 250 这里的系数与采样率有关，一定注意！！
+float left_servotf_dec[SERVOTF_ORDER-1] = {-1.6455,0.6828};//Fs = 250 这里的系数与采样率有关，一定注意！！
+
+
+float32_t right_motortf_x[MOTORTF_ORDER] = {0};
+float32_t right_motortf_y[MOTORTF_ORDER-1] = {0};
+float32_t right_motortf_num[MOTORTF_ORDER] = {0,0.0601}; //Fs = 1000 这里的系数与采样率有关，一定注意！！
+float32_t right_motortf_dec[MOTORTF_ORDER-1] = {-0.9399};//Fs = 1000 这里的系数与采样率有关，一定注意！！
+
+#define  SERVOTF_ORDER 3  // 这里的阶数是系统实际阶数+1
+float right_servotf_x[SERVOTF_ORDER] = {0};
+float right_servotf_y[SERVOTF_ORDER-1] = {0};
+float right_servotf_num[SERVOTF_ORDER] = {0,0.0186,0.0186};//Fs = 250 这里的系数与采样率有关，一定注意！！
+float right_servotf_dec[SERVOTF_ORDER-1] = {-1.6455,0.6828};//Fs = 250 这里的系数与采样率有关，一定注意！！
 // // static arm_matrix_instance_f32 pSrc_servotf_x; 
 // // static arm_matrix_instance_f32 pSrc_servotf_y; 
 // // static arm_matrix_instance_f32 pSrc_servotf_num; 
 // // static arm_matrix_instance_f32 pSrc_servotf_dec; 
-// Tf_t motortf;
-// Tf_t servotf;
+Tf_t right_motortf;
+Tf_t right_servotf;
+Tf_t left_motortf;
+Tf_t left_servotf;
+
+control_Tf_t control_Tf;
 
 /* Model initialize function */
 void model_initialize(void)
@@ -78,32 +94,44 @@ void model_initialize(void)
 //   DCMbe[4] = 1.0;
 //   DCMbe[8] = 1.0;
 
-//   motortf.order = MOTORTF_ORDER;
-//   motortf.decp  = motortf_dec;
-//   motortf.nump  = motortf_num;
-//   motortf.x     = motortf_x;
-//   motortf.y     = motortf_y;
+    right_motortf.order = MOTORTF_ORDER;
+    right_motortf.decp  = right_motortf_dec;
+    right_motortf.nump  = right_motortf_num;
+    right_motortf.x     = right_motortf_x;
+    right_motortf.y     = right_motortf_y;
+    
+    right_servotf.order = SERVOTF_ORDER;
+    right_servotf.decp  = right_servotf_dec;
+    right_servotf.nump  = right_servotf_num;
+    right_servotf.x     = right_servotf_x;
+    
+    left_motortf.order = MOTORTF_ORDER;
+    left_motortf.decp  = left_motortf_dec;
+    left_motortf.nump  = left_motortf_num;
+    left_motortf.x     = left_motortf_x;
+    left_motortf.y     = left_motortf_y;
 
-//   servotf.order = SERVOTF_ORDER;
-//   servotf.decp  = servotf_dec;
-//   servotf.nump  = servotf_num;
-//   servotf.x     = servotf_x;
-//   servotf.y     = servotf_y;
+    left_servotf.order = SERVOTF_ORDER;
+    left_servotf.decp  = left_servotf_dec;
+    left_servotf.nump  = left_servotf_num;
+    left_servotf.x     = left_servotf_x;
+    left_servotf.y     = left_servotf_y;
 
-    arm_mat_init_f32(&mat_model_C_44, 4,4, model_C);
-    arm_mat_init_f32(&mat_model_C_inv_44, 4,4, model_C_inv);
+    arm_mat_init_f32(&mat_model_C_44, 4, 4, model_C);
+    arm_mat_init_f32(&mat_model_C_inv_44, 4, 4, model_C_inv);
 
+    arm_mat_init_f32(&control_Tf.mat_Tao_Fz_41, 4, 1, control_Tf.Tao_Fz);
+    arm_mat_init_f32(&control_Tf.mat_U_41, 4, 1, control_Tf.U);
 
+// arm_mat_init_f32(&pSrc_motortf_x, MOTORTF_ORDER,1, motortf_x);
+// arm_mat_init_f32(&pSrc_motortf_y, MOTORTF_ORDER,1, motortf_y);
+// arm_mat_init_f32(&pSrc_motortf_num, MOTORTF_ORDER,1, motortf_x);
+// arm_mat_init_f32(&pSrc_motortf_dec, MOTORTF_ORDER,1, motortf_y);
 
-  // arm_mat_init_f32(&pSrc_motortf_x, MOTORTF_ORDER,1, motortf_x);
-  // arm_mat_init_f32(&pSrc_motortf_y, MOTORTF_ORDER,1, motortf_y);
-  // arm_mat_init_f32(&pSrc_motortf_num, MOTORTF_ORDER,1, motortf_x);
-  // arm_mat_init_f32(&pSrc_motortf_dec, MOTORTF_ORDER,1, motortf_y);
-
-  // arm_mat_init_f32(&pSrc_servotf_x, SERVOTF_ORDER,1, servotf_x);
-  // arm_mat_init_f32(&pSrc_servotf_y, SERVOTF_ORDER,1, servotf_y);
-  // arm_mat_init_f32(&pSrc_servotf_num, SERVOTF_ORDER,1, servotf_num);
-  // arm_mat_init_f32(&pSrc_servotf_dec, SERVOTF_ORDER,1, servotf_dec);
+// arm_mat_init_f32(&pSrc_servotf_x, SERVOTF_ORDER,1, servotf_x);
+// arm_mat_init_f32(&pSrc_servotf_y, SERVOTF_ORDER,1, servotf_y);
+// arm_mat_init_f32(&pSrc_servotf_num, SERVOTF_ORDER,1, servotf_num);
+// arm_mat_init_f32(&pSrc_servotf_dec, SERVOTF_ORDER,1, servotf_dec);
 }
 
 /* Model terminate function */
@@ -200,7 +228,7 @@ float ServoPWM2Servoangle(u32 servoPWM)
 * Others: 在这个函数里面更新了tf中的状态量
 
 */
-float TfApply(Tf_t *tf,const float input)
+float TfApply(Tf_t *tf,const float input, const float lowLimit, const float highLimit)
 {
     float32_t result_num = 0;
     float32_t result_dec = 0;
@@ -210,12 +238,20 @@ float TfApply(Tf_t *tf,const float input)
     *(tf->x) = input;
     arm_dot_prod_f32(tf->x, tf->nump, tf->order, &result_num);
     arm_dot_prod_f32(tf->y, tf->decp, (tf->order-1), &result_dec);
-    y = result_num - result_dec;
+    y = constrainf(result_num - result_dec, lowLimit, highLimit);;
     for (u8 i = (tf->order-2); i > 0; i--)
         *(tf->y + i) = *(tf->y + i - 1);
     *(tf->y) = y;
     return y;
 } 
+
+void actuator_TfApply(control_t *control)
+{
+    control_Tf.actuator[T_l]    = TfApply(&left_motortf, control->actuator[T_l], 0.0f, 200.0f); // 200 对应于200mN
+    control_Tf.actuator[T_r]    = TfApply(&right_motortf, control->actuator[T_r], 0.0f, 200.0f);
+    control_Tf.actuator[beta_l] = TfApply(&left_servotf, control->actuator[beta_l], -0.9f, 0.9f); // 0.8726对应50°
+    control_Tf.actuator[beta_r] = TfApply(&right_servotf, control->actuator[beta_r], -0.9f, 0.9f);
+}
 /*
 
 * Function: Fdz_coffe_cal
@@ -368,11 +404,11 @@ arm_status U_cal(control_t *control, attitude_t *angle)
 //     *(D+3) = -G;
 // }
 
-void C_coffe_cal(float32_t *C, attitude_t *angle_R)
+void C_coffe_cal(float32_t *C, Axis3f *angle_R)
 {
-    float Cr = arm_cos_f32(angle_R->roll);
-    float Cp = arm_cos_f32(angle_R->pitch);
-    float Sp = arm_sin_f32(angle_R->pitch);
+    float Cr = arm_cos_f32(angle_R->x);
+    float Cp = arm_cos_f32(angle_R->y);
+    float Sp = arm_sin_f32(angle_R->y);
 
     *C        = 7.289f;
     *(C + 1)  = 0.000001f;
@@ -432,6 +468,19 @@ void control_allocation(control_t *control)
     control->actuator[beta_l] = constrainf(control->actuator[beta_l], -0.9f, 0.9f);  //0.8726对应50°
     control->actuator[beta_r] = constrainf(control->actuator[beta_r], -0.9f, 0.9f);  //0.8726对应50°
 }
+
+void control_allocation_inv(Axis3f *angle)
+{
+    control_Tf.U[0] = control_Tf.actuator[T_l] * arm_cos_f32(control_Tf.actuator[beta_l]);
+    control_Tf.U[1] = control_Tf.actuator[T_l] * arm_sin_f32(control_Tf.actuator[beta_l]);
+    control_Tf.U[2] = control_Tf.actuator[T_r] * arm_cos_f32(control_Tf.actuator[beta_r]);
+    control_Tf.U[3] = control_Tf.actuator[T_r] * arm_sin_f32(control_Tf.actuator[beta_r]);
+
+    C_coffe_cal(model_C, angle);
+    arm_mat_mult_f32(&mat_model_C_44, &control_Tf.mat_U_41 , &control_Tf.mat_Tao_Fz_41);
+    arm_scale_f32 (control_Tf.Tao_Fz, 100.0f, control_Tf.Tao_Fz, 4);  //unit change from mN to g*cm/s^2
+}
+
 void actuator2PWM(control_t *control, actuatorStatus_t *actuatorStatus)
 {
     Thrust2motorPWM(&actuatorStatus->motor_l,control->actuator[T_l]);

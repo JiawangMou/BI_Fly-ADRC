@@ -27,14 +27,12 @@ typedef struct
 {
 	u32 	PWM;
 	float	angle;
-	float	actual_angle;
 }Servostatus_t;
 
 typedef struct 
 {
 	u32 	PWM;
 	float	f_Hz;
-	float	actual_f_Hz;
 }Motorstatus_t;
 typedef struct 
 {
