@@ -16,6 +16,8 @@ extern tdObject_t Roll_td;
 extern tdObject_t Pitch_td;
 extern tdObject_t Yaw_td;
 
+extern Axes_lesoObject_2rd_t axes_ESO;
+
 // #define RATE_LOOP_RATE RATE_500_HZ
 // #define RATE_LOOP_DT   (1.0f/RATE_LOOP_RATE)
 

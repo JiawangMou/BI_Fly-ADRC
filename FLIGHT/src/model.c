@@ -245,12 +245,12 @@ float TfApply(Tf_t *tf,const float input, const float lowLimit, const float high
     return y;
 } 
 
-void actuator_TfApply(control_t *control)
+void actuator_TfApply(float *actuator)
 {
-    control_Tf.actuator[T_l]    = TfApply(&left_motortf, control->actuator[T_l], 0.0f, 200.0f); // 200 对应于200mN
-    control_Tf.actuator[T_r]    = TfApply(&right_motortf, control->actuator[T_r], 0.0f, 200.0f);
-    control_Tf.actuator[beta_l] = TfApply(&left_servotf, control->actuator[beta_l], -0.9f, 0.9f); // 0.8726对应50°
-    control_Tf.actuator[beta_r] = TfApply(&right_servotf, control->actuator[beta_r], -0.9f, 0.9f);
+    control_Tf.actuator[T_l]    = TfApply(&left_motortf,  actuator[T_l], 0.0f, 200.0f); // 200 对应于200mN
+    control_Tf.actuator[T_r]    = TfApply(&right_motortf, actuator[T_r], 0.0f, 200.0f);
+    control_Tf.actuator[beta_l] = TfApply(&left_servotf,  actuator[beta_l], -0.9f, 0.9f); // 0.8726对应50°
+    control_Tf.actuator[beta_r] = TfApply(&right_servotf, actuator[beta_r], -0.9f, 0.9f);
 }
 /*
 

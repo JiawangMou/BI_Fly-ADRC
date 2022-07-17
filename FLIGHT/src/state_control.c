@@ -90,6 +90,12 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         attitudeTD(setpoint);
     }
 
+    if (RATE_DO_EXECUTE(AXES_ESO_RATE, tick)) {
+        actuator_TfApply(control->actuator);
+		control_allocation_inv(&sensors->gyro_R);
+        Axes_Attitude_ESO(&control_Tf, &sensors->gyro_R);
+    }
+
 
 //     if (RATE_DO_EXECUTE(POS_PID_RATE, tick)) {
 //         if (setpoint->mode.x != modeDisable || setpoint->mode.y != modeDisable || setpoint->mode.z != modeDisable) {
@@ -178,11 +184,7 @@ void stateControl(control_t* control, sensorData_t* sensors, state_t* state, set
         Position_Adaptive_law();
     }
 
-    if (RATE_DO_EXECUTE(AXES_ESO_RATE, tick)) {
-            
-		control_allocation_inv(&sensors->gyro_R);
-        Axes_Attitude_ESO(&control_Tf, &sensors->gyro_R);
-    }
+
 
 //     //角速度环
 //     if (RATE_DO_EXECUTE(RATE_PID_RATE, tick)) {

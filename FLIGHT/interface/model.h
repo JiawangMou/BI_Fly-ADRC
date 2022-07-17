@@ -126,6 +126,7 @@ void model_reset(void);
 float ServoPWM2Servoangle(u32 servoPWM);
 // float flappingHZ2ThrustZ_E(const float f_hz,float servoangle,float pitchangle);
 float TfApply(Tf_t *tf,const float input, const float lowLimit, const float highLimit);
+void actuator_TfApply(float *actuator);
 
 // float Fdz_coffe_cal(const attitude_t *atti,velocity_t vel,float servoangle);
 // float Ffz_coffe_cal(const attitude_t *atti,float servoangle);

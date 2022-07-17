@@ -23,7 +23,7 @@ Axes_lesoObject_2rd_t axes_ESO;
 static float temp[3];
 static arm_matrix_instance_f32 mat_temp_31;
 
-static float J_hat_inv[9];
+static float J_hat_inv[9] = {0};
 static arm_matrix_instance_f32 mat_J_hat_inv_33;
 
 // adrcObject_t ADRCRatePitch;
@@ -190,22 +190,24 @@ void attitudeADRCinit(void)
 void Axes_Attitude_ESO(control_Tf_t *control_Tf, Axis3f *wb)
 {
     float Tao_temp[3];
+    float beta1_e[3];
     memcpy(Tao_temp, control_Tf->Tao_Fz, sizeof(Tao_temp));
 
     //update z1
-    arm_sub_f32(axes_ESO.z1, wb->axis, axes_ESO.e, 3);
-    arm_mult_f32 (axes_ESO.beta1, axes_ESO.e, temp, 3);
-    arm_sub_f32(axes_ESO.z2, temp, temp, 3);
-    arm_add_f32(temp, BASCAtti.Tao0_hat, temp, 3);
-    arm_add_f32(temp, Tao_temp, temp, 3);
+    //z1(n+1) = z1(n) + (J_inv * (tao + tao0 - w_Jw) + z2 - beta01 * e) * h
+    //z2(n+1) = z2(n) - (beta02 * e) * h
+    arm_add_f32(BASCAtti.Tao0_hat, Tao_temp, temp, 3);
     arm_sub_f32(temp, BASCAtti.w_Jw, temp, 3);
-    arm_scale_f32(temp, axes_ESO.h, temp, 3);
-
     J_hat_inv[0] = 1.0f / BASCAtti.J_hat[0];
     J_hat_inv[4] = 1.0f / BASCAtti.J_hat[4];
     J_hat_inv[8] = 1.0f / BASCAtti.J_hat[8];
-
     arm_mat_mult_f32 (&mat_J_hat_inv_33, &mat_temp_31, &mat_temp_31);
+    arm_sub_f32(axes_ESO.z2, temp, temp, 3);
+
+    arm_sub_f32(axes_ESO.z1, wb->axis, axes_ESO.e, 3);
+    arm_mult_f32 (axes_ESO.beta1, axes_ESO.e, beta1_e, 3);
+    arm_sub_f32(temp, beta1_e, temp, 3);    
+    arm_scale_f32(temp, axes_ESO.h, temp, 3);
     arm_add_f32(temp, axes_ESO.z1, axes_ESO.z1, 3);
 
     //update z2
@@ -213,11 +215,10 @@ void Axes_Attitude_ESO(control_Tf_t *control_Tf, Axis3f *wb)
     arm_scale_f32(temp, -1.0f * axes_ESO.h, temp, 3);
     arm_add_f32(temp, axes_ESO.z2, axes_ESO.z2, 3);
 
-    memcpy(BASCAtti.disturb, axes_ESO.z2, sizeof(BASCAtti.disturb));
+    BASCAtti.disturb[0] = BASCAtti.J_hat[0] * axes_ESO.z2[0];
+    BASCAtti.disturb[1] = BASCAtti.J_hat[4] * axes_ESO.z2[1];
+    BASCAtti.disturb[2] = BASCAtti.J_hat[8] * axes_ESO.z2[2];   
 
-    // adrcobject->z1 += (adrcobject->z2 - Beta_01 * adrcobject->e + adrcobject->b0 * lpf2pApply(&adrcobject->uLpf, u)) * adrcobject->h;
-    // // adrcobject->z1 += (adrcobject->z2 - Beta_01 * e + adrcobject->b0 *  adrcobject->u) * adrcobject->h;
-    // adrcobject->z2 += -Beta_02 * adrcobject->e * adrcobject->h;
 }
 
 void Axes_Attitude_ESO_init(float tdDt)
@@ -232,7 +233,7 @@ void Axes_Attitude_ESO_init(float tdDt)
 //TODO: Whether the initial states needs to be assigned to the ESO states to ensure fast convergence
 
     arm_mat_init_f32(&mat_temp_31, 3, 1, temp);
-    arm_mat_init_f32(&mat_J_hat_inv_33, 3, 1, J_hat_inv);
+    arm_mat_init_f32(&mat_J_hat_inv_33, 3, 3, J_hat_inv);
     // arm_mat_init_f32(&axes_ESO.mat_z1_31, 3, 1, axes_ESO.z1);
     // arm_mat_init_f32(&axes_ESO.mat_z2_31, 3, 1, axes_ESO.z2);
     // arm_mat_init_f32(&axes_ESO.mat_e_31, 3, 1, axes_ESO.e);

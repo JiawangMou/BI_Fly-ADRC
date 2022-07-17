@@ -782,7 +782,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                 0.001f * BASCAtti.A2[8]);
             sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[4], BASCAtti.J_gamma[8],
                 0.01f * BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], 0.001f * BASCAtti.Tao0_gamma[8]);
-            sendPid(3, 0.1f * BASCPos.A1, BASCPos.A2, 0.01f *BASCPos.A3, posZ_TD.r, 1000.0f * BASCPos.M_gamma, 0, 0, 0, 0);
+            sendPid(3, 0.1f * BASCPos.A1, BASCPos.A2, 0.01f *BASCPos.A3, posZ_TD.r, 1000.0f * BASCPos.M_gamma, 0,axes_ESO.w0[0],axes_ESO.w0[1], 10.0f * axes_ESO.w0[2]);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
             sendPid(5, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -796,7 +796,7 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
                 0.001f * BASCAtti.A2[8]);
             sendPid(2, Roll_td.r, Pitch_td.r, Yaw_td.r, BASCAtti.J_gamma[0], BASCAtti.J_gamma[4], BASCAtti.J_gamma[8],
                 0.01f * BASCAtti.Tao0_gamma[0], BASCAtti.Tao0_gamma[4], 0.001f * BASCAtti.Tao0_gamma[8]);
-            sendPid(3, 0.1f * BASCPos.A1, BASCPos.A2, 0.01f * BASCPos.A3, posZ_TD.r, 1000.0f * BASCPos.M_gamma, 0, 0, 0, 0);
+            sendPid(3, 0.1f * BASCPos.A1, BASCPos.A2, 0.01f * BASCPos.A3, posZ_TD.r, 1000.0f * BASCPos.M_gamma, 0, axes_ESO.w0[0],axes_ESO.w0[1], 10.0f * axes_ESO.w0[2]);
             sendPid(4, 0, 0, 0, getservoinitpos_configParam(PWM_LEFT), getservoinitpos_configParam(PWM_RIGHT),
                 getservoinitpos_configParam(PWM_MIDDLE) / 10, 0, 0, 0);
             sendPid(5, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -846,9 +846,9 @@ static void atkpReceiveAnl(atkp_t* anlPacket)
         BASCPos.M_gamma = 0.0001 * ((s16)(*(anlPacket->data + 8) << 8) | *(anlPacket->data + 9));
         // pidZ.kd = 0.01 * ((s16)(*(anlPacket->data + 10) << 8) | *(anlPacket->data + 11));
 
-        // pidVX.kp = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
-        // pidVX.ki = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
-        // pidVX.kd = 0.01 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
+        axes_ESO.w0[0] = 0.1 * ((s16)(*(anlPacket->data + 12) << 8) | *(anlPacket->data + 13));
+        axes_ESO.w0[1] = 0.1 * ((s16)(*(anlPacket->data + 14) << 8) | *(anlPacket->data + 15));
+        axes_ESO.w0[2] = 0.1 * ((s16)(*(anlPacket->data + 16) << 8) | *(anlPacket->data + 17));
         attitudeADRCwriteToConfigParam();
         posZ_adrc_writeToConfigParam();
         BASCwriteToConfigParam();

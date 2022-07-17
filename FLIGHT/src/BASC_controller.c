@@ -16,12 +16,12 @@ static arm_matrix_instance_f32 mat_A1;
 static arm_matrix_instance_f32 mat_A2;
 static arm_matrix_instance_f32 mat_A3;
 static arm_matrix_instance_f32 mat_J_hat;
-static arm_matrix_instance_f32 mat_Tao0_hat;
+// static arm_matrix_instance_f32 mat_Tao0_hat;
 static arm_matrix_instance_f32 mat_J_gamma_33;
 static arm_matrix_instance_f32 mat_Tao0_gamma;
 
 static arm_matrix_instance_f32 mat_angle;
-static arm_matrix_instance_f32 mat_desiredangle;
+// static arm_matrix_instance_f32 mat_desiredangle;
 static arm_matrix_instance_f32 mat_x2;
 
 static arm_matrix_instance_f32 mat_delta1;
@@ -45,7 +45,7 @@ static arm_matrix_instance_f32 mat_temp_31;
 static float J_dot[3];
 static arm_matrix_instance_f32 mat_J_dot_31;
 static float J_hat[3];
-static arm_matrix_instance_f32 mat_J_hat_31;
+// static arm_matrix_instance_f32 mat_J_hat_31;
 
 
 static float Tao0_dot[3];
@@ -59,7 +59,7 @@ static float td_x3[3]= {0};
 
 static float wb_rad[3] = {0};
 static float angle_rad[3] = {0};
-static float desiredangle_rad[3] = {0};
+// static float desiredangle_rad[3] = {0};
 
 static arm_matrix_instance_f32 mat_td_x1;
 static arm_matrix_instance_f32 mat_td_x2;
@@ -108,7 +108,7 @@ void BASCAttitudeInit(void)
     arm_mat_init_f32(&mat_A1, 3,3, BASCAtti.A1);
     arm_mat_init_f32(&mat_A2, 3,3, BASCAtti.A2);
     arm_mat_init_f32(&mat_A3, 3,3, BASCAtti.A3);
-    arm_mat_init_f32(&mat_Tao0_hat, 3,3, BASCAtti.Tao0_hat);
+    // arm_mat_init_f32(&mat_Tao0_hat, 3,1, BASCAtti.Tao0_hat);
     arm_mat_init_f32(&mat_J_gamma_33, 3,3, BASCAtti.J_gamma);
     arm_mat_init_f32(&mat_Tao0_gamma, 3,3, BASCAtti.Tao0_gamma);
     
@@ -130,14 +130,13 @@ void BASCAttitudeInit(void)
 
     arm_mat_init_f32(&mat_angle, 3,1, angle_rad);
     arm_mat_init_f32(&mat_x2, 3,1, wb_rad);
-    arm_mat_init_f32(&mat_desiredangle, 3,1, desiredangle_rad);
+    // arm_mat_init_f32(&mat_desiredangle, 3,1, desiredangle_rad);
 
     arm_mat_init_f32(&mat_Y_J_T_33, 3,3, BASCAtti.Y_J_transpose);
     arm_mat_init_f32(&mat_Y_tao0_T, 3,3, BASCAtti.Y_tao0_transpose);
 
     arm_mat_init_f32(&mat_temp_31, 3,1, temp_31);
     arm_mat_init_f32(&mat_J_dot_31, 3,1, J_dot);
-    arm_mat_init_f32(&mat_J_hat_31, 3,1, J_hat);
     arm_mat_init_f32(&mat_Tao0_dot_31, 3,1, Tao0_dot);
     BASCAtti.AL_Dt = RATE_ADAPITVE_DT;
 }
